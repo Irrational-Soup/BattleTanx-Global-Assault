@@ -127,3 +127,19 @@ The typed reconstruction is linked at its retail address and all relocated
 pointers and scalar values are compared byte-for-byte with this title.
 
 The source/tooling-only distribution and eventual Vita workflow follow the project structure and legal/release boundaries established in `TheGh0stShip/VitaKart64`.
+
+The display-list packet replacement loop in `src/code/model_player_color.c`
+uses the source structure of `func_80085330` from the CC0 original-BattleTanx
+decompilation at
+[`melalawi/battletanx-decomp`](https://github.com/melalawi/battletanx-decomp/tree/235abfc6c5bc3b6d5673d9c98de6b74093735726).
+Global Assault adds geometry-mode repair handling and uses 17 packet pairs
+instead of 15; the adapted unit compiles to the exact retail bytes for both
+of its functions.
+
+The ASN64 compatibility preprocessor in `tools/modern_asn64.py` is based on
+the public-domain/Unlicense `RocketRet/modern-asn64` revision
+`20d21729ce6a2e7bc8a4a91ec9505cab0d6e50f9`. Six project additions were derived
+from Global Assault's retail instruction bytes and are independently covered
+by positive, negative, and whole-unit comparisons. GPL `n64link` was used only
+as a black-box output oracle; none of its source was read or incorporated.
+The upstream license text is retained in `tools/modern_asn64.LICENSE`.

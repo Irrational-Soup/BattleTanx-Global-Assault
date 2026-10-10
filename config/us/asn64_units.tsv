@@ -1,0 +1,9 @@
+# unit	vram	text_size	status
+nearest_live_entity	0x80083230	0x1EC	asn64-clean
+ai_target_bit_select	0x80084CC8	0x480	asn64-clean
+func_8008A1A4	0x8008A1A4	0x1A0	asn64-clean
+func_800904C8	0x800904C8	0x144	asn64-clean
+font_number_draw	0x80096BDC	0x238	asn64-clean
+effect_sprite_ring_draw	0x800A42C8	0x1A0	asn64-clean
+800B4684_collision_query	0x800B4684	0x35C	asn64-clean
+800B5B8C_mover_reflect	0x800B5B8C	0xBC	asn64-clean

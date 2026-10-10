@@ -12,6 +12,115 @@ SPEC.loader.exec_module(MODULE)
 
 
 class KmcPipelineTests(unittest.TestCase):
+    def _sprite_phase_fixture(self) -> str:
+        return (
+            "func_800A4468:\n"
+            "\t.set\tnoreorder\n\tbc1f\t.L1\n\tmove\t$16,$0\n\t.set\tnoreorder\n"
+            "\tl.s\t$f22,$LF_lis1\n\tli\t$21,-2147483648\t\t\t# 0x80000000\n"
+            "\taddu\t$19,$sp,48\n\taddu\t$6,$16,$3\n"
+            "\tmfc1\t$3,$f2\n\t#nop\n\tor\t$3,$3,$21\n"
+            "\tsub.s\t$f2,$f2,$f0\n.L24:\n\tmul.s\t$f2,$f4,$f2\n"
+            "\taddu\t$5,$17,20\n\t.set\tnoreorder\n\tjal\tfunc_800AD6A8\n"
+            "\t.end\tfunc_800A4468\n"
+        )
+
+    def test_sprite_phase_lifetimes_are_exact_and_gated(self) -> None:
+        source = self._sprite_phase_fixture()
+        normalized = MODULE.shape_sprite_phase_lifetimes(source)
+        self.assertIn("\tbc1f\t.L1\n\taddu\t$21,$17,20\n", normalized)
+        self.assertIn("\tli\t$2,-2147483648", normalized)
+        self.assertIn("\tmove\t$5,$21\n", normalized)
+        self.assertIn(".L24 = . + 4\n", normalized)
+        unrelated = source.replace("func_800A4468", "func_800A4464")
+        self.assertEqual(unrelated, MODULE.shape_sprite_phase_lifetimes(unrelated))
+
+    def test_sprite_phase_lifetimes_reject_drift(self) -> None:
+        source = self._sprite_phase_fixture().replace("\taddu\t$5,$17,20", "\taddu\t$5,$17,24")
+        with self.assertRaisesRegex(RuntimeError, "call argument rewrite fired 0 times"):
+            MODULE.shape_sprite_phase_lifetimes(source)
+
+    def test_effect_burst_register_cycle_is_function_gated(self) -> None:
+        unrelated = "func_800D6504:\n\tnop\n\t.end\tfunc_800D6504\n"
+        self.assertEqual(
+            unrelated, MODULE.cycle_effect_burst_saved_registers(unrelated)
+        )
+
+    def test_ai_leader_lifetimes_are_function_gated(self) -> None:
+        unrelated = "func_800854C0:\n\tnop\n\t.end\tfunc_800854C0\n"
+        self.assertEqual(unrelated, MODULE.shape_ai_leader_lifetimes(unrelated))
+
+    def _step_pool_fixture(self) -> str:
+        return (
+            "func_8007DBE0:\n"
+            "\tli\t$10,0x00000003\t\t# 3\n\tli\t$12,0x00000002\t\t# 2\n"
+            "\tli\t$11,0x00000004\t\t# 4\n\tli\t$13,0x00000001\t\t# 1\n"
+            "\tbeq\t$3,$10,.L9\n\tslt\t$2,$3,$11\n\t.set\tnoreorder\n"
+            "\t.set\tnoreorder\n\tbeql\t$2,$0,.L7\n\tli\t$6,0x00000001\t\t# 1\n"
+            "\t.set\tnoreorder\n\tbeq\t$3,$12,.L14\n"
+            "\tlw\t$3,D_80114680\n\t#nop\n\t.set\tnoat\n\tlui\t$1,1\n"
+            "\taddu\t$1,$3,$1\n\tlw\t$2,-16384($1)\n\t.set\tat\n\t#nop\n"
+            "\tsw\t$2,4($4)\n\t.set\tnoat\n\tlui\t$1,1\n\taddu\t$1,$3,$1\n"
+            "\tsw\t$4,-16384($1)\n\t.set\tat\n\tsh\t$7,8($4)\n\tsb\t$13,0($4)\n"
+            "\t.end\tfunc_8007DBE0\n"
+        )
+
+    def test_step_pool_release_registers_are_exact_and_gated(self) -> None:
+        source = self._step_pool_fixture()
+        normalized = MODULE.shape_step_pool_release_registers(source)
+        self.assertIn("\tli\t$13,0x00000002", normalized)
+        self.assertIn("\tslti\t$2,$3,4\n", normalized)
+        self.assertIn("\tlw\t$2,D_80114680\n", normalized)
+        self.assertIn("\tsw\t$3,4($4)\n", normalized)
+        self.assertIn("\tsb\t$11,0($4)\n", normalized)
+
+        unrelated = source.replace("func_8007DBE0", "func_8007DBDC")
+        self.assertEqual(unrelated, MODULE.shape_step_pool_release_registers(unrelated))
+
+    def test_step_pool_release_registers_reject_drift(self) -> None:
+        source = self._step_pool_fixture().replace("\tli\t$10,0x00000003", "\tli\t$10,0x00000004")
+        with self.assertRaisesRegex(RuntimeError, "kind constants rewrite fired 0 times"):
+            MODULE.shape_step_pool_release_registers(source)
+
+    def test_matrix_rotate_setup_is_function_gated(self) -> None:
+        unrelated = "func_8009FCC8:\n\tnop\n\t.end\tfunc_8009FCC8\n"
+        self.assertEqual(unrelated, MODULE.schedule_matrix_rotate_setup(unrelated))
+
+    def test_matrix_rotate_setup_rejects_pattern_drift(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "setup schedule fired 0 times"):
+            MODULE.schedule_matrix_rotate_setup(
+                "func_8009FCCC:\n\tnop\n\t.end\tfunc_8009FCCC\n"
+            )
+
+    def _player_setup_fixture(self) -> str:
+        return (
+            "func_800A7D70:\n"
+            "\tli\t$23,0x00000002\t\t# 2\n"
+            "\taddu\t$22,$4,-2\n"
+            "\tlw\t$3,24($2)\n\t#nop\n\tsw\t$3,76($sp)\n"
+            "\tlw\t$3,28($2)\n\tlbu\t$2,16($sp)\n\tmove\t$16,$0\n"
+            "\tandi\t$2,$2,0x0002\n\t.set\tnoreorder\n"
+            "\tbeq\t$2,$0,.L13\n\tsw\t$3,80($sp)\n\t.set\tnoreorder\n"
+            "\tli\t$2,0x00000005\t\t# 5\n\t.set\tnoreorder\n"
+            "\tbnel\t$3,$2,.L34\n\tsw\t$0,68($sp)\n\t.set\tnoreorder\n"
+            "\t.set\tnoreorder\n\tj\t.L34\n\tsw\t$3,68($sp)\n"
+            "\t.set\tnoreorder\n\t.end\tfunc_800A7D70\n"
+        )
+
+    def test_player_setup_schedule_is_exact_and_function_gated(self) -> None:
+        source = self._player_setup_fixture()
+        normalized = MODULE.schedule_player_setup(source)
+        self.assertLess(normalized.index("\taddu\t$22,$4,-2\n"), normalized.index("\tli\t$23,"))
+        self.assertIn("\tlw\t$4,28($2)\n\tsw\t$3,76($sp)\n\tsw\t$4,80($sp)\n", normalized)
+        self.assertIn("\tbeql\t$3,$2,.L34\n\tsw\t$3,68($sp)\n", normalized)
+
+        unrelated = source.replace("func_800A7D70", "func_800A7D6C")
+        self.assertEqual(unrelated, MODULE.schedule_player_setup(unrelated))
+
+    def test_player_setup_schedule_rejects_pattern_drift(self) -> None:
+        source = self._player_setup_fixture().replace("\taddu\t$22,$4,-2\n", "\taddu\t$22,$4,-3\n")
+        with self.assertRaisesRegex(RuntimeError, "constants schedule fired 0 times"):
+            MODULE.schedule_player_setup(source)
+
     def _task_class_init_fixture(self) -> str:
         return (
             "func_800A22CC:\n"

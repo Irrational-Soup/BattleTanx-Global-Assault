@@ -136,10 +136,6 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_80083FF8_to_80084C50.s.o .text 0xc58 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_80084CC8_to_800859A8.s.o asm/us/main_80084CC8_to_800859A8.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_80084CC8_to_800859A8.s.o .text 0xce0 --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800859E4_to_8009C284.s.o asm/us/main_800859E4_to_8009C284.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800859E4_to_8009C284.s.o .text 0xee9c --alignment 4
@@ -952,6 +948,7 @@ for unit in early_hw early_memory_read early_memory_write early_remote_copy \
             collision_fields object_query pair_queue \
             object_defaults mode_owner mode_transition object_disable \
             object_predicates object_direction object_action matrix_scale_curve \
+            func_80085148 func_8008518C func_80085250 func_8008543C zone_spawn_query \
             80094880 func_80094F40 func_80094F78 80094FBC \
             func_80095B50 func_80095B68 func_80095B90 func_80095BE4 80095C50 \
             func_80095E7C func_80096250 80096294 func_8009660C 800966D4 \
@@ -1640,6 +1637,34 @@ while IFS=$'\t' read -r unit address text_size status; do
             "build/us/src/code/${unit}.c.o" .rodata "$rodata_size" --alignment 4
     fi
 done < config/us/clean_normalized_units.tsv
+
+# Units whose raw KMC GCC output matches when assembled with the retail
+# SN Systems ASN64 behavior.  The public-domain preprocessor is deliberately
+# limited to this evidence-backed allowlist; compiler/register rewrites remain
+# on the normalizer-assisted path below.
+while IFS=$'\t' read -r unit address text_size status; do
+    case "$unit" in
+        \#*|unit|'') continue ;;
+    esac
+    .toolchain/kmc-gcc-2.7.2/gcc -B.toolchain/kmc-gcc-2.7.2/ -S \
+        -O2 -G0 -mips3 -mgp32 -mfp32 -Iinclude \
+        -o "build/us/src/code/${unit}.raw.s" "src/code/${unit}.c"
+    python3 tools/modern_asn64.py \
+        "${tool_prefix}as" -march=vr4300 -mabi=32 -EB -G0 \
+        --no-pad-sections "build/us/src/code/${unit}.raw.s" \
+        -o "build/us/src/code/${unit}.c.o"
+    "${tool_prefix}objcopy" \
+        --rename-section .rdata=.rodata,alloc,load,readonly,data,contents \
+        "build/us/src/code/${unit}.c.o"
+    python3 tools/trim_elf32_section.py \
+        "build/us/src/code/${unit}.c.o" .text "$text_size" --alignment 4
+    rodata_size="$(awk -v wanted="$unit" '$1 == wanted { print $3 }' \
+        config/us/unit_rodata.tsv)"
+    if [[ -n "$rodata_size" ]]; then
+        python3 tools/trim_elf32_section.py \
+            "build/us/src/code/${unit}.c.o" .rodata "$rodata_size" --alignment 4
+    fi
+done < config/us/asn64_units.tsv
 
 # Whole gameplay units whose C is exact apart from narrowly gated, documented
 # retail-assembler behavior reproduced by the production normalizer.
@@ -3525,7 +3550,7 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/src/code/bounds_pair.c.o .text 0x120 --alignment 4
 python3 tools/trim_elf32_section.py \
-    build/us/src/code/model_player_color.c.o .text 0xdc --alignment 4
+    build/us/src/code/model_player_color.c.o .text 0x1b8 --alignment 4
 python3 tools/trim_elf32_section.py \
     build/us/src/code/object_reset.c.o .text 0x24 --alignment 4
 python3 tools/trim_elf32_section.py \
@@ -4171,7 +4196,14 @@ if false; then
     build/us/src/code/object_predicates.c.o \
     build/us/asm/us/main_80083FF8_to_80084C50.s.o \
     build/us/src/code/object_direction.c.o \
-    build/us/asm/us/main_80084CC8_to_800859A8.s.o \
+    build/us/src/code/ai_target_bit_select.c.o \
+    build/us/src/code/func_80085148.c.o \
+    build/us/src/code/func_8008518C.c.o \
+    build/us/src/code/func_80085250.c.o \
+    build/us/src/code/ai_node_setup.c.o \
+    build/us/src/code/func_8008543C.c.o \
+    build/us/src/code/func_800854C4.c.o \
+    build/us/src/code/zone_spawn_query.c.o \
     build/us/src/code/object_action.c.o \
     build/us/asm/us/main_800859E4_to_8009C284.s.o \
     build/us/src/code/80094880.c.o \
@@ -4346,7 +4378,7 @@ if false; then
     build/us/src/code/object_timing.c.o \
     build/us/src/code/effect_sprite_key_draw.c.o \
     build/us/src/code/effect_sprite_ring_draw.c.o \
-    build/us/asm/us/main_800A4468_to_800A477C.s.o \
+    build/us/src/code/func_800A4468.c.o \
     build/us/src/code/800A477C.c.o \
     build/us/asm/us/main_800A5858_to_800A5BD8.s.o \
     build/us/src/code/800A5BD8.c.o \
@@ -4711,17 +4743,15 @@ if false; then
     build/us/asm/us/main_800D5C7C_to_800D5C80.s.o \
     build/us/src/code/script_particle_spawn.c.o \
     build/us/src/code/800D5E2C_script_particle_update.c.o \
-    build/us/asm/us/main_800D6508_to_800D67F0.s.o \
+    build/us/src/code/func_800D6508.c.o \
     build/us/src/code/model_ring_identity.c.o \
     build/us/src/code/font_render_constants.c.o \
     build/us/src/code/path_waypoint_constants.c.o \
     build/us/src/code/path_route_constants.c.o \
     build/us/src/code/path_search_constants.c.o \
-    build/us/src/code/ai_target_constants.c.o \
     build/us/src/code/waypoint_stack_constants.c.o \
     build/us/src/code/object_mode_constants.c.o \
     build/us/src/code/tank_motion_constant.c.o \
-    build/us/src/code/effect_sprite_constants.c.o \
     build/us/src/code/camera_probe_constants.c.o \
     build/us/src/code/object_collision_constants.c.o \
     build/us/src/code/object_region_bounds.c.o \

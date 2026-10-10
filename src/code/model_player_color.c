@@ -21,6 +21,8 @@ typedef struct {
 
 extern u8 D_80219590[][3];
 extern int D_802195A0[];
+extern DisplayCommand D_80116710[17];
+extern DisplayCommand D_80116798[17];
 
 void func_800F80E8(int id, int *a, int *b, u8 *color);
 
@@ -62,6 +64,74 @@ void func_800B9AB0(ModelObject **object_ptr, int player) {
         if (a != 0) {
             mesh->unk10 = a;
             mesh->unk0C = b;
+        }
+    }
+}
+
+/*
+ * Source shape adapted from the CC0 BattleTanx func_80085330 implementation.
+ * Global Assault adds the geometry-mode repair and expands the tables to 17.
+ */
+void func_800B9B8C(void *arg0, int arg1) {
+    int *source;
+    int *replacement;
+    int end;
+    int index;
+    DisplayCommand *command;
+    DisplayCommand *current;
+    DisplayCommand *source_base;
+    DisplayCommand *replacement_base;
+    int end_opcode;
+    int opcode_mask;
+    int geometry_opcode;
+    int set_bits;
+    int clear_bits;
+    int fallback_bits;
+    int replacement0;
+    int replacement4;
+
+    command = arg0;
+    if (arg1 > 0) {
+        end_opcode = 0xDF000000;
+        opcode_mask = 0xFF000000;
+        geometry_opcode = 0xD9000000;
+        set_bits = 0x10400;
+        clear_bits = ~0x200;
+        fallback_bits = 0xFFFBFF;
+        source_base = D_80116710;
+        replacement_base = D_80116798;
+        end = (int)((arg1 << 3) + (u32)command);
+loop:
+        if (command->word0 != end_opcode) {
+            index = 0;
+            if ((command->word0 & opcode_mask) == geometry_opcode) {
+                if (command->word1 != 0) {
+                    command->word1 = (command->word1 | set_bits) & clear_bits;
+                } else {
+                    command->word0 |= fallback_bits;
+                    index = 0;
+                }
+            }
+            index = 0;
+            current = command;
+            replacement = (int *)replacement_base;
+            source = (int *)source_base;
+            do {
+                if ((((DisplayCommand *)source)->word0 == current->word0) &&
+                    (((DisplayCommand *)source)->word1 == current->word1)) {
+                    replacement0 = ((DisplayCommand *)replacement)->word0;
+                    replacement4 = ((DisplayCommand *)replacement)->word1;
+                    current->word0 = replacement0;
+                    current->word1 = replacement4;
+                }
+                replacement = (int *)((DisplayCommand *)replacement + 1);
+                index += 1;
+                source = (int *)((DisplayCommand *)source + 1);
+            } while (index < 17);
+            command++;
+            if ((int)command < end) {
+                goto loop;
+            }
         }
     }
 }

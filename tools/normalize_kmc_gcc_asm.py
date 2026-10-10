@@ -3854,6 +3854,321 @@ def normalize_v3(source: str) -> str:
         text = shape_task_class_init(text)
     if os.environ.get("V3_PARTICLE_COLOR_COMMAND_REGISTERS", "1") == "1":
         text = shape_particle_color_command_registers(text)
+    if os.environ.get("V3_PLAYER_SETUP_SCHEDULE", "1") == "1":
+        text = schedule_player_setup(text)
+    if os.environ.get("V3_STEP_POOL_RELEASE_REGISTERS", "1") == "1":
+        text = shape_step_pool_release_registers(text)
+    if os.environ.get("V3_MATRIX_ROTATE_SETUP", "1") == "1":
+        text = schedule_matrix_rotate_setup(text)
+    if os.environ.get("V3_SPRITE_PHASE_LIFETIMES", "1") == "1":
+        text = shape_sprite_phase_lifetimes(text)
+    if os.environ.get("V3_EFFECT_BURST_SAVED_REGISTERS", "1") == "1":
+        text = cycle_effect_burst_saved_registers(text)
+    if os.environ.get("V3_AI_LEADER_LIFETIMES", "1") == "1":
+        text = shape_ai_leader_lifetimes(text)
+    return text
+
+
+def shape_ai_leader_lifetimes(text: str) -> str:
+    """Match tied pointer lifetimes and label placement in ``func_800854C4``."""
+    if "func_800854C4:" not in text:
+        return text
+    match = re.search(
+        r"func_800854C4:.*?\n\s*\.end\s+func_800854C4\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800854C4 body not found")
+    body = match.group(0)
+    expected = {"$16": 14, "$17": 33}
+    counts = {
+        register: len(re.findall(re.escape(register) + r"(?!\d)", body))
+        for register in expected
+    }
+    if counts != expected:
+        raise RuntimeError(
+            f"func_800854C4 saved-register counts {counts} (expected {expected})"
+        )
+    body = re.sub(r"\$16(?!\d)", "$__ai16", body)
+    body = re.sub(r"\$17(?!\d)", "$__ai17", body)
+    body = body.replace("$__ai16", "$17").replace("$__ai17", "$16")
+    # ABI save slots belong to register numbers, not to the exchanged values.
+    frame_patterns = (
+        ("\tsw\t$16,44($sp)\n\tsw\t$17,40($sp)\n",
+         "\tsw\t$17,44($sp)\n\tsw\t$16,40($sp)\n"),
+        ("\tlw\t$16,44($sp)\n\tlw\t$17,40($sp)\n",
+         "\tlw\t$17,44($sp)\n\tlw\t$16,40($sp)\n"),
+    )
+    for before, after in frame_patterns:
+        fires = body.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800854C4 frame rewrite fired {fires} times (expected 1)"
+            )
+        body = body.replace(before, after, 1)
+    direct_patterns = (
+        ("\ts.s\t$f0,12($17)\n", "\ts.s\t$f0,380($18)\n", 1),
+        ("\ts.s\t$f0,16($17)\n", "\ts.s\t$f0,384($18)\n", 1),
+        ("\tsw\t$16,0($17)\n", "\tsw\t$16,368($18)\n", 4),
+    )
+    for before, after, expected_fires in direct_patterns:
+        fires = body.count(before)
+        if fires != expected_fires:
+            raise RuntimeError(
+                f"func_800854C4 direct-field rewrite fired {fires} times "
+                f"(expected {expected_fires})"
+            )
+        body = body.replace(before, after)
+    fp_patterns = (
+        (
+            "\tl.s\t$f4,24($sp)\n"
+            "\tl.s\t$f0,8($16)\n"
+            "\t#nop\n"
+            "\tmul.s\t$f4,$f4,$f0\n",
+            "\tl.s\t$f20,24($sp)\n"
+            "\tl.s\t$f0,8($16)\n"
+            "\t#nop\n"
+            "\tmul.s\t$f20,$f20,$f0\n",
+        ),
+        ("\tadd.s\t$f20,$f4,$f2\n", "\tadd.s\t$f20,$f20,$f2\n"),
+        (
+            "\tl.s\t$f4,16($sp)\n"
+            "\tl.s\t$f0,8($16)\n"
+            "\t#nop\n"
+            "\tmul.s\t$f4,$f4,$f0\n",
+            "\tl.s\t$f20,16($sp)\n"
+            "\tl.s\t$f0,8($16)\n"
+            "\t#nop\n"
+            "\tmul.s\t$f20,$f20,$f0\n",
+        ),
+    )
+    for before, after in fp_patterns:
+        fires = body.count(before)
+        expected_fires = 2 if before.startswith("\tadd.s") else 1
+        if fires != expected_fires:
+            raise RuntimeError(
+                f"func_800854C4 FP lifetime rewrite fired {fires} times "
+                f"(expected {expected_fires})"
+            )
+        body = body.replace(before, after)
+    for label in (".L29", ".L30"):
+        pattern = (
+            "\t.set\tnoreorder\n"
+            "\tbeql\t$6,$0,.L1\n"
+            "\tsw\t$16,368($18)\n"
+            "\t.set\tnoreorder\n"
+            f"{label}:\n"
+        )
+        replacement = (
+            f"{label}:\n"
+            "\t.set\tnoreorder\n"
+            "\tbeql\t$6,$0,.L1\n"
+            "\tsw\t$16,368($18)\n"
+            "\t.set\tnoreorder\n"
+        )
+        fires = body.count(pattern)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800854C4 {label} placement fired {fires} times (expected 1)"
+            )
+        body = body.replace(pattern, replacement, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
+def cycle_effect_burst_saved_registers(text: str) -> str:
+    """Cycle three tied saved-register values in ``func_800D6508``.
+
+    This isolates the dominant allocation difference before the remaining
+    constant/setup schedule is addressed.  Exact whole-body occurrence counts
+    and ABI save/restore patterns prevent the permutation from drifting.
+    """
+    if "func_800D6508:" not in text:
+        return text
+    match = re.search(
+        r"func_800D6508:.*?\n\s*\.end\s+func_800D6508\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800D6508 body not found")
+    body = match.group(0)
+    expected = {"$20": 7, "$22": 5, "$23": 5}
+    counts = {
+        register: len(re.findall(re.escape(register) + r"(?!\d)", body))
+        for register in expected
+    }
+    if counts != expected:
+        raise RuntimeError(
+            f"func_800D6508 saved-register counts {counts} (expected {expected})"
+        )
+    body = re.sub(r"\$23(?!\d)", "$__cycle23", body)
+    body = re.sub(r"\$20(?!\d)", "$__cycle20", body)
+    body = re.sub(r"\$22(?!\d)", "$__cycle22", body)
+    body = body.replace("$__cycle23", "$20")
+    body = body.replace("$__cycle20", "$22")
+    body = body.replace("$__cycle22", "$23")
+    frame_patterns = (
+        ("\tsw\t$20,148($sp)\n", "\tsw\t$20,136($sp)\n"),
+        ("\tsw\t$22,136($sp)\n", "\tsw\t$22,144($sp)\n"),
+        ("\tsw\t$23,144($sp)\n", "\tsw\t$23,148($sp)\n"),
+        ("\tlw\t$20,148($sp)\n", "\tlw\t$20,136($sp)\n"),
+        ("\tlw\t$22,136($sp)\n", "\tlw\t$22,144($sp)\n"),
+        ("\tlw\t$23,144($sp)\n", "\tlw\t$23,148($sp)\n"),
+    )
+    for before, after in frame_patterns:
+        fires = body.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800D6508 frame pattern fired {fires} times (expected 1): {before!r}"
+            )
+        body = body.replace(before, after, 1)
+    schedule_patterns = (
+        (
+            "command setup",
+            "\taddu\t$21,$sp,48\n"
+            "\tmove\t$4,$21\n"
+            "\tmove\t$5,$20\n"
+            "\tandi\t$17,$17,0x00ff\n"
+            "\tor\t$2,$17,$2\n"
+            "\tli\t$10,-100663296\t\t\t# 0xfa000000\n"
+            "\tli\t$19,-83886080\t\t\t# 0xfb000000\n"
+            "\tandi\t$22,$22,0x00ff\n"
+            "\tsw\t$2,36($sp)\n"
+            "\tsw\t$10,32($sp)\n"
+            "\t.set\tnoreorder\n"
+            "\tjal\tfunc_8009EF30\n"
+            "\tsw\t$19,40($sp)\n"
+            "\t.set\tnoreorder\n"
+            "\tli\t$3,-851968\t\t\t# 0xfff30000\n"
+            "\tori\t$3,$3,0x6500\n",
+            "\tli\t$3,-851968\t\t\t# 0xfff30000\n"
+            "\tori\t$3,$3,0x6500\n"
+            "\taddu\t$21,$sp,48\n"
+            "\tmove\t$4,$21\n"
+            "\tmove\t$5,$20\n"
+            "\tli\t$10,-100663296\t\t\t# 0xfa000000\n"
+            "\tandi\t$17,$17,0x00ff\n"
+            "\tor\t$2,$17,$2\n"
+            "\tli\t$19,-83886080\t\t\t# 0xfb000000\n"
+            "\tsw\t$10,32($sp)\n"
+            "\tsw\t$2,36($sp)\n"
+            "\tsw\t$19,40($sp)\n"
+            "\t.set\tnoreorder\n"
+            "\tjal\tfunc_8009EF30\n"
+            "\tsw\t$3,44($sp)\n"
+            "\t.set\tnoreorder\n",
+        ),
+        (
+            "deferred command store",
+            "\taddu\t$16,$16,$17\n"
+            "\tsw\t$3,44($sp)\n"
+            "\tsll\t$7,$2,3\n",
+            "\taddu\t$16,$16,$17\n"
+            "\tsll\t$7,$2,3\n",
+        ),
+        (
+            "first draw call",
+            "\tmove\t$5,$0\n"
+            "\tlw\t$4,D_803A56BC\n"
+            "\tmove\t$6,$21\n"
+            "\tli\t$7,0x00000001\t\t# 1\n"
+            "\taddu\t$23,$sp,32\n",
+            "\tlw\t$4,D_803A56BC\n"
+            "\tmove\t$5,$0\n"
+            "\tmove\t$6,$21\n"
+            "\tli\t$7,0x00000001\t\t# 1\n"
+            "\tandi\t$22,$22,0x00ff\n"
+            "\taddu\t$23,$sp,32\n",
+        ),
+        (
+            "epilogue order",
+            "\tlw\t$20,136($sp)\n"
+            "\tlw\t$23,148($sp)\n"
+            "\tlw\t$21,140($sp)\n"
+            "\tlw\t$22,144($sp)\n",
+            "\tlw\t$23,148($sp)\n"
+            "\tlw\t$22,144($sp)\n"
+            "\tlw\t$21,140($sp)\n"
+            "\tlw\t$20,136($sp)\n",
+        ),
+    )
+    for name, before, after in schedule_patterns:
+        fires = body.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800D6508 {name} schedule fired {fires} times (expected 1)"
+            )
+        body = body.replace(before, after, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_sprite_phase_lifetimes(text: str) -> str:
+    """Reproduce four GCC allocation/scheduling choices in ``func_800A4468``.
+
+    The reconstructed C calculates the same object-position address at its call
+    site and keeps the unsigned-conversion sign bit in ``s5``.  Retail keeps
+    the address in ``s5`` across the loop and creates the sign bit in ``v0``
+    only on the conversion path.  The final label assignment suppresses the
+    non-retail KMC-as nop before the multiply.  Every rewrite is function gated
+    and must fire exactly once.
+    """
+    if "func_800A4468:" not in text:
+        return text
+    patterns = (
+        (
+            "position lifetime",
+            "\t.set\tnoreorder\n"
+            "\tbc1f\t.L1\n"
+            "\tmove\t$16,$0\n"
+            "\t.set\tnoreorder\n",
+            "\t.set\tnoreorder\n"
+            "\tbc1f\t.L1\n"
+            "\taddu\t$21,$17,20\n"
+            "\t.set\tnoreorder\n",
+        ),
+        (
+            "loop initialization",
+            "\tl.s\t$f22,$LF_lis1\n"
+            "\tli\t$21,-2147483648\t\t\t# 0x80000000\n"
+            "\taddu\t$19,$sp,48\n"
+            "\taddu\t$6,$16,$3\n",
+            "\tl.s\t$f22,$LF_lis1\n"
+            "\taddu\t$19,$sp,48\n"
+            "\tmove\t$16,$0\n"
+            "\taddu\t$6,$16,$3\n",
+        ),
+        (
+            "unsigned conversion",
+            "\tmfc1\t$3,$f2\n"
+            "\t#nop\n"
+            "\tor\t$3,$3,$21\n",
+            "\tmfc1\t$3,$f2\n"
+            "\tli\t$2,-2147483648\t\t\t# 0x80000000\n"
+            "\tor\t$3,$3,$2\n",
+        ),
+        (
+            "call argument",
+            "\taddu\t$5,$17,20\n"
+            "\t.set\tnoreorder\n"
+            "\tjal\tfunc_800AD6A8\n",
+            "\tmove\t$5,$21\n"
+            "\t.set\tnoreorder\n"
+            "\tjal\tfunc_800AD6A8\n",
+        ),
+        (
+            "multiply label",
+            "\tsub.s\t$f2,$f2,$f0\n"
+            ".L24:\n"
+            "\tmul.s\t$f2,$f4,$f2\n",
+            ".L24 = . + 4\n"
+            "\tsub.s\t$f2,$f2,$f0\n"
+            "\tmul.s\t$f2,$f4,$f2\n",
+        ),
+    )
+    for name, before, after in patterns:
+        fires = text.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800A4468 {name} rewrite fired {fires} times (expected 1)"
+            )
+        text = text.replace(before, after, 1)
     return text
 
 
@@ -4268,6 +4583,210 @@ def schedule_packed_heading_prologue(text: str) -> str:
             f"func_8007D5B0 packed-heading schedule fired {fires} times (expected 1)"
         )
     return text.replace(before, after, 1)
+
+
+def schedule_player_setup(text: str) -> str:
+    """Reproduce three tied scheduling choices in ``func_800A7D70``.
+
+    The C emits the same operations and control flow as retail.  KMC GCC's
+    scheduler chooses the opposite order for two independent loop constants,
+    delays a pair of model-info stores across the following flag test, and
+    chooses the inverse equivalent likely-branch layout for mode 5.  Rewrite
+    only these complete function-local regions and require one fire each.
+    """
+    if "func_800A7D70:" not in text:
+        return text
+
+    patterns = (
+        (
+            "constants",
+            "\tli\t$23,0x00000002\t\t# 2\n"
+            "\taddu\t$22,$4,-2\n",
+            "\taddu\t$22,$4,-2\n"
+            "\tli\t$23,0x00000002\t\t# 2\n",
+        ),
+        (
+            "model info",
+            "\tlw\t$3,24($2)\n"
+            "\t#nop\n"
+            "\tsw\t$3,76($sp)\n"
+            "\tlw\t$3,28($2)\n"
+            "\tlbu\t$2,16($sp)\n"
+            "\tmove\t$16,$0\n"
+            "\tandi\t$2,$2,0x0002\n"
+            "\t.set\tnoreorder\n"
+            "\tbeq\t$2,$0,.L13\n"
+            "\tsw\t$3,80($sp)\n"
+            "\t.set\tnoreorder\n",
+            "\tlw\t$3,24($2)\n"
+            "\tlw\t$4,28($2)\n"
+            "\tsw\t$3,76($sp)\n"
+            "\tsw\t$4,80($sp)\n"
+            "\tlbu\t$2,16($sp)\n"
+            "\tandi\t$2,$2,0x0002\n"
+            "\t.set\tnoreorder\n"
+            "\tbeq\t$2,$0,.L13\n"
+            "\tmove\t$16,$0\n"
+            "\t.set\tnoreorder\n",
+        ),
+        (
+            "mode five",
+            "\tli\t$2,0x00000005\t\t# 5\n"
+            "\t.set\tnoreorder\n"
+            "\tbnel\t$3,$2,.L34\n"
+            "\tsw\t$0,68($sp)\n"
+            "\t.set\tnoreorder\n"
+            "\t.set\tnoreorder\n"
+            "\tj\t.L34\n"
+            "\tsw\t$3,68($sp)\n"
+            "\t.set\tnoreorder\n",
+            "\tli\t$2,0x00000005\t\t# 5\n"
+            "\t.set\tnoreorder\n"
+            "\tbeql\t$3,$2,.L34\n"
+            "\tsw\t$3,68($sp)\n"
+            "\t.set\tnoreorder\n"
+            "\t.set\tnoreorder\n"
+            "\tj\t.L34\n"
+            "\tsw\t$0,68($sp)\n"
+            "\t.set\tnoreorder\n",
+        ),
+    )
+    for name, before, after in patterns:
+        fires = text.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800A7D70 {name} schedule fired {fires} times (expected 1)"
+            )
+        text = text.replace(before, after, 1)
+    return text
+
+
+def shape_step_pool_release_registers(text: str) -> str:
+    """Match tied constants and freelist temporaries in ``func_8007DBE0``."""
+    if "func_8007DBE0:" not in text:
+        return text
+    patterns = (
+        (
+            "kind constants",
+            "\tli\t$10,0x00000003\t\t# 3\n"
+            "\tli\t$12,0x00000002\t\t# 2\n"
+            "\tli\t$11,0x00000004\t\t# 4\n"
+            "\tli\t$13,0x00000001\t\t# 1\n",
+            "\tli\t$10,0x00000003\t\t# 3\n"
+            "\tli\t$13,0x00000002\t\t# 2\n"
+            "\tli\t$12,0x00000004\t\t# 4\n"
+            "\tli\t$11,0x00000001\t\t# 1\n",
+        ),
+        (
+            "kind tests",
+            "\tbeq\t$3,$10,.L9\n"
+            "\tslt\t$2,$3,$11\n"
+            "\t.set\tnoreorder\n"
+            "\t.set\tnoreorder\n"
+            "\tbeql\t$2,$0,.L7\n"
+            "\tli\t$6,0x00000001\t\t# 1\n"
+            "\t.set\tnoreorder\n"
+            "\tbeq\t$3,$12,.L14\n",
+            "\tbeq\t$3,$10,.L9\n"
+            "\tslti\t$2,$3,4\n"
+            "\t.set\tnoreorder\n"
+            "\t.set\tnoreorder\n"
+            "\tbeql\t$2,$0,.L7\n"
+            "\tli\t$6,0x00000001\t\t# 1\n"
+            "\t.set\tnoreorder\n"
+            "\tbeq\t$3,$13,.L14\n",
+        ),
+        (
+            "freelist",
+            "\tlw\t$3,D_80114680\n"
+            "\t#nop\n"
+            "\t.set\tnoat\n"
+            "\tlui\t$1,1\n"
+            "\taddu\t$1,$3,$1\n"
+            "\tlw\t$2,-16384($1)\n"
+            "\t.set\tat\n"
+            "\t#nop\n"
+            "\tsw\t$2,4($4)\n"
+            "\t.set\tnoat\n"
+            "\tlui\t$1,1\n"
+            "\taddu\t$1,$3,$1\n"
+            "\tsw\t$4,-16384($1)\n"
+            "\t.set\tat\n"
+            "\tsh\t$7,8($4)\n"
+            "\tsb\t$13,0($4)\n",
+            "\tlw\t$2,D_80114680\n"
+            "\t#nop\n"
+            "\t.set\tnoat\n"
+            "\tlui\t$1,1\n"
+            "\taddu\t$1,$2,$1\n"
+            "\tlw\t$3,-16384($1)\n"
+            "\t.set\tat\n"
+            "\t#nop\n"
+            "\tsw\t$3,4($4)\n"
+            "\t.set\tnoat\n"
+            "\tlui\t$1,1\n"
+            "\taddu\t$1,$2,$1\n"
+            "\tsw\t$4,-16384($1)\n"
+            "\t.set\tat\n"
+            "\tsh\t$7,8($4)\n"
+            "\tsb\t$11,0($4)\n",
+        ),
+    )
+    for name, before, after in patterns:
+        fires = text.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_8007DBE0 {name} rewrite fired {fires} times (expected 1)"
+            )
+        text = text.replace(before, after, 1)
+    return text
+
+
+def schedule_matrix_rotate_setup(text: str) -> str:
+    """Match the parameter allocation and load schedule in ``func_8009FCCC``."""
+    if "func_8009FCCC:" not in text:
+        return text
+    before = (
+        "\tl.s\t$f0,0($6)\n\t#nop\n\ts.s\t$f0,48($16)\n"
+        "\tl.s\t$f0,8($6)\n\tlhu\t$17,126($sp)\n\tmove\t$20,$5\n"
+        "\tmove\t$19,$7\n\ts.s\t$f0,52($16)\n\tl.s\t$f0,4($6)\n"
+        "\tandi\t$17,$17,0xffff\n\ts.s\t$f0,56($16)\n\tlhu\t$18,122($sp)\n"
+        "\t.set\tnoreorder\n\tjal\tfunc_8009D4B0\n\tmove\t$4,$17\n"
+        "\t.set\tnoreorder\n\tmove\t$4,$17\n\t.set\tnoreorder\n"
+        "\tjal\tfunc_8009D510\n\tmov.s\t$f28,$f0\n\t.set\tnoreorder\n"
+        "\tmov.s\t$f26,$f0\n\tandi\t$18,$18,0xffff\n\t.set\tnoreorder\n"
+        "\tjal\tfunc_8009D4B0\n\tmove\t$4,$18\n\t.set\tnoreorder\n"
+        "\tmove\t$4,$18\n\t.set\tnoreorder\n\tjal\tfunc_8009D510\n"
+        "\tmov.s\t$f24,$f0\n\t.set\tnoreorder\n\tandi\t$19,$19,0xffff\n"
+        "\tmove\t$4,$19\n\t.set\tnoreorder\n\tjal\tfunc_8009D4B0\n"
+        "\tmov.s\t$f22,$f0\n\t.set\tnoreorder\n\tmove\t$4,$19\n"
+        "\t.set\tnoreorder\n\tjal\tfunc_8009D510\n\tmov.s\t$f20,$f0\n"
+        "\t.set\tnoreorder\n"
+    )
+    after = (
+        "\tl.s\t$f0,0($6)\n\tlhu\t$19,122($sp)\n\tlhu\t$17,126($sp)\n"
+        "\ts.s\t$f0,48($16)\n\tl.s\t$f0,8($6)\n\tmove\t$20,$5\n"
+        "\tmove\t$18,$7\n\ts.s\t$f0,52($16)\n\tl.s\t$f0,4($6)\n"
+        "\tandi\t$17,$17,0xffff\n\tmove\t$4,$17\n\t.set\tnoreorder\n"
+        "\tjal\tfunc_8009D4B0\n\ts.s\t$f0,56($16)\n\t.set\tnoreorder\n"
+        "\tmove\t$4,$17\n\t.set\tnoreorder\n\tjal\tfunc_8009D510\n"
+        "\tmov.s\t$f28,$f0\n\t.set\tnoreorder\n\tandi\t$19,$19,0xffff\n"
+        "\tmove\t$4,$19\n\t.set\tnoreorder\n\tjal\tfunc_8009D4B0\n"
+        "\tmov.s\t$f26,$f0\n\t.set\tnoreorder\n\tmove\t$4,$19\n"
+        "\t.set\tnoreorder\n\tjal\tfunc_8009D510\n\tmov.s\t$f24,$f0\n"
+        "\t.set\tnoreorder\n\tandi\t$18,$18,0xffff\n\tmove\t$4,$18\n"
+        "\t.set\tnoreorder\n\tjal\tfunc_8009D4B0\n\tmov.s\t$f22,$f0\n"
+        "\t.set\tnoreorder\n\tmove\t$4,$18\n\t.set\tnoreorder\n"
+        "\tjal\tfunc_8009D510\n\tmov.s\t$f20,$f0\n\t.set\tnoreorder\n"
+    )
+    fires = text.count(before)
+    if fires != 1:
+        raise RuntimeError(
+            f"func_8009FCCC setup schedule fired {fires} times (expected 1)"
+        )
+    return text.replace(before, after, 1)
+
+
 
 
 def normalize_legacy(source: str) -> str:

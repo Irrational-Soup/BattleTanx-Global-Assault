@@ -32,19 +32,52 @@ dependencies:
   integration should be. Do not adopt it; its useful idea is already covered by
   explicitly chaining `m2c`, a project-specific compiler wrapper, and the
   permuter.
+- SN Systems ASN64 behavior was tested across 1,050 production C units. The
+  repository's public-domain `tools/modern_asn64.py` matches 926 units from raw
+  KMC GCC output, including every unit matched by the GPL oracle used for
+  comparison. Six ROM-derived rules cover symbol-plus-base memory macros,
+  large offsets, floating-point compare hazards, `remu`, and two multiply
+  hazards. Production initially uses this assembler only for the seven units
+  listed in `config/us/asn64_units.tsv`; compiler/register rewrites remain on
+  the normalizer path.
 
 ## Use now
 
+- `tools/decomp_batch.py` runs a TSV portfolio of candidate functions through
+  `tools/decomp_permuter.py`. The search deduplicates generated source before
+  compilation, deduplicates identical compiler output before scoring, divides
+  a fixed compiler-worker budget across functions, and retains per-function
+  ledgers plus an aggregate report under `build/decomp_search/`. Use bounded
+  searches across many near matches instead of an unbounded run on one
+  register-allocation plateau. A zero-word result is reported as exact only
+  after its complete text span and owned rodata match at their retail
+  addresses. Mutations are exploratory and still require source review.
+  Select `--pipeline production`, `raw-kmc`, or `asn64` to prevent an existing
+  normalizer rule from being mistaken for a clean source/compiler match.
+- `tools/decomp_make_batch.py` consumes prior `INVENTORY.tsv` and
+  `NEAR_MISSES.tsv` files, filters them against the current decomp report,
+  selects the best recorded candidate for each still-unmatched function, and
+  infers multi-function unit starts. This is the standard way to generate the
+  next ranked batch without manually revisiting stale or already-integrated
+  targets.
+  The preprocessor supplies m2c's field/bitwise helper macros and explicit N64
+  primitive widths, allowing saved raw m2c drafts to be scored alongside
+  hand-cleaned candidates.
 - [asm-differ](https://github.com/simonlindholm/asm-differ): add or adapt a
   local configuration for rapid, symbol-aware assembly diffs while editing a
   function. This should sit in front of the narrow object/ROM comparator; it
   does not replace the comparator or `make verify-code`.
 - [decomp-permuter](https://github.com/simonlindholm/decomp-permuter): useful
   for the remaining small and medium near-misses involving expression order,
-  temporary lifetimes, register allocation, and statement placement. Its
-  compile script must invoke this project's exact KMC GCC or IDO path and the
-  appropriate production normalizer mode. Accept a result only after an
-  unmasked object/ROM comparison.
+  temporary lifetimes, register allocation, and statement placement. The
+  repository's `decomp_permuter.py` is the project-specific adapter: it invokes
+  the exact KMC GCC path and selectable assembler pipeline, retains relocation
+  and rodata context, and performs the unmasked unit comparison.
+  A direct trial of upstream's broader randomizer on `func_800A4468` evaluated
+  roughly 700 variants in one minute, but its only reported improvement changed
+  behavior and its ordinary object scorer could not model the unit's relocated
+  rodata faithfully. Keep the exact project adapter as the unattended gate;
+  use upstream manual `PERM_*` alternatives only as an idea generator.
 - [m2c](https://github.com/matt-kempster/m2c): continue using it to produce a
   readable first-pass C control-flow model from MIPS assembly. Treat output as
   a candidate, never as matching evidence.
@@ -111,3 +144,56 @@ documentation, an N64-native test harness, or explicitly supervised hardware
 testing. They should not be mixed into the matching pipeline, and none of them
 changes the decision to defer PS Vita-specific work until the portable source
 base is substantially complete.
+
+### Portfolio-wide automated campaigns
+
+`tools/decomp_campaign.py` is the normal entry point for broad searches. It
+collects all saved candidates for functions that are still unmatched in the
+live report, establishes fresh baselines under both the production and ASN64
+pipelines, ranks them, and searches the best candidates concurrently. It does
+not edit production sources and writes a consolidated leaderboard below
+`build/decomp_search/campaigns/`.
+
+```sh
+.venv/bin/python tools/decomp_campaign.py \
+  --name remaining-20261010 --pipelines production,asn64 \
+  --shortlist 24 --iters 500 --targets 8 --jobs 16 --resume
+```
+
+The cheap baseline stage always covers the complete candidate inventory. The
+mutation stage is deliberately bounded and spends compiler time on the
+closest current outputs rather than stale handoff scores. Use `--resume` after
+an interruption to reuse completed stage results.
+
+For allocator/scheduler plateaus, use the deterministic beam engine instead
+of issuing one-off experiments. Each generation expands every retained
+machine-code shape across every enabled mutation family, compiles the set in
+parallel, removes duplicate source and duplicate object output, and retains a
+diverse top set for the next generation:
+
+```sh
+.venv/bin/python tools/decomp_batch.py targets.tsv \
+  --name remaining-beam --engine beam --rounds 3 --beam 10 --samples 24 \
+  --targets 4 --jobs 16 --pipeline production --stop-at-zero
+```
+
+The complete ranked experiment ledger and best candidate for each function
+remain under `build/decomp_search/`; production sources are never edited.
+
+The beam engine also supports `int_type` and `param_type` families for cases
+where the disassembly or GCC dumps implicate integer narrowing, extension, or
+incoming-argument priority. These explore signed and unsigned 8-, 16-, and
+32-bit declarations. They are not semantics-preserving in the general case:
+use them only to identify a plausible original type, then review behavior and
+require an exact whole-unit gate before accepting the result.
+
+The first bounded portfolio trials evaluated 549 distinct compiler outputs
+from the generic families and another 571 from the type-aware families. They
+confirmed the current plateaus for `func_800A4468`, `func_80081834`,
+`func_800B0E38`, `func_800D6508`, `func_800854C4`, `func_800A7090`, and
+`func_800A5858`; do not repeat those same search spaces without adding a new
+compiler-directed hypothesis.
+
+Beam searches stop after two consecutive unimproved generations by default.
+Use `--plateau-rounds 0` only when an intentionally deep combinatorial search
+justifies continuing through a measured plateau.

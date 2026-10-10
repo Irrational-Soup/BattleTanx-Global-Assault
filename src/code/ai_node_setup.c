@@ -1,3 +1,4 @@
+/* RODATA_VRAM 0x80071350 */
 typedef struct Vec2 {
     float x;
     float y;

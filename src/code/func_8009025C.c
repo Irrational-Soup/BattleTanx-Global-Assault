@@ -5,6 +5,7 @@ extern s32 D_8021945C;
 /* Advance the two timed record cursors when their delays expire. */
 void func_8009025C(void *arg0) {
     __asm__ volatile(
+        ".set noreorder\n"
         "addu $6,$0,$0\n"
         "lui $7,%%hi(D_8021945C)\n"
         "lw $7,%%lo(D_8021945C)($7)\n"
@@ -30,7 +31,8 @@ void func_8009025C(void *arg0) {
         "3:\n"
         "sltiu $2,$6,2\n"
         "bnez $2,1b\n"
-        "addiu $4,$4,4"
+        "addiu $4,$4,4\n"
+        ".set reorder"
         :
         :
         : "$2", "$3", "$4", "$5", "$6", "$7", "$8", "memory");

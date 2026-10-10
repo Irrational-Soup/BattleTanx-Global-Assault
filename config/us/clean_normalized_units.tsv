@@ -1,5 +1,6 @@
 # unit	vram	text_size	status
 800902C0	0x800902C0	0x208	matched
+func_8008F874	0x8008F874	0x7CC	matched
 func_800909CC	0x800909CC	0x280	matched
 func_800F1278	0x800F1278	0x4F8	matched
 func_800AD6A8	0x800AD6A8	0x300	matched
@@ -89,7 +90,7 @@ mover_collision_response	0x800B5F70	0x248	matched
 800B87A0	0x800B87A0	0xD0	matched
 grid_node_height	0x800B8870	0x6C	matched
 grid_height_query	0x800B93A4	0x224	matched
-model_player_color	0x800B9AB0	0xDC	matched
+model_player_color	0x800B9AB0	0x1B8	matched
 ai_active_target_update	0x80083464	0xF8	matched
 800B9FD4	0x800B9FD4	0x1E8	matched
 800BBDC0	0x800BBDC0	0x1AC0	matched
