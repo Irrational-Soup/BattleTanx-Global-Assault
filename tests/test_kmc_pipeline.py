@@ -45,10 +45,6 @@ class KmcPipelineTests(unittest.TestCase):
             unrelated, MODULE.cycle_effect_burst_saved_registers(unrelated)
         )
 
-    def test_ai_leader_lifetimes_are_function_gated(self) -> None:
-        unrelated = "func_800854C0:\n\tnop\n\t.end\tfunc_800854C0\n"
-        self.assertEqual(unrelated, MODULE.shape_ai_leader_lifetimes(unrelated))
-
     def _step_pool_fixture(self) -> str:
         return (
             "func_8007DBE0:\n"
@@ -572,6 +568,32 @@ class KmcPipelineTests(unittest.TestCase):
         self.assertIn(
             "\tmfhi\t$4\n\taddu\t$2,$2,$17\n\tnop\n\tmultu\t$2,$3\n",
             normalized,
+        )
+
+    def test_materializes_hilo_hazard_with_second_placeholder(self) -> None:
+        source = (
+            "\tmflo\t$3\n"
+            "\t#nop\n"
+            "\tlhu\t$2,40($17)\n"
+            "\t#nop\n"
+            "\tmult\t$3,$2\n"
+        )
+        normalized = MODULE.normalize_v3(source)
+        self.assertIn(
+            "\tmflo\t$3\n\tlhu\t$2,40($17)\n\tnop\n\tmult\t$3,$2\n",
+            normalized,
+        )
+
+    def test_effect_mesh_transform_rule_is_function_gated(self) -> None:
+        unrelated = "func_800A5854:\n\tnop\n\t.end\tfunc_800A5854\n"
+        self.assertEqual(
+            unrelated, MODULE.shape_effect_mesh_transform_allocations(unrelated)
+        )
+
+    def test_grid_node_insert_rule_is_function_gated(self) -> None:
+        unrelated = "func_800B0E34:\n\tnop\n\t.end\tfunc_800B0E34\n"
+        self.assertEqual(
+            unrelated, MODULE.shape_grid_node_insert_allocations(unrelated)
         )
 
     def test_uses_at_for_indexed_symbol_load(self) -> None:
@@ -1552,6 +1574,51 @@ class KmcPipelineTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, r"expected \(1, 1, 1\)"):
             MODULE.merge_object_search_loop_entry(
                 "func_80084278:\n\tnop\n"
+            )
+
+    def test_grid_node_create_rejects_partial_allocator(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "save/restore pattern fired"):
+            MODULE.shape_grid_node_create_allocations(
+                "func_800B1898:\n\tnop\n\t.end\tfunc_800B1898\n"
+            )
+
+    def test_view_state_build_reproduces_preheader_and_likely_slots(self) -> None:
+        source = (
+            "func_800AC9E8:\n"
+            "\tli\t$23,0x00000001\t\t# 1\n"
+            "\tmtc1\t$0,$f26\n"
+            "\tmove\t$17,$0\n"
+            "\tmove\t$21,$0\n"
+            "\taddu\t$20,$16,51\n"
+            "\tbeql\t$2,$0,.L17\n\tmul.s\t$f2,$f20,$f20\n"
+            "\tbc1fl\t.L17\n\tmul.s\t$f2,$f20,$f20\n"
+        )
+        normalized = MODULE.schedule_view_state_build(source)
+        self.assertIn(
+            "\tmtc1\t$0,$f26\n\taddu\t$20,$16,51\n"
+            "\tmove\t$17,$0\n\tmove\t$21,$0\n",
+            normalized,
+        )
+        self.assertIn(
+            "\tmul.s\t$f2,$f20,$f20\n"
+            "\tbeql\t$2,$0,.L17\n\tnop\n",
+            normalized,
+        )
+        self.assertIn(
+            "\tmul.s\t$f2,$f20,$f20\n"
+            "\tbc1fl\t.L17\n\tnop\n",
+            normalized,
+        )
+
+    def test_view_state_build_rejects_partial_schedule(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, r"likely=\[0, 0\]"):
+            MODULE.schedule_view_state_build(
+                "func_800AC9E8:\n"
+                "\tli\t$23,0x00000001\t\t# 1\n"
+                "\tmtc1\t$0,$f26\n"
+                "\tmove\t$17,$0\n"
+                "\tmove\t$21,$0\n"
+                "\taddu\t$20,$16,51\n"
             )
 
 

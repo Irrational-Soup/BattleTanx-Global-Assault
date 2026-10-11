@@ -38,6 +38,24 @@ MISMATCH_KEYS = ("mismatch_words", "mismatched_words", "after", "before")
 RESULT_RE = re.compile(r"\b(UNIT MATCH|NORMALIZER_ASSISTED|DIFF\((\d+)\)|DIFF)")
 TEXT_DIFF_RE = re.compile(r"^\.text\s+[^:]+:\s+(\d+)\s+mismatched words", re.MULTILINE)
 TEXT_SPAN_RE = re.compile(r"^\.text\s+([0-9A-Fa-f]+)\.\.([0-9A-Fa-f]+):", re.MULTILINE)
+RESULT_LINE_RE = re.compile(
+    r"^RESULT \S+: (UNIT MATCH|NORMALIZER_ASSISTED|DIFF)\s*$", re.MULTILINE
+)
+SPAN_RE = re.compile(
+    r"^\.text\s+([0-9A-Fa-f]+)\.\.([0-9A-Fa-f]+):\s+"
+    r"(\d+) mismatched words",
+    re.MULTILINE,
+)
+FATAL_RE = re.compile(
+    r"^(Traceback \(most recent call last\)|UNDEFINED SYMBOLS|.*Error: )",
+    re.MULTILINE,
+)
+DIFF_COUNT_RE = re.compile(r"\bDIFF\((\d+)\)")
+INCLUDE_RE = re.compile(r'^\s*#\s*include\s+"([^"]+)"', re.MULTILINE)
+ENV_KEYS = (
+    "LANE_PROD", "LANE_NA", "FOCUS", "KMC_NORMALIZER", "DIST_NA",
+    "MODERN_ASN64_DISABLE",
+)
 HEX_RE = re.compile(r"(?:0x)?([0-9A-Fa-f]{8})")
 
 
@@ -212,44 +230,73 @@ def production_state(repo: Path, kind: str, owner: str) -> str:
     return c_source_state(source.read_text(errors="replace"))
 
 
+def _includes(path: Path, roots: list[Path], seen: set[Path]) -> None:
+    path = path.resolve()
+    if path in seen or not path.is_file():
+        return
+    seen.add(path)
+    for name in INCLUDE_RE.findall(path.read_text(errors="replace")):
+        for root in [path.parent, *roots]:
+            included = (root / name).resolve()
+            if included.is_file():
+                _includes(included, roots, seen)
+                break
+
+
 def digest_job(job: dict[str, object], repo: Path) -> str:
+    """Hash every input that can affect a narrow-gate verdict."""
     digest = hashlib.sha256()
-    digest.update(Path(__file__).read_bytes())
-    digest.update(Path(job["candidate"]).read_bytes())
-    digest.update(Path(job["comparator"]).read_bytes())
-    # Changes to production normalization/build orchestration invalidate all
-    # cached narrow gates, which is precisely when a campaign rerun matters.
-    for relative in ("tools/normalize_kmc_gcc_asm.py", "tools/build_code.sh"):
-        path = repo / relative
-        if path.is_file():
-            digest.update(path.read_bytes())
+
+    def add(path: Path) -> None:
+        digest.update(str(path).encode())
+        digest.update(path.read_bytes() if path.is_file() else b"<missing>")
+
+    add(Path(__file__))
+    candidate = Path(job["candidate"])
+    comparator = Path(job["comparator"])
+    lane = comparator.parent.parent
+    dependencies: set[Path] = set()
+    _includes(candidate, [repo / "include", lane / "candidates"], dependencies)
+    for path in sorted(dependencies):
+        add(path)
+    for path in sorted(comparator.parent.glob("*")):
+        if path.is_file() and path.suffix in (".py", ".tsv"):
+            add(path)
+    for relative in (
+        "tools/normalize_kmc_gcc_asm.py",
+        "tools/build_code.sh",
+        "tools/trim_elf32_section.py",
+        "config/us/splat.yaml",
+        "build/us/symbols.ld",
+        ".toolchain/kmc-gcc-2.7.2/cc1",
+        ".toolchain/kmc-gcc-2.7.2/as",
+        ".toolchain/kmc-gcc-2.7.2/gcc",
+    ):
+        add(repo / relative)
+    for key in ENV_KEYS:
+        digest.update(f"{key}={os.environ.get(key, '')};".encode())
     digest.update(str(job["target"]).encode())
     return digest.hexdigest()
 
 
 def parse_result(output: str, returncode: int) -> tuple[str, int | None]:
-    # Comparators use a non-zero exit status for an ordinary byte difference.
-    # Parse their explicit RESULT line before treating the process as broken.
-    matches = list(RESULT_RE.finditer(output))
-    if not matches:
+    """Accept exact results only with anchored, internally consistent evidence."""
+    results = RESULT_LINE_RE.findall(output)
+    if not results:
         return ("ERROR" if returncode else "UNKNOWN"), None
-    result = matches[-1].group(1)
-    if result == "UNIT MATCH":
-        span = TEXT_SPAN_RE.search(output)
-        if span and int(span.group(1), 16) == int(span.group(2), 16):
+    result = results[-1]
+    span = SPAN_RE.search(output)
+    if result in ("UNIT MATCH", "NORMALIZER_ASSISTED"):
+        if returncode != 0 or FATAL_RE.search(output):
             return "INVALID", None
-        return "MATCH", 0
-    if result == "NORMALIZER_ASSISTED":
-        return "ASSISTED", 0
-    if result.startswith("DIFF"):
-        whole_unit = TEXT_DIFF_RE.search(output)
-        if whole_unit:
-            return "DIFF", int(whole_unit.group(1))
-        count = matches[-1].group(2)
-        if count is None:
-            count = next((match.group(2) for match in reversed(matches) if match.group(2) is not None), None)
-        return "DIFF", int(count) if count is not None else None
-    return result, None
+        if (not span or int(span.group(1), 16) >= int(span.group(2), 16)
+                or span.group(3) != "0"):
+            return "INVALID", None
+        return ("MATCH" if result == "UNIT MATCH" else "ASSISTED"), 0
+    if span:
+        return "DIFF", int(span.group(3))
+    counts = DIFF_COUNT_RE.findall(output)
+    return "DIFF", int(counts[-1]) if counts else None
 
 
 def run_job(job: dict[str, object], repo: Path, cache: Path) -> dict[str, object]:

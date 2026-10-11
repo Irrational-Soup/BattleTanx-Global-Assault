@@ -1,4 +1,4 @@
-/* SPAN 0x800988E8 */
+/* SPAN 0x80098AFC */
 typedef unsigned char u8;
 typedef signed char s8;
 typedef unsigned short u16;
@@ -39,7 +39,7 @@ extern int D_80216FF0[4];
 extern int D_80217000[4];
 extern int D_80219208[4];
 extern PadSet D_80219218;
-extern int D_80219230;
+extern volatile int D_80219230;
 extern PadSet D_80219238;
 extern int D_80114804;
 extern int osResetType;
@@ -114,4 +114,43 @@ int func_800985A0(void) {
     }
     osSendMesg(D_80217010, &D_80219200, 0);
     return D_80114804;
+}
+
+void func_800988E8(void) {
+    for (;;) {
+        osRecvMesg(D_80217030, &D_80219200, 1);
+        osRecvMesg(D_80217010, &D_80219200, 1);
+        if (D_80219230 != 0) {
+            osContStartReadData(D_80216DC0);
+            osRecvMesg(D_80216DC0, 0, 1);
+            D_80219218 = D_80219238;
+            osContGetReadData(D_80219238.pad);
+            D_80219230 = 0;
+        }
+
+        {
+            int i;
+
+            for (i = 0; i < 4; i++) {
+                if (D_80216FD0[i] == 0) {
+                    continue;
+                }
+                if (--D_80216FD0[i] != 0) {
+                    if (D_80217000[i] > 0) {
+                        if (--D_80217000[i] == 0) {
+                            osMotorStop(&D_80216E00[i]);
+                            D_80217000[i] = D_80216FF0[i];
+                        }
+                    } else if (++D_80217000[i] == 0) {
+                        osMotorStart(&D_80216E00[i]);
+                        D_80217000[i] = D_80216FE0[i];
+                    }
+                } else {
+                    osMotorStop(&D_80216E00[i]);
+                }
+            }
+        }
+
+        osSendMesg(D_80217010, &D_80219200, 0);
+    }
 }

@@ -93,6 +93,35 @@ dependencies:
 
 ## Evaluate after the current integration batch
 
+- [Abu Recipe Maker 64](https://github.com/melalawi/abu-recipe-maker-64)
+  and [Abu Cake Unbake 64](https://github.com/melalawi/abu-cake-unbake-64)
+  provide a useful separation between creative candidate generation and an
+  objective build/prove/land stage. Their architecture is worth comparing
+  against `decomp_context.py` and the campaign runner, especially immutable
+  recipes and structured results. Do not vendor them casually: Unbake is
+  GPL-3.0-or-later, and their BattleTanx configuration is evidence to test,
+  not a substitute for this project's retail-address gate.
+- [Coddog](https://github.com/ethteck/coddog) is the next retrieval tool to
+  trial. Run the remaining functions against independently matched C, then use
+  the returned whole-function and region-level siblings to seed types, inline
+  helpers, macros, and translation-unit grouping. Similarity is hypothesis
+  guidance only; it is never matching evidence.
+- [Mario Golf 64](https://github.com/monde-lointain/mariogolf64) uses the same
+  KMC GCC 2.7.2 flag family and contains useful libmus, libkmc, libnaudio,
+  libnusys, and libultra references. Its general build permits NONMATCHING
+  code, so every borrowed source shape must be independently compiled and
+  compared here.
+- The historical
+  [EN64 BattleTanx: Global Assault symbol list](https://en64.shoutwiki.com/wiki/BattleTanx:_Global_Assult)
+  corroborates numerous SDK/audio symbol identities and addresses. Treat it as
+  naming evidence only; it is an old community reference under CC BY-SA 3.0,
+  not source or byte-match evidence.
+- [Hack64](https://hack64.net/wiki/doku.php?id=nintendo_64), the Ultra64 SDK
+  manuals, and the F3DEX/S2DEX graphics notes are best used when a large target
+  is probably an expansion of graphics or SDK macros. Recover the macro family
+  and arguments first, then compile with this repository's actual headers and
+  toolchain.
+
 - [bdiff](https://github.com/encounter/bdiff): useful as a fast first-pass binary
   triage tool for locating changed runs before using the project's
   symbol-aware and instruction-aware comparators. It is not sufficient match
@@ -174,7 +203,7 @@ diverse top set for the next generation:
 ```sh
 .venv/bin/python tools/decomp_batch.py targets.tsv \
   --name remaining-beam --engine beam --rounds 3 --beam 10 --samples 24 \
-  --targets 4 --jobs 16 --pipeline production --stop-at-zero
+  --max-evals 600 --targets 4 --jobs 16 --pipeline production --stop-at-zero
 ```
 
 The complete ranked experiment ledger and best candidate for each function
@@ -197,3 +226,51 @@ compiler-directed hypothesis.
 Beam searches stop after two consecutive unimproved generations by default.
 Use `--plateau-rounds 0` only when an intentionally deep combinatorial search
 justifies continuing through a measured plateau.
+
+### Context-first diagnosis
+
+Do not send the entire remaining inventory directly into a wide mutation
+search. First create dependency-complete contexts and classify the mismatch:
+
+```sh
+.venv/bin/python tools/decomp_context.py targets.tsv \
+  --output build/decomp_search/contexts/remaining --pipeline production
+.venv/bin/python tools/decomp_siblings.py targets.tsv \
+  --output build/decomp_search/contexts/remaining/siblings.tsv
+.venv/bin/python tools/decomp_worklist.py \
+  build/decomp_search/contexts/remaining \
+  build/decomp_search/contexts/remaining/siblings.tsv \
+  --alternate-contexts build/decomp_search/contexts/remaining-asn64 \
+  --output build/decomp_search/contexts/remaining/worklist.tsv
+```
+
+The context ID covers the source, transitive headers reported by KMC GCC,
+compiler/assembler/linker binaries, normalizer, symbol map, catalogue, pipeline,
+and nonempty ROM reference span. Results are structured JSON, so text printed by
+a failed comparator cannot be mistaken for a match. The worklist assigns a next
+experiment by failure class and lists proven matched functions with similar
+mnemonic n-grams. Retrieval is hypothesis guidance only; byte identity remains
+the acceptance gate.
+
+Use mutation search only after structural, type, ownership, and toolchain causes
+have been eliminated. `--max-evals` is a deterministic per-target,
+per-generation ceiling; the default is 2,000. The initial unrestricted pilot
+would have generated roughly 9,000 candidates per target per generation and was
+stopped as economically uninformative. A 600-evaluation cap retained useful
+score movement while keeping individual targets bounded.
+
+When an inventory row has no compiling candidate, regenerate it with
+`tools/decomp_m2c_refresh.py` before searching. The refresh path can consume
+separately reconstructed jump tables, add names for fall-through table targets,
+and apply an explicitly recorded analysis-only delay-slot workaround. Generated
+drafts remain under `build/decomp_search`; compiling them establishes a measured
+baseline, not a matching claim.
+
+Byte score is never a semantic acceptance test. In particular, unrestricted
+statement swaps previously produced lower scores by changing linked-list update
+order and by reading a temporary before assignment. `swap_stmts` now permits
+only dependency-free scalar assignments with no calls, and `alias_uses` only
+copies initialized values that are never reassigned. Beam output records its
+mutation lineage and whether semantic review is required in `candidate.json`.
+Even a zero-word candidate still needs human source review and the exact
+whole-unit gate before integration.

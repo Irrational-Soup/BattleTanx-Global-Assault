@@ -37,6 +37,7 @@ import decomp_score as mclass  # noqa: E402
 R = kmclib.R
 FORBID = re.compile(r"\b(asm|__asm__|volatile|register)\b")
 MARKER = re.compile(r"/\*[^*]*?\b(SPAN|RODATA_VRAM|DATA_VRAM|LDSYM|CFLAGS|MODE)\b[^*]*\*/")
+TYPEOF_MAP = {}
 
 
 # ----------------------------------------------------------------------------- parsing
@@ -53,6 +54,15 @@ def preprocess(src, relax_prototypes=False):
     if p.returncode:
         raise SystemExit("cpp failed:\n" + p.stderr)
     text = p.stdout
+    # pycparser does not accept GCC's __typeof__(expr), but temp candidates
+    # must remain reusable as parents in later campaigns.  Parse stable typedef
+    # placeholders, then restore the extension after rendering the AST.
+    def hide_typeof(match):
+        expr = match.group(1)
+        name = "decomp_typeof_" + hashlib.sha1(expr.encode()).hexdigest()[:12]
+        TYPEOF_MAP[name] = expr
+        return name
+    text = re.sub(r"__typeof__\(([^()\n]+)\)", hide_typeof, text)
     # Raw m2c output uses '?' when it cannot infer a type.  Treat that token as
     # an integer-sized unknown for the first scoring pass; a matching candidate
     # still requires replacing every such guess with reviewed real types.
@@ -83,6 +93,9 @@ def preprocess(src, relax_prototypes=False):
         "M2C_UNK32": "unsigned int", "M2C_UNK64": "unsigned long long",
     }
     preamble = []
+    for name in sorted(TYPEOF_MAP):
+        if re.search(r"\b%s\b" % name, text):
+            preamble.append("typedef int %s;" % name)
     for name, underlying in primitive_types.items():
         if re.search(r"\b%s\b" % name, text) and not re.search(
                 r"\btypedef\b[^;]*\b%s\s*;" % name, text):
@@ -92,6 +105,13 @@ def preprocess(src, relax_prototypes=False):
     # representation before AST parsing and regeneration.
     text = re.sub(r"\bNULL\b", "((void *) 0)", text)
     return "\n".join(preamble) + ("\n" if preamble else "") + text
+
+
+def restore_typeof(text):
+    for name, expr in TYPEOF_MAP.items():
+        text = re.sub(r"(?m)^typedef int %s;\s*\n?" % re.escape(name), "", text)
+        text = re.sub(r"\b%s\b" % re.escape(name), "__typeof__(%s)" % expr, text)
+    return text
 
 
 def markers(src):
@@ -166,13 +186,45 @@ def is_decl(x):
     return isinstance(x, c_ast.Decl)
 
 
+def _statement_effects(stmt):
+    """Return conservative scalar writes, identifier reads and call presence.
+
+    This is intentionally narrower than a C alias analysis.  It exists to
+    prevent the search from improving byte scores by swapping dependent or
+    externally observable operations.  Unknown memory writes are not eligible.
+    """
+    if not isinstance(stmt, c_ast.Assignment):
+        return None
+    if nodes_of(stmt, c_ast.FuncCall):
+        return None
+    if not isinstance(stmt.lvalue, c_ast.ID):
+        return None
+    write = stmt.lvalue.name
+    reads = {node.name for node in nodes_of(stmt.rvalue, c_ast.ID)}
+    if stmt.op != "=":
+        reads.add(write)
+    return {write}, reads
+
+
+def statements_can_swap(first, second):
+    a = _statement_effects(first)
+    b = _statement_effects(second)
+    if a is None or b is None:
+        return False
+    writes_a, reads_a = a
+    writes_b, reads_b = b
+    return not (writes_a & (writes_b | reads_b) or
+                writes_b & (writes_a | reads_a))
+
+
 def m_swap_stmts(fn, rng):
     cs = [c for c in compounds(fn) if sum(not is_decl(x) for x in c.block_items) >= 2]
     if not cs:
         return False
     c = rng.choice(cs)
     idx = [i for i, x in enumerate(c.block_items) if not is_decl(x) and not isinstance(x, (c_ast.Label, c_ast.Case, c_ast.Default))]
-    pairs = [(a, b) for a, b in zip(idx, idx[1:]) if b == a + 1]
+    pairs = [(a, b) for a, b in zip(idx, idx[1:])
+             if b == a + 1 and statements_can_swap(c.block_items[a], c.block_items[b])]
     if not pairs:
         return False
     a, b = rng.choice(pairs)
@@ -273,6 +325,175 @@ def m_temp(fn, rng):
                             self.visit(e)
     Rep().visit(s)
     c.block_items[k] = c_ast.Compound([decl, s])
+    return True
+
+
+def m_address_temp(fn, rng):
+    """Route a struct-ref call argument through a block-local pointer.
+
+    This changes pseudo birth/lifetime like a value temp, but leaves the final
+    argument as a memory dereference.  It is useful when retail uses a direct
+    integer-word argument load and a value temp would force lwc1/mfc1.
+    """
+    candidates = []
+    for c in compounds(fn):
+        for k, statement in enumerate(c.block_items):
+            if not isinstance(statement, c_ast.FuncCall):
+                continue
+            for ref in nodes_of(statement.args, c_ast.StructRef):
+                candidates.append((c, k, statement, ref))
+    if not candidates:
+        return False
+    c, k, statement, ref = rng.choice(candidates)
+    _tmpn[0] += 1
+    name = "pa%d" % _tmpn[0]
+    rendered = c_generator.CGenerator().visit(ref)
+    decl = c_ast.Decl(
+        name, [], [], [], [],
+        c_ast.TypeDecl(name, [], None,
+                       c_ast.IdentifierType(["__typeof__(&%s)" % rendered])),
+        c_ast.UnaryOp("&", copy.deepcopy(ref)), None,
+    )
+
+    class Rep(c_ast.NodeVisitor):
+        def generic_visit(self, node):
+            for attr in [a for a in node.__slots__ if a not in ("coord", "__weakref__")]:
+                value = getattr(node, attr, None)
+                if value is ref:
+                    setattr(node, attr, c_ast.UnaryOp("*", c_ast.ID(name)))
+                elif isinstance(value, c_ast.Node):
+                    self.visit(value)
+                elif isinstance(value, list):
+                    for index, child in enumerate(value):
+                        if child is ref:
+                            value[index] = c_ast.UnaryOp("*", c_ast.ID(name))
+                        elif isinstance(child, c_ast.Node):
+                            self.visit(child)
+    Rep().visit(statement)
+    c.block_items[k] = c_ast.Compound([decl, statement])
+    return True
+
+
+def m_inline_address_alias(fn, rng):
+    """Replace a stable local `p = &object` alias with direct `&object` uses."""
+    candidates = []
+    for compound in compounds(fn):
+        items = compound.block_items or []
+        declarations = {item.name: index for index, item in enumerate(items)
+                        if is_decl(item) and item.init is None and
+                        isinstance(item.type, c_ast.PtrDecl)}
+        for index, statement in enumerate(items):
+            if not (isinstance(statement, c_ast.Assignment) and statement.op == "=" and
+                    isinstance(statement.lvalue, c_ast.ID) and
+                    statement.lvalue.name in declarations and
+                    isinstance(statement.rvalue, c_ast.UnaryOp) and
+                    statement.rvalue.op == "&"):
+                continue
+            name = statement.lvalue.name
+            writes = 0
+            uses = []
+            for later_index, later in enumerate(items[index + 1:], index + 1):
+                for assignment in nodes_of(later, c_ast.Assignment):
+                    if isinstance(assignment.lvalue, c_ast.ID) and \
+                            assignment.lvalue.name == name:
+                        writes += 1
+                for ident in nodes_of(later, c_ast.ID):
+                    if ident.name == name:
+                        uses.append((later_index, ident))
+            if writes == 0 and len(uses) >= 2:
+                candidates.append((compound, declarations[name], index, name,
+                                   statement.rvalue, uses))
+    if not candidates:
+        return False
+    compound, decl_index, assignment_index, name, address, uses = rng.choice(candidates)
+    for statement_index, ident in uses:
+        statement = compound.block_items[statement_index]
+
+        class Rep(c_ast.NodeVisitor):
+            def generic_visit(self, node):
+                for attr in [a for a in node.__slots__ if a not in ("coord", "__weakref__")]:
+                    value = getattr(node, attr, None)
+                    if value is ident:
+                        setattr(node, attr, copy.deepcopy(address))
+                    elif isinstance(value, c_ast.Node):
+                        self.visit(value)
+                    elif isinstance(value, list):
+                        for child_index, child in enumerate(value):
+                            if child is ident:
+                                value[child_index] = copy.deepcopy(address)
+                            elif isinstance(child, c_ast.Node):
+                                self.visit(child)
+        Rep().visit(statement)
+    for remove_index in sorted((decl_index, assignment_index), reverse=True):
+        del compound.block_items[remove_index]
+    return True
+
+
+def m_sink_address_assignment(fn, rng):
+    """Move `p = &local` immediately before its first later use."""
+    candidates = []
+    for compound in compounds(fn):
+        items = compound.block_items or []
+        for index, statement in enumerate(items):
+            if not (isinstance(statement, c_ast.Assignment) and statement.op == "=" and
+                    isinstance(statement.lvalue, c_ast.ID) and
+                    isinstance(statement.rvalue, c_ast.UnaryOp) and
+                    statement.rvalue.op == "&" and
+                    isinstance(statement.rvalue.expr, c_ast.ID)):
+                continue
+            name = statement.lvalue.name
+            referent = statement.rvalue.expr.name
+            first_use = None
+            safe = True
+            for later_index, later in enumerate(items[index + 1:], index + 1):
+                if any(ident.name == name for ident in nodes_of(later, c_ast.ID)):
+                    first_use = later_index
+                    break
+                for assignment in nodes_of(later, c_ast.Assignment):
+                    if isinstance(assignment.lvalue, c_ast.ID) and \
+                            assignment.lvalue.name in (name, referent):
+                        safe = False
+                if nodes_of(later, c_ast.FuncCall) and any(
+                        ident.name == referent for ident in nodes_of(later, c_ast.ID)):
+                    safe = False
+            if safe and first_use is not None and first_use > index + 1:
+                candidates.append((compound, index, first_use))
+    if not candidates:
+        return False
+    compound, index, first_use = rng.choice(candidates)
+    statement = compound.block_items.pop(index)
+    # Removing the earlier item shifts the original first-use index by one.
+    compound.block_items.insert(first_use - 1, statement)
+    return True
+
+
+def m_repeat_address_assignment(fn, rng):
+    """Repeat a stable `p = &local` immediately before a later use."""
+    candidates = []
+    generator = c_generator.CGenerator()
+    for compound in compounds(fn):
+        items = compound.block_items or []
+        for assignment in items:
+            if not (isinstance(assignment, c_ast.Assignment) and assignment.op == "=" and
+                    isinstance(assignment.lvalue, c_ast.ID) and
+                    isinstance(assignment.rvalue, c_ast.UnaryOp) and
+                    assignment.rvalue.op == "&" and
+                    isinstance(assignment.rvalue.expr, c_ast.ID)):
+                continue
+            name = assignment.lvalue.name
+            spelling = generator.visit(assignment)
+            start = items.index(assignment)
+            for use_index in range(start + 1, len(items)):
+                statement = items[use_index]
+                if not any(ident.name == name for ident in nodes_of(statement, c_ast.ID)):
+                    continue
+                if use_index and generator.visit(items[use_index - 1]) == spelling:
+                    continue
+                candidates.append((compound, use_index, assignment))
+    if not candidates:
+        return False
+    compound, use_index, assignment = rng.choice(candidates)
+    compound.block_items.insert(use_index, copy.deepcopy(assignment))
     return True
 
 
@@ -474,10 +695,22 @@ def m_alias_uses(fn, rng):
         items = compound.block_items or []
         declared = []
         for index, item in enumerate(items):
-            if is_decl(item) and item.name and not isinstance(
+            if is_decl(item) and item.name and item.init is not None and not isinstance(
                     item.type, (c_ast.ArrayDecl, c_ast.FuncDecl)):
                 declared.append((item.name, index))
         for name, decl_index in declared:
+            reassigned = False
+            for statement in items[decl_index + 1:]:
+                for assignment in nodes_of(statement, c_ast.Assignment):
+                    if isinstance(assignment.lvalue, c_ast.ID) and \
+                            assignment.lvalue.name == name:
+                        reassigned = True
+                for unary in nodes_of(statement, c_ast.UnaryOp):
+                    if unary.op in ("p++", "++", "p--", "--") and \
+                            isinstance(unary.expr, c_ast.ID) and unary.expr.name == name:
+                        reassigned = True
+            if reassigned:
+                continue
             uses = []
             for statement_index in range(decl_index + 1, len(items)):
                 statement = items[statement_index]
@@ -531,6 +764,10 @@ MUTATIONS = {
     "split_assign": m_split_assign, "decl_init": m_decl_init, "copy_temp": m_copy_temp,
     "move_decl_out": m_move_decl_out, "int_type": m_int_type,
     "param_type": m_param_type, "alias_uses": m_alias_uses,
+    "address_temp": m_address_temp,
+    "inline_address_alias": m_inline_address_alias,
+    "sink_address_assignment": m_sink_address_assignment,
+    "repeat_address_assignment": m_repeat_address_assignment,
 }
 
 
@@ -607,7 +844,7 @@ def main():
         )
 
     def render(ast):
-        t = mk + gen.visit(ast)
+        t = mk + restore_typeof(gen.visit(ast))
         if FORBID.search(re.sub(r"__typeof__", "", t)):
             return None
         return t
@@ -617,7 +854,7 @@ def main():
     if not r0["ok"]:
         try:
             relaxed_ast = parse(preprocess(a.src, relax_prototypes=True))
-            relaxed_text = mk + gen.visit(relaxed_ast)
+            relaxed_text = mk + restore_typeof(gen.visit(relaxed_ast))
             relaxed = evaluate((a.src, relaxed_text, vram, a.func, a.pipeline))
         except Exception:
             relaxed = {"ok": False}

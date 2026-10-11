@@ -59,6 +59,7 @@ def run_target(job):
     if args.engine == "beam":
         cmd += ["--rounds", str(args.rounds), "--beam", str(args.beam),
                 "--samples", str(args.samples),
+                "--max-evals", str(args.max_evals),
                 "--plateau-rounds", str(args.plateau_rounds)]
     else:
         cmd += ["--iters", str(args.iters), "--max-mut", str(args.max_mut)]
@@ -93,6 +94,10 @@ def main():
     ap.add_argument("--iters", type=int, default=400)
     ap.add_argument("--targets", type=int, default=4,
                     help="number of functions searched concurrently")
+    ap.add_argument("--include", default="",
+                    help="comma-separated function allowlist")
+    ap.add_argument("--mutations", default="",
+                    help="override every manifest row's mutation families")
     ap.add_argument("--jobs", type=int, default=8,
                     help="total compiler workers shared across targets")
     ap.add_argument("--seed", type=int, default=1)
@@ -104,6 +109,8 @@ def main():
                     help="distinct machine outputs retained per generation")
     ap.add_argument("--samples", type=int, default=24,
                     help="stable mutation positions per family and parent")
+    ap.add_argument("--max-evals", type=int, default=2000,
+                    help="maximum sources compiled per beam generation and target")
     ap.add_argument("--plateau-rounds", type=int, default=2,
                     help="stop a beam target after this many unimproved generations")
     ap.add_argument("--pipeline", choices=("production", "raw-kmc", "asn64"),
@@ -112,6 +119,15 @@ def main():
     ap.add_argument("--stop-at-zero", action="store_true")
     args = ap.parse_args()
     rows = read_manifest(args.manifest)
+    if args.include:
+        wanted = {name.strip() for name in args.include.split(",") if name.strip()}
+        rows = [row for row in rows if row["function"] in wanted]
+        missing = wanted - {row["function"] for row in rows}
+        if missing:
+            ap.error("functions absent from manifest: " + ", ".join(sorted(missing)))
+    if args.mutations:
+        for row in rows:
+            row["mutations"] = args.mutations
     target_workers = max(1, min(args.targets, len(rows), args.jobs))
     workers_each = max(1, args.jobs // target_workers)
     outdir = os.path.join(ROOT, "build", "decomp_search", "batches", args.name)

@@ -144,7 +144,6 @@ for spec in \
     main_8009700C_to_800973E0:0x3d4 \
     main_8009755C_to_80097560:0x4 \
     main_8009859C_to_800985A0:0x4 \
-    main_800988E8_to_80098AFC:0x214 \
     main_80099824_to_80099830:0xc \
     main_8009B694_to_8009C098:0xa04
 do
@@ -3303,6 +3302,8 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/src/code/800B4684_collision_query.c.o .rodata 0x10 --alignment 4
 python3 tools/trim_elf32_section.py \
+    build/us/src/code/func_800B4F38.c.o .text 0x1f8 --alignment 4
+python3 tools/trim_elf32_section.py \
     build/us/src/code/800B5A10.c.o .text 0x17c --alignment 4
 python3 tools/trim_elf32_section.py \
     build/us/src/code/800B5A10.c.o .rodata 0xc --alignment 4
@@ -3508,7 +3509,7 @@ for spec in \
     800973E0:0x128:0 \
     80097560:0x100:0 \
     80097DF8:0xec:0 \
-    800985A0:0x348:0 \
+    800985A0:0x55C:0 \
     80098CC8:0x25c:0 \
     800991CC:0x114:0 \
     func_80099464:0x260:0 \
@@ -4267,7 +4268,6 @@ if false; then
     build/us/src/code/func_80098534.c.o \
     build/us/asm/us/main_8009859C_to_800985A0.s.o \
     build/us/src/code/800985A0.c.o \
-    build/us/asm/us/main_800988E8_to_80098AFC.s.o \
     build/us/src/code/func_80098AFC.c.o \
     build/us/src/code/func_80098B2C.c.o \
     build/us/src/code/func_80098B40.c.o \
@@ -4366,7 +4366,7 @@ if false; then
     build/us/src/code/task_class_init.c.o \
     build/us/src/code/object_range.c.o \
     build/us/src/code/func_800A2B9C.c.o \
-    build/us/asm/us/main_800A2C6C_to_800A2DFC.s.o \
+    build/us/src/code/contact_message_broadcast.c.o \
     build/us/src/code/scheduler_misc.c.o \
     build/us/src/code/func_800A2E5C.c.o \
     build/us/asm/us/main_800A2EEC_to_800A2EF0.s.o \
@@ -4380,7 +4380,7 @@ if false; then
     build/us/src/code/effect_sprite_ring_draw.c.o \
     build/us/src/code/func_800A4468.c.o \
     build/us/src/code/800A477C.c.o \
-    build/us/asm/us/main_800A5858_to_800A5BD8.s.o \
+    build/us/src/code/effect_mesh_transform_draw.c.o \
     build/us/src/code/800A5BD8.c.o \
     build/us/src/code/func_800A60E0.c.o \
     build/us/asm/us/main_800A619C_to_800A61A0.s.o \
@@ -4445,7 +4445,9 @@ if false; then
     build/us/src/code/func_800ABE6C.c.o \
     build/us/src/code/nearest_path_test.c.o \
     build/us/src/code/800AC0F4.c.o \
-    build/us/asm/us/main_800AC198_to_800ACE70.s.o \
+    build/us/src/code/path_visibility_queries.c.o \
+    build/us/src/code/view_state_build.c.o \
+    build/us/asm/us/main_800ACCB4_to_800ACE70.s.o \
     build/us/src/code/func_800ACE70.c.o \
     build/us/src/code/func_800ACEB4.c.o \
     build/us/src/code/func_800ACEFC.c.o \
@@ -4453,10 +4455,14 @@ if false; then
     build/us/src/code/func_800ACFE0.c.o \
     build/us/src/code/func_800AD088.c.o \
     build/us/src/code/800AD14C.c.o \
-    build/us/asm/us/main_800AD6A8_to_800AE710.s.o \
+    build/us/src/code/func_800AD6A8.c.o \
+    build/us/src/code/func_800AD9A8.c.o \
+    build/us/src/code/func_800ADCA0.c.o \
+    build/us/src/code/func_800ADFC8.c.o \
+    build/us/src/code/model_lod_draw.c.o \
+    build/us/src/code/func_800AE4D0.c.o \
     build/us/src/code/800AE710.c.o \
-    build/us/asm/us/main_800AE8EC_to_800AF364.s.o \
-    build/us/src/code/collision_bounds_constants.c.o \
+    build/us/src/code/model_view_draw.c.o \
     build/us/src/code/world_collision_thresholds.c.o \
     build/us/src/code/800AF364.c.o \
     build/us/asm/us/main_800AF43C_to_800B0268.s.o \
@@ -4471,14 +4477,14 @@ if false; then
     build/us/asm/us/main_800B06D8_to_800B06E0.s.o \
     build/us/src/code/800B06E0.c.o \
     build/us/src/code/func_800B0D70.c.o \
-    build/us/asm/us/main_800B0E38_to_800B0F4C.s.o \
+    build/us/src/code/grid_node_insert.c.o \
     build/us/src/code/grid_node_remove.c.o \
     build/us/src/code/800B109C.c.o \
     build/us/asm/us/main_800B129C_to_800B14A8.s.o \
     build/us/src/code/800B14A8.c.o \
     build/us/src/code/func_800B1610.c.o \
     build/us/src/code/800B1668.c.o \
-    build/us/asm/us/main_800B1898_to_800B1DA8.s.o \
+    build/us/src/code/grid_node_create.c.o \
     build/us/src/code/800B1DA8.c.o \
     build/us/src/code/func_800B22F8.c.o \
     build/us/src/code/800B2364.c.o \
@@ -4491,7 +4497,9 @@ if false; then
     build/us/src/code/800B3504.c.o \
     build/us/asm/us/main_800B3748_to_800B4684.s.o \
     build/us/src/code/800B4684_collision_query.c.o \
-    build/us/asm/us/main_800B49E0_to_800B5A10.s.o \
+    build/us/asm/us/main_800B49E0_to_800B4F38.s.o \
+    build/us/src/code/func_800B4F38.c.o \
+    build/us/asm/us/main_800B5130_to_800B5A10.s.o \
     build/us/src/code/hud_coordinate_constants.c.o \
     build/us/src/code/800B5A10.c.o \
     build/us/src/code/800B5B8C_mover_reflect.c.o \
@@ -4507,7 +4515,8 @@ if false; then
     build/us/src/code/hud_layout_constants.c.o \
     build/us/src/code/hud_timing_constants.c.o \
     build/us/src/code/contact_side_test.c.o \
-    build/us/asm/us/main_800B74B4_to_800B8310.s.o \
+    build/us/asm/us/main_800B74B4_to_800B8100.s.o \
+    build/us/src/code/mover_step_response.c.o \
     build/us/src/code/hud_animation_limits.c.o \
     build/us/src/code/vector_angle_from_xy.c.o \
     build/us/asm/us/main_800B83A8_to_800B87A0.s.o \
@@ -4754,12 +4763,10 @@ if false; then
     build/us/src/code/tank_motion_constant.c.o \
     build/us/src/code/camera_probe_constants.c.o \
     build/us/src/code/object_collision_constants.c.o \
-    build/us/src/code/object_region_bounds.c.o \
     build/us/src/code/hud_scale_constant.c.o \
     build/us/src/code/race_bar_scale_constants.c.o \
     build/us/src/code/race_bar_ratio_constants.c.o \
     build/us/src/code/lightning_segment_constants.c.o \
-    build/us/src/code/effect_transform_template.c.o \
     build/us/src/code/results_format_constants.c.o \
     build/us/src/code/effect_draw.c.o \
     build/us/src/code/effect_code_table.c.o \

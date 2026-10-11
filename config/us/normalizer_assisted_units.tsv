@@ -4,8 +4,9 @@ step_pool_release	0x8007DBE0	0x174	normalizer-assisted
 matrix_rotate_translate	0x8009FCCC	0x250	normalizer-assisted
 player_setup_init	0x800A7D70	0x33C	normalizer-assisted
 func_800A4468	0x800A4468	0x314	normalizer-assisted
+effect_mesh_transform_draw	0x800A5858	0x380	normalizer-assisted
+grid_node_insert	0x800B0E38	0x114	normalizer-assisted
 func_800D6508	0x800D6508	0x2E8	normalizer-assisted
-func_800854C4	0x800854C4	0x32C	normalizer-assisted
 func_800F01F0	0x800F01F0	0x428	normalizer-assisted
 func_8009060C	0x8009060C	0x3C0	normalizer-assisted
 func_8009299C	0x8009299C	0x29C	normalizer-assisted
@@ -50,3 +51,5 @@ destroyed_object_update	0x800EA224	0x4F0	normalizer-assisted
 billboard_command_update	0x800EBDA0	0x1E0	normalizer-assisted
 ai_object_search_update	0x80084278	0x48C	normalizer-assisted
 matrix_scale_curve	0x8009277C	0x220	normalizer-assisted
+grid_node_create	0x800B1898	0x510	normalizer-assisted
+view_state_build	0x800AC9E8	0x2CC	normalizer-assisted

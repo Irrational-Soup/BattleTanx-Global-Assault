@@ -1,5 +1,7 @@
 import importlib.util
 import os
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -16,6 +18,47 @@ def load(name):
 
 
 class DecompSearchTests(unittest.TestCase):
+    def test_beam_exposes_bounded_generation_budget(self):
+        proc = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "tools", "decomp_beam.py"), "--help"],
+            cwd=ROOT, check=True, capture_output=True, text=True,
+        )
+        self.assertIn("--max-evals", proc.stdout)
+
+    def test_context_diagnosis_categories(self):
+        context = load("decomp_context")
+        base = {
+            "words": 3, "built_size": 16, "rom_size": 16,
+            "classes": {"regname": 3}, "blocks": {"built": 1, "rom": 1},
+            "pure_regname": True, "opcode_identical": True, "structural": 0,
+        }
+        self.assertEqual(context.diagnosis(base), "register_allocation")
+        structural = dict(base, built_size=12, pure_regname=False)
+        self.assertEqual(context.diagnosis(structural), "source_structure")
+
+    def test_sibling_similarity_prefers_identical_features(self):
+        siblings = load("decomp_siblings")
+        a = (siblings.collections.Counter({("lw", "addiu", "sw"): 2}), 12)
+        b = (siblings.collections.Counter({("lw", "addiu", "sw"): 2}), 12)
+        c = (siblings.collections.Counter({("lwc1", "mul.s", "swc1"): 2}), 12)
+        self.assertEqual(siblings.similarity(a, b), 1.0)
+        self.assertEqual(siblings.similarity(a, c), 0.0)
+
+    def test_worklist_has_actions_for_every_diagnosis(self):
+        worklist = load("decomp_worklist")
+        expected = {"source_structure", "instruction_selection_or_types",
+                    "stack_layout_or_lifetime", "control_flow_or_calls",
+                    "linking_rodata_or_ownership", "register_allocation",
+                    "instruction_scheduling", "mixed_codegen",
+                    "infrastructure", "exact"}
+        self.assertEqual(set(worklist.NEXT), expected)
+
+    def test_m2c_refresh_prefers_narrowest_span(self):
+        refresh = load("decomp_m2c_refresh")
+        spans = refresh.asm_candidates("func_800B6CC4")
+        self.assertTrue(spans)
+        self.assertLessEqual(os.path.getsize(spans[0]), os.path.getsize(spans[-1]))
+
     def test_catalogue_covers_distant_gameplay_ranges(self):
         compile_tool = load("decomp_compile")
         catalogue = compile_tool.catalogue()
@@ -172,6 +215,17 @@ class DecompSearchTests(unittest.TestCase):
         self.assertIn("func_80000000(s32, s32)", strict)
         self.assertIn("func_80000000()", relaxed)
 
+    def test_gcc_typeof_candidate_round_trips_through_parser(self):
+        permuter = load("decomp_permuter")
+        with tempfile.NamedTemporaryFile("w", suffix=".c") as fh:
+            fh.write("int target(int x) { __typeof__(x) y = x; return y; }\n")
+            fh.flush()
+            ast = permuter.parse(permuter.preprocess(fh.name))
+        rendered = permuter.restore_typeof(
+            permuter.c_generator.CGenerator().visit(ast))
+        self.assertIn("__typeof__(x) y", rendered)
+        self.assertNotIn("decomp_typeof_", rendered)
+
     def test_campaign_summary_score(self):
         campaign = load("decomp_campaign")
         summary = "func_80000000\tbest.c\tasn64\t-\t7\tDIFF\t-\tnote"
@@ -213,6 +267,19 @@ class DecompSearchTests(unittest.TestCase):
         self.assertTrue(permuter.m_int_type(fn, __import__("random").Random(1)))
         self.assertTrue(permuter.m_param_type(fn, __import__("random").Random(2)))
 
+    def test_statement_swap_rejects_dependencies_and_calls(self):
+        permuter = load("decomp_permuter")
+        independent = permuter.parse(
+            "int target(void) { int a; int b; a = 1; b = 2; return a + b; }")
+        dependent = permuter.parse(
+            "int target(void) { int a; int b; a = 1; b = a; return a + b; }")
+        called = permuter.parse(
+            "int call(void); int target(void) { int a; int b; a = call(); b = 2; return a + b; }")
+        rng = __import__("random").Random(1)
+        self.assertTrue(permuter.m_swap_stmts(permuter.find_func(independent, "target"), rng))
+        self.assertFalse(permuter.m_swap_stmts(permuter.find_func(dependent, "target"), rng))
+        self.assertFalse(permuter.m_swap_stmts(permuter.find_func(called, "target"), rng))
+
     def test_alias_mutation_partitions_uses(self):
         permuter = load("decomp_permuter")
         with tempfile.NamedTemporaryFile("w", suffix=".c") as fh:
@@ -223,6 +290,142 @@ class DecompSearchTests(unittest.TestCase):
         self.assertTrue(permuter.m_alias_uses(fn, __import__("random").Random(3)))
         rendered = permuter.c_generator.CGenerator().visit(ast)
         self.assertRegex(rendered, r"au\d+")
+
+    def test_alias_mutation_rejects_uninitialized_or_reassigned_values(self):
+        permuter = load("decomp_permuter")
+        uninitialized = permuter.parse(
+            "int target(int p) { int x; int y; x = p; y = x; return x + y; }")
+        reassigned = permuter.parse(
+            "int target(int p) { int x = p; int y; x = p + 1; y = x; return x + y; }")
+        rng = __import__("random").Random(3)
+        self.assertFalse(permuter.m_alias_uses(
+            permuter.find_func(uninitialized, "target"), rng))
+        self.assertFalse(permuter.m_alias_uses(
+            permuter.find_func(reassigned, "target"), rng))
+
+    def test_address_temp_keeps_call_argument_as_memory_dereference(self):
+        permuter = load("decomp_permuter")
+        ast = permuter.parse(
+            "struct V { float z; }; void use(float); "
+            "void target(struct V *v) { use(v->z); }")
+        fn = permuter.find_func(ast, "target")
+        self.assertTrue(permuter.m_address_temp(
+            fn, __import__("random").Random(1)))
+        rendered = permuter.restore_typeof(
+            permuter.c_generator.CGenerator().visit(ast))
+        self.assertIn("__typeof__(&v->z)", rendered)
+        self.assertRegex(rendered, r"use\(\*pa\d+\)")
+
+    def test_inline_address_alias_replaces_stable_pointer(self):
+        permuter = load("decomp_permuter")
+        ast = permuter.parse(
+            "void use(int *); void target(void) { int x; int *p; "
+            "p = &x; use(p); use(p); }")
+        fn = permuter.find_func(ast, "target")
+        self.assertTrue(permuter.m_inline_address_alias(
+            fn, __import__("random").Random(1)))
+        rendered = permuter.c_generator.CGenerator().visit(ast)
+        self.assertNotIn("*p", rendered)
+        self.assertNotIn("p =", rendered)
+        self.assertEqual(rendered.count("use(&x)"), 2)
+
+    def test_sink_address_assignment_moves_to_first_use(self):
+        permuter = load("decomp_permuter")
+        ast = permuter.parse(
+            "void use(int *); void target(void) { int x; int y; int *p; "
+            "p = &x; y = 2; use(p); use(p); }")
+        fn = permuter.find_func(ast, "target")
+        self.assertTrue(permuter.m_sink_address_assignment(
+            fn, __import__("random").Random(1)))
+        rendered = permuter.c_generator.CGenerator().visit(ast)
+        self.assertLess(rendered.index("y = 2"), rendered.index("p = &x"))
+        self.assertLess(rendered.index("p = &x"), rendered.index("use(p)"))
+
+    def test_repeat_address_assignment_targets_later_use(self):
+        permuter = load("decomp_permuter")
+        ast = permuter.parse(
+            "void use(int *); void target(void) { int x; int *p; "
+            "p = &x; use(p); use(p); }")
+        fn = permuter.find_func(ast, "target")
+        self.assertTrue(permuter.m_repeat_address_assignment(
+            fn, __import__("random").Random(1)))
+        rendered = permuter.c_generator.CGenerator().visit(ast)
+        self.assertEqual(rendered.count("p = &x"), 2)
+
+    def test_m2c_refresh_supplies_fallthrough_and_delay_slot_labels(self):
+        refresh = load("decomp_m2c_refresh")
+        with tempfile.TemporaryDirectory() as td:
+            asm = os.path.join(td, "input.s")
+            table = os.path.join(td, "jump_tables.s")
+            with open(asm, "w") as fh:
+                fh.write("    /* 10 80000010 00000000 */ nop\n")
+                fh.write("  .L80000014:\n")
+                fh.write("    /* 14 80000014 00000000 */ nop\n")
+            with open(table, "w") as fh:
+                fh.write(".word .L80000010\n.word .L80000014\n")
+            with open(os.path.join(td, "delay_slot_nop_before.txt"), "w") as fh:
+                fh.write(".L80000014\n")
+            generated = refresh.add_missing_jump_labels(asm, [table], td)
+            with open(generated) as fh:
+                text = fh.read()
+        self.assertIn(".L80000010:\n", text)
+        self.assertIn("nop  /* analysis-only delay-slot workaround */\n  .L80000014:", text)
+
+    def test_campaign_parser_requires_complete_exact_evidence(self):
+        runner = load("run_decomp_campaign")
+        exact = (
+            ".text 80001000..80001100: 0 mismatched words\n"
+            "RESULT x.c: UNIT MATCH\n"
+        )
+        self.assertEqual(runner.parse_result(exact, 0), ("MATCH", 0))
+        self.assertEqual(runner.parse_result(exact, 1)[0], "INVALID")
+        self.assertEqual(
+            runner.parse_result(exact + "Traceback (most recent call last):\n", 1)[0],
+            "INVALID",
+        )
+        self.assertEqual(
+            runner.parse_result("RESULT x.c: UNIT MATCH\n", 0)[0], "INVALID"
+        )
+        self.assertEqual(
+            runner.parse_result("note: expected 'UNIT MATCH'\n", 2)[0], "ERROR"
+        )
+        assisted_empty = (
+            ".text 80001000..80001000: 0 mismatched words\n"
+            "RESULT x.c: NORMALIZER_ASSISTED\n"
+        )
+        self.assertEqual(runner.parse_result(assisted_empty, 0)[0], "INVALID")
+
+    def test_campaign_cache_tracks_transitive_inputs(self):
+        runner = load("run_decomp_campaign")
+        from pathlib import Path
+
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            lane = root / "lane"
+            tools = lane / "tools"
+            candidates = lane / "candidates"
+            tools.mkdir(parents=True)
+            candidates.mkdir()
+            comparator = tools / "kmc_cmp.py"
+            helper = tools / "lanecfg.py"
+            header = candidates / "candidate.h"
+            candidate = candidates / "candidate.c"
+            comparator.write_text("# comparator\n")
+            helper.write_text("MODE = 1\n")
+            header.write_text("#define VALUE 1\n")
+            candidate.write_text('#include "candidate.h"\n')
+            job = {
+                "candidate": candidate,
+                "comparator": comparator,
+                "target": "80001000",
+            }
+            first = runner.digest_job(job, Path(ROOT))
+            header.write_text("#define VALUE 2\n")
+            second = runner.digest_job(job, Path(ROOT))
+            helper.write_text("MODE = 2\n")
+            third = runner.digest_job(job, Path(ROOT))
+        self.assertNotEqual(first, second)
+        self.assertNotEqual(second, third)
 
 
 if __name__ == "__main__":

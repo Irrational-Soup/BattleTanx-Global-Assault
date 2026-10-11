@@ -1,7 +1,6 @@
 unit	address	size
 model_ring_identity	0x80074F94	0x50
 camera_perspective_constants	0x80072C8C	0x3C
-collision_bounds_constants	0x80072F04	0x60
 world_collision_thresholds	0x80072F64	0x2C
 distance_metric_constants	0x800725DC	0x30
 hud_coordinate_constants	0x800730A0	0x24
@@ -19,13 +18,11 @@ path_search_constants	0x800711C0	0x5C
 waypoint_stack_constants	0x800718A0	0x18
 object_mode_tail_constants	0x800718F0	0x18
 camera_probe_constants	0x80072B90	0x8
-object_collision_constants	0x80072E84	0xC
-object_region_bounds	0x80072EE4	0x10
+object_collision_constants	0x80072E8C	0x4
 hud_scale_constant	0x8007318C	0x4
 race_bar_scale_constants	0x80073EE4	0x8
 race_bar_ratio_constants	0x80073EF0	0x10
 lightning_segment_constants	0x80075EA8	0x10
-effect_transform_template	0x80072AA0	0x4C
 results_format_constants	0x80073F00	0x2C
 race_message_style_jump_table	0x80073F50	0x1C
 object_state_jump_table	0x800724D0	0x3C

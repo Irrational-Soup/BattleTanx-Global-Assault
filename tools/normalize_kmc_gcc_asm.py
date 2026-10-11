@@ -212,9 +212,16 @@ def hilo_nops(text: str) -> str:
             while j < len(lines) and lines[j].strip() == "#nop":
                 j += 1
             hazard_use = j < len(lines) and op(lines[j]) in HILO_USE
-            scheduled_gap = (not hazard_use and j + 1 < len(lines)
+            # GCC may leave another ``#nop`` placeholder between the one
+            # independent instruction and the following HI/LO producer.
+            # Retail schedules the instruction into the first placeholder
+            # and materializes the second as the remaining hazard nop.
+            next_use = j + 1
+            while next_use < len(lines) and lines[next_use].strip() == "#nop":
+                next_use += 1
+            scheduled_gap = (not hazard_use and next_use < len(lines)
                     and op(lines[j]) and not op(lines[j]).startswith(".")
-                    and op(lines[j + 1]) in HILO_USE)
+                    and op(lines[next_use]) in HILO_USE)
             if scheduled_gap:
                 # MIPS requires two instructions between mfhi/mflo and the
                 # next mult/div.  The retail assembler schedules the one
@@ -224,6 +231,8 @@ def hilo_nops(text: str) -> str:
                 for k in range(i + 2, j):
                     lines[k] = ""
                 lines[j] = "\tnop"
+                for k in range(j + 1, next_use):
+                    lines[k] = ""
             elif j > i + 1 and hazard_use:
                 for k in range(i + 1, j):
                     lines[k] = "\tnop"
@@ -1008,6 +1017,8 @@ def reproduce_color_interpolate_load_hazard(text: str) -> str:
     before = "\tlw\t$8,16($sp)\n\t#nop\n\tdiv\t$2,$2,$8\n"
     after = "\tlw\t$8,16($sp)\n\tnop\n\tdiv\t$2,$2,$8\n"
     fires = text.count(before)
+    if fires == 0 and text.count(after) == 1:
+        return text
     if fires != 1:
         raise RuntimeError(
             f"func_800F3B80 load hazard fired {fires} times (expected 1)"
@@ -1035,6 +1046,8 @@ def reproduce_lzari_load_hazards(text: str) -> str:
             raise RuntimeError(f"{name} body not found for LZARI load hazard")
         body = match.group(0)
         fires = body.count(pattern)
+        if fires == 0 and body.count(replacement) == 1:
+            continue
         if fires != 1:
             raise RuntimeError(
                 f"{name} load-delay hazard fired {fires} times (expected 1)"
@@ -3603,6 +3616,226 @@ def shape_mission_actor_spawn(text: str) -> str:
     return text[:match.start()] + body + text[match.end():]
 
 
+def shape_effect_mesh_transform_allocations(text: str) -> str:
+    """Reproduce the retail allocation of the effect-mesh transform locals.
+
+    The C has the retail CFG and instruction selection.  GCC gives the long-
+    lived definition, visibility result, constant, and matrix pointer the
+    same four saved registers in a different priority order.  The retail
+    schedule also keeps the matrix address beside its first call instead of
+    hoisting it into the early-return delay slot.  Keep this explicitly
+    assisted and require every source-shape anchor exactly once.
+    """
+    match = re.search(
+        r"func_800A5858:.*?\n\s*\.end\s+func_800A5858\b", text, flags=re.S
+    )
+    if match is None:
+        return text
+    body = match.group(0)
+
+    branch = re.compile(
+        r"(\tbeq\t\$2,\$0,([^\n]+)\n)\taddu\t\$20,\$sp,64\n"
+    )
+    body, branch_fires = branch.subn(
+        r"\1\tli\t$8,-2147483648\t\t\t# 0x80000000\n", body, count=1
+    )
+    first_literal = (
+        "\tl.s\t$f4,$LF_lis0\n"
+        "\tli\t$8,-2147483648\t\t\t# 0x80000000\n"
+    )
+    literal_fires = body.count(first_literal)
+    body = body.replace(first_literal, "\tl.s\t$f4,$LF_lis0\n", 1)
+
+    call_setup = (
+        "\tlw\t$5,20($16)\n"
+        "\tlw\t$6,28($16)\n"
+        "\tlw\t$7,24($16)\n"
+        "\t.set\tnoreorder\n"
+        "\tjal\tfunc_8009EFD4\n"
+    )
+    call_fires = body.count(call_setup)
+    body = body.replace(
+        call_setup,
+        "\tlw\t$5,20($16)\n"
+        "\tlw\t$6,28($16)\n"
+        "\tlw\t$7,24($16)\n"
+        "\taddu\t$20,$sp,64\n"
+        "\t.set\tnoreorder\n"
+        "\tjal\tfunc_8009EFD4\n",
+        1,
+    )
+    if (branch_fires, literal_fires, call_fires) != (1, 1, 1):
+        raise RuntimeError(
+            "func_800A5858 transform schedule fired "
+            f"{branch_fires}/{literal_fires}/{call_fires} times (expected 1/1/1)"
+        )
+
+    cycle = {"17": "18", "18": "19", "19": "20", "20": "17"}
+    lines = body.split("\n")
+    for index, line in enumerate(lines):
+        # GCC already saves and restores the physical registers in retail
+        # order; only the pseudos held in those registers need cycling.
+        if re.fullmatch(
+            r"\t(?:sw|lw)\t\$(?:17|18|19|20),(?:148|152|156|160)\(\$sp\)",
+            line,
+        ):
+            continue
+        lines[index] = re.sub(
+            r"\$(17|18|19|20)\b", lambda item: "$" + cycle[item.group(1)], line
+        )
+    body = "\n".join(lines)
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_grid_node_insert_allocations(text: str) -> str:
+    """Keep the retail CSE/allocation choices in ``func_800B0E38``.
+
+    Retail retains separate raw and zero-extended copies of the ``u16`` loop
+    counter.  GCC's CSE pass shares the extension in the reconstructed TU,
+    rotating the node/write temporaries and moving the mask before ``mult``.
+    The surrounding CFG and instruction set are otherwise identical.
+    """
+    match = re.search(
+        r"func_800B0E38:.*?\n\s*\.end\s+func_800B0E38\b", text, flags=re.S
+    )
+    if match is None:
+        return text
+    body = match.group(0)
+    patterns = (
+        (
+            "\tmove\t$6,$5\n",
+            "\tmove\t$8,$5\n",
+            "entry node copy",
+        ),
+        (
+            "\tmove\t$8,$6\n"
+            "\tla\t$13,D_801166E0\n"
+            "\tla\t$12,D_801166E8\n"
+            "\tlh\t$5,16($8)\n"
+            "\tlh\t$3,0($7)\n"
+            "\tlh\t$4,18($8)\n"
+            "\tlh\t$2,2($7)\n"
+            "\tmove\t$6,$0\n"
+            "\tsubu\t$11,$5,$3\n"
+            "\tsubu\t$10,$4,$2\n",
+            "\tmove\t$6,$0\n"
+            "\tla\t$13,D_801166E0\n"
+            "\tla\t$12,D_801166E8\n"
+            "\tlh\t$5,16($8)\n"
+            "\tlh\t$3,0($7)\n"
+            "\tlh\t$4,18($8)\n"
+            "\tlh\t$2,2($7)\n"
+            "\tmove\t$11,$8\n"
+            "\tsubu\t$10,$5,$3\n"
+            "\tsubu\t$8,$4,$2\n",
+            "loop setup",
+        ),
+        (
+            "\tlhu\t$5,10($7)\n"
+            "\tandi\t$4,$6,0xffff\n"
+            "\tmult\t$4,$5\n"
+            "\tmflo\t$5\n",
+            "\tlhu\t$5,10($7)\n"
+            "\tmult\t$6,$5\n"
+            "\tmflo\t$5\n"
+            "\tandi\t$4,$6,0xffff\n",
+            "counter extension schedule",
+        ),
+        ("\taddu\t$3,$10,$3\n", "\taddu\t$3,$8,$3\n", "z offset"),
+        ("\taddu\t$2,$11,$2\n", "\taddu\t$2,$10,$2\n", "x offset"),
+        ("\taddu\t$4,$4,$8\n", "\taddu\t$4,$4,$11\n", "write node"),
+    )
+    for before, after, name in patterns:
+        fires = body.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800B0E38 {name} fired {fires} times (expected 1)"
+            )
+        body = body.replace(before, after, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_grid_node_create_allocations(text: str) -> str:
+    """Reproduce the tied allocations in ``func_800B1898``.
+
+    The reconstructed inline free-list allocator has the retail CFG, frame,
+    and instruction selection.  GCC nevertheless gives the returned node id
+    and the stack-passed kind argument the opposite pair of saved registers,
+    then rotates the allocator's three short-lived argument registers.  Keep
+    this rewrite inside the function and require the complete allocator shape
+    exactly once so a source drift cannot silently receive a partial fix.
+    """
+    match = re.search(
+        r"func_800B1898:.*?\n\s*\.end\s+func_800B1898\b", text, flags=re.S
+    )
+    if match is None:
+        return text
+    body = match.group(0)
+
+    # The two long-lived allocnos are globally exchanged in this function.
+    body = body.replace("$23", "$__grid_saved_tmp")
+    body = body.replace("$fp", "$23")
+    body = body.replace("$__grid_saved_tmp", "$fp")
+    prologue_epilogue = (
+        ("\tsw\t$23,104($sp)\n", "\tsw\t$23,100($sp)\n"),
+        ("\tsw\t$fp,100($sp)\n", "\tsw\t$fp,104($sp)\n"),
+        ("\tlw\t$23,104($sp)\n", "\tlw\t$fp,104($sp)\n"),
+        ("\tlw\t$fp,100($sp)\n", "\tlw\t$23,100($sp)\n"),
+    )
+    for before, after in prologue_epilogue:
+        fires = body.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800B1898 save/restore pattern fired {fires} times (expected 1)"
+            )
+        body = body.replace(before, after, 1)
+
+    allocator = re.search(r"(\.L11:.*?\n)(.*?)(\.L10:\n)", body, flags=re.S)
+    if allocator is None:
+        raise RuntimeError("func_800B1898 allocator block fired 0 times (expected 1)")
+    middle = allocator.group(2)
+    middle = middle.replace("$5", "$__grid_arg_tmp")
+    middle = middle.replace("$4", "$5")
+    middle = middle.replace("$__grid_arg_tmp", "$4")
+    middle = middle.replace("\tli\t$2,0x0000ffff", "\tli\t$fp,0x0000ffff", 1)
+    fires = middle.count("\tmove\t$2,$4\n")
+    if fires != 1:
+        raise RuntimeError(
+            f"func_800B1898 allocator return copy fired {fires} times (expected 1)"
+        )
+    middle = middle.replace("\tmove\t$2,$4\n", "\tmove\t$fp,$4\n", 1)
+    body = body[:allocator.start(2)] + middle + body[allocator.end(2):]
+
+    sentinel = "\tbeq\t$2,$16,.L10\n\tli\t$2,0x0000ffff"
+    if body.count(sentinel) != 1:
+        raise RuntimeError("func_800B1898 sentinel result fired 0 times (expected 1)")
+    body = body.replace(
+        sentinel, "\tbeq\t$2,$16,.L10\n\tli\t$fp,0x0000ffff", 1
+    )
+
+    before = "\n.L10:\n\tandi\t$fp,$2,0xffff\n"
+    after = "\n.L10:\n\tandi\t$4,$fp,0xffff\n"
+    fires = body.count(before)
+    if fires != 1:
+        raise RuntimeError(
+            f"func_800B1898 result narrowing fired {fires} times (expected 1)"
+        )
+    body = body.replace(before, after, 1)
+    initial_id_uses = (
+        ("\tbeq\t$fp,$2,", "\tbeq\t$4,$2,"),
+        ("\tsll\t$3,$fp,2\n", "\tsll\t$3,$4,2\n"),
+        ("\taddu\t$3,$3,$fp\n", "\taddu\t$3,$3,$4\n"),
+    )
+    for before, after in initial_id_uses:
+        fires = body.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800B1898 initial id use fired {fires} times (expected 1)"
+            )
+        body = body.replace(before, after, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
 def shape_matrix_scale_curve(text: str) -> str:
     """Reproduce func_8009277C's tied FP allocation and final schedule.
 
@@ -3673,6 +3906,55 @@ def shape_matrix_scale_curve(text: str) -> str:
             )
         body = body.replace(before, after, 1)
     return text[:match.start()] + body + text[match.end():]
+
+
+def schedule_view_state_build(text: str) -> str:
+    """Reproduce the retail preheader and ASN64 likely-slot scheduling.
+
+    The source has the correct loop and value flow.  GCC's loop pass emits the
+    reduced view pointer two instructions later than retail, while ASN64 moves
+    each independent multiply ahead of its likely branch and leaves the delay
+    slot empty.  Keep the rewrite limited to the complete function patterns.
+    """
+    if "func_800AC9E8:" not in text:
+        return text
+
+    preheader_before = (
+        "\tli\t$23,0x00000001\t\t# 1\n"
+        "\tmtc1\t$0,$f26\n"
+        "\tmove\t$17,$0\n"
+        "\tmove\t$21,$0\n"
+        "\taddu\t$20,$16,51\n"
+    )
+    preheader_after = (
+        "\tli\t$23,0x00000001\t\t# 1\n"
+        "\tmtc1\t$0,$f26\n"
+        "\taddu\t$20,$16,51\n"
+        "\tmove\t$17,$0\n"
+        "\tmove\t$21,$0\n"
+    )
+    likely_patterns = (
+        (
+            "\tbeql\t$2,$0,.L17\n\tmul.s\t$f2,$f20,$f20\n",
+            "\tmul.s\t$f2,$f20,$f20\n\tbeql\t$2,$0,.L17\n\tnop\n",
+        ),
+        (
+            "\tbc1fl\t.L17\n\tmul.s\t$f2,$f20,$f20\n",
+            "\tmul.s\t$f2,$f20,$f20\n\tbc1fl\t.L17\n\tnop\n",
+        ),
+    )
+    preheader_fires = text.count(preheader_before)
+    likely_fires = [text.count(before) for before, _ in likely_patterns]
+    if preheader_fires != 1 or likely_fires != [1, 1]:
+        raise RuntimeError(
+            "func_800AC9E8 schedule fired "
+            f"preheader={preheader_fires}, likely={likely_fires} "
+            "(expected 1, [1, 1])"
+        )
+    text = text.replace(preheader_before, preheader_after, 1)
+    for before, after in likely_patterns:
+        text = text.replace(before, after, 1)
+    return text
 
 
 def normalize_v3(source: str) -> str:
@@ -3836,6 +4118,12 @@ def normalize_v3(source: str) -> str:
         text = schedule_grid_collision_midpoint_load(text)
     if os.environ.get("V3_MISSION_ACTOR_SPAWN", "1") == "1":
         text = shape_mission_actor_spawn(text)
+    if os.environ.get("V3_EFFECT_MESH_TRANSFORM_ALLOCATIONS", "1") == "1":
+        text = shape_effect_mesh_transform_allocations(text)
+    if os.environ.get("V3_GRID_NODE_INSERT_ALLOCATIONS", "1") == "1":
+        text = shape_grid_node_insert_allocations(text)
+    if os.environ.get("V3_GRID_NODE_CREATE_ALLOCATIONS", "1") == "1":
+        text = shape_grid_node_create_allocations(text)
     if os.environ.get("V3_MATRIX_SCALE_CURVE", "1") == "1":
         text = shape_matrix_scale_curve(text)
     if os.environ.get("V3_PATH_SEQUENCE_FINAL_CALL", "1") == "1":
@@ -3864,114 +4152,9 @@ def normalize_v3(source: str) -> str:
         text = shape_sprite_phase_lifetimes(text)
     if os.environ.get("V3_EFFECT_BURST_SAVED_REGISTERS", "1") == "1":
         text = cycle_effect_burst_saved_registers(text)
-    if os.environ.get("V3_AI_LEADER_LIFETIMES", "1") == "1":
-        text = shape_ai_leader_lifetimes(text)
+    if os.environ.get("V3_VIEW_STATE_BUILD_SCHEDULE", "1") == "1":
+        text = schedule_view_state_build(text)
     return text
-
-
-def shape_ai_leader_lifetimes(text: str) -> str:
-    """Match tied pointer lifetimes and label placement in ``func_800854C4``."""
-    if "func_800854C4:" not in text:
-        return text
-    match = re.search(
-        r"func_800854C4:.*?\n\s*\.end\s+func_800854C4\b", text, flags=re.S
-    )
-    if match is None:
-        raise RuntimeError("func_800854C4 body not found")
-    body = match.group(0)
-    expected = {"$16": 14, "$17": 33}
-    counts = {
-        register: len(re.findall(re.escape(register) + r"(?!\d)", body))
-        for register in expected
-    }
-    if counts != expected:
-        raise RuntimeError(
-            f"func_800854C4 saved-register counts {counts} (expected {expected})"
-        )
-    body = re.sub(r"\$16(?!\d)", "$__ai16", body)
-    body = re.sub(r"\$17(?!\d)", "$__ai17", body)
-    body = body.replace("$__ai16", "$17").replace("$__ai17", "$16")
-    # ABI save slots belong to register numbers, not to the exchanged values.
-    frame_patterns = (
-        ("\tsw\t$16,44($sp)\n\tsw\t$17,40($sp)\n",
-         "\tsw\t$17,44($sp)\n\tsw\t$16,40($sp)\n"),
-        ("\tlw\t$16,44($sp)\n\tlw\t$17,40($sp)\n",
-         "\tlw\t$17,44($sp)\n\tlw\t$16,40($sp)\n"),
-    )
-    for before, after in frame_patterns:
-        fires = body.count(before)
-        if fires != 1:
-            raise RuntimeError(
-                f"func_800854C4 frame rewrite fired {fires} times (expected 1)"
-            )
-        body = body.replace(before, after, 1)
-    direct_patterns = (
-        ("\ts.s\t$f0,12($17)\n", "\ts.s\t$f0,380($18)\n", 1),
-        ("\ts.s\t$f0,16($17)\n", "\ts.s\t$f0,384($18)\n", 1),
-        ("\tsw\t$16,0($17)\n", "\tsw\t$16,368($18)\n", 4),
-    )
-    for before, after, expected_fires in direct_patterns:
-        fires = body.count(before)
-        if fires != expected_fires:
-            raise RuntimeError(
-                f"func_800854C4 direct-field rewrite fired {fires} times "
-                f"(expected {expected_fires})"
-            )
-        body = body.replace(before, after)
-    fp_patterns = (
-        (
-            "\tl.s\t$f4,24($sp)\n"
-            "\tl.s\t$f0,8($16)\n"
-            "\t#nop\n"
-            "\tmul.s\t$f4,$f4,$f0\n",
-            "\tl.s\t$f20,24($sp)\n"
-            "\tl.s\t$f0,8($16)\n"
-            "\t#nop\n"
-            "\tmul.s\t$f20,$f20,$f0\n",
-        ),
-        ("\tadd.s\t$f20,$f4,$f2\n", "\tadd.s\t$f20,$f20,$f2\n"),
-        (
-            "\tl.s\t$f4,16($sp)\n"
-            "\tl.s\t$f0,8($16)\n"
-            "\t#nop\n"
-            "\tmul.s\t$f4,$f4,$f0\n",
-            "\tl.s\t$f20,16($sp)\n"
-            "\tl.s\t$f0,8($16)\n"
-            "\t#nop\n"
-            "\tmul.s\t$f20,$f20,$f0\n",
-        ),
-    )
-    for before, after in fp_patterns:
-        fires = body.count(before)
-        expected_fires = 2 if before.startswith("\tadd.s") else 1
-        if fires != expected_fires:
-            raise RuntimeError(
-                f"func_800854C4 FP lifetime rewrite fired {fires} times "
-                f"(expected {expected_fires})"
-            )
-        body = body.replace(before, after)
-    for label in (".L29", ".L30"):
-        pattern = (
-            "\t.set\tnoreorder\n"
-            "\tbeql\t$6,$0,.L1\n"
-            "\tsw\t$16,368($18)\n"
-            "\t.set\tnoreorder\n"
-            f"{label}:\n"
-        )
-        replacement = (
-            f"{label}:\n"
-            "\t.set\tnoreorder\n"
-            "\tbeql\t$6,$0,.L1\n"
-            "\tsw\t$16,368($18)\n"
-            "\t.set\tnoreorder\n"
-        )
-        fires = body.count(pattern)
-        if fires != 1:
-            raise RuntimeError(
-                f"func_800854C4 {label} placement fired {fires} times (expected 1)"
-            )
-        body = body.replace(pattern, replacement, 1)
-    return text[:match.start()] + body + text[match.end():]
 
 
 def cycle_effect_burst_saved_registers(text: str) -> str:

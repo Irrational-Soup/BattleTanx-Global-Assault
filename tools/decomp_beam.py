@@ -10,6 +10,7 @@ import concurrent.futures
 import copy
 import csv
 import hashlib
+import json
 import os
 import random
 import sys
@@ -25,7 +26,7 @@ def source_hash(text):
 
 
 def render(ast, markers, generator):
-    text = markers + generator.visit(ast)
+    text = markers + perm.restore_typeof(generator.visit(ast))
     if perm.FORBID.search(text.replace("__typeof__", "")):
         return None
     return text
@@ -66,13 +67,22 @@ def main():
     ap.add_argument("--rounds", type=int, default=4)
     ap.add_argument("--beam", type=int, default=12)
     ap.add_argument("--samples", type=int, default=32)
+    ap.add_argument("--max-evals", type=int, default=2000,
+                    help="maximum distinct sources compiled per generation (0 disables)")
     ap.add_argument("--plateau-rounds", type=int, default=2,
                     help="stop after this many consecutive rounds without a better score (0 disables)")
     ap.add_argument("--jobs", type=int, default=16)
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--only"); ap.add_argument("--focus")
+    ap.add_argument(
+        "--allow-type-mutations", action="store_true",
+        help=("include int_type and param_type mutations; these can change "
+              "program semantics and require explicit review"),
+    )
     ap.add_argument("--focus-max", type=int, default=2500)
     ap.add_argument("--stop-at-zero", action="store_true")
+    ap.add_argument("--save-survivors", action="store_true",
+                    help="retain each distinct compiled output for diagnosis")
     args = ap.parse_args()
 
     vram = int(args.vram, 16)
@@ -85,6 +95,8 @@ def main():
     base = perm.parse(perm.preprocess(args.src))
     generator = perm.c_generator.CGenerator()
     kinds = list(perm.MUTATIONS)
+    if not args.allow_type_mutations:
+        kinds = [kind for kind in kinds if kind not in {"int_type", "param_type"}]
     if args.only:
         requested = [x for x in args.only.split(",") if x]
         unknown = set(requested) - set(kinds)
@@ -96,7 +108,8 @@ def main():
     base_result = perm.evaluate((args.src, base_text, vram, args.func, args.pipeline))
     if not base_result.get("ok"):
         raise SystemExit("baseline does not build: " + base_result.get("err", "unknown"))
-    beam = [(perm.score(base_result), base, base_text, base_result["hash"], "baseline")]
+    beam = [(perm.score(base_result), base, base_text, base_result["hash"],
+             "baseline", ())]
     best = beam[0]
     seen_sources = {source_hash(base_text)}
     seen_outputs = {base_result["hash"]: perm.score(base_result)}
@@ -110,7 +123,7 @@ def main():
         for round_no in range(1, args.rounds + 1):
             score_before = best[0]
             candidates = []
-            for parent_index, (_, ast, _, _, _) in enumerate(beam):
+            for parent_index, (_, ast, _, _, _, _) in enumerate(beam):
                 edges = expand(ast, args.func, kinds, args.samples,
                     args.seed + round_no * 10000019 + parent_index * 20000003,
                     markers, generator)
@@ -119,6 +132,13 @@ def main():
                         continue
                     seen_sources.add(digest)
                     candidates.append((parent_index, child_ast, text, kind, sample, digest))
+            generated = len(candidates)
+            if args.max_evals and len(candidates) > args.max_evals:
+                # Avoid bias toward the first parent or mutation family while
+                # keeping identical campaigns reproducible.
+                chooser = random.Random(args.seed + round_no * 30000011)
+                chooser.shuffle(candidates)
+                candidates = candidates[:args.max_evals]
             jobs = [(args.src, row[2], vram, args.func, args.pipeline) for row in candidates]
             survivors = list(beam)
             compiled = 0
@@ -133,7 +153,16 @@ def main():
                     if not duplicate:
                         seen_outputs[result["hash"]] = value
                         provenance = "r%d:p%d:%s:%d" % (round_no, parent_index, kind, sample)
-                        survivors.append((value, ast, text, result["hash"], provenance))
+                        history = beam[parent_index][5] + (kind,)
+                        survivors.append((value, ast, text, result["hash"], provenance,
+                                          history))
+                        if args.save_survivors:
+                            frontier = os.path.join(outdir, "survivors")
+                            os.makedirs(frontier, exist_ok=True)
+                            filename = "r%d_%s_%s.c" % (
+                                round_no, result["words"], result["hash"][:12])
+                            with open(os.path.join(frontier, filename), "w") as fh:
+                                fh.write(text)
                         if value < best[0]:
                             best = survivors[-1]
                             open(os.path.join(outdir, "best.c"), "w").write(text)
@@ -152,8 +181,9 @@ def main():
                 output_hashes.add(item[3]); beam.append(item)
                 if len(beam) == args.beam:
                     break
-            print("round %d: generated=%d compiled=%d outputs=%d beam_best=%s" %
-                  (round_no, len(candidates), compiled, len(seen_outputs), beam[0][0]), flush=True)
+            print("round %d: generated=%d sampled=%d compiled=%d outputs=%d beam_best=%s" %
+                  (round_no, generated, len(candidates), compiled,
+                   len(seen_outputs), beam[0][0]), flush=True)
             if best[0] == (0, 0):
                 exact_path = os.path.join(outdir, "exact.c")
                 open(exact_path, "w").write(best[2])
@@ -171,11 +201,19 @@ def main():
                 break
     if not os.path.isfile(os.path.join(outdir, "best.c")):
         open(os.path.join(outdir, "best.c"), "w").write(best[2])
+    review_families = {"temp", "int_type", "param_type", "alias_uses", "commute"}
+    with open(os.path.join(outdir, "candidate.json"), "w") as fh:
+        json.dump({"function": args.func, "score": best[0][0],
+                   "size_delta": best[0][1], "pipeline": args.pipeline,
+                   "mutation_history": list(best[5]),
+                   "semantic_review_required": bool(review_families & set(best[5]))},
+                  fh, indent=2, sort_keys=True)
     with open(os.path.join(outdir, "summary.tsv"), "w") as fh:
         fh.write("\t".join([args.func, os.path.join(outdir, "best.c"), args.pipeline,
             "-", str(best[0][0]), "MATCH" if best[0] == (0, 0) else "DIFF", "-",
-            "beam rounds=%d width=%d samples=%d outputs=%d" %
-            (args.rounds, args.beam, args.samples, len(seen_outputs))]) + "\n")
+            "beam rounds=%d width=%d samples=%d max_evals=%d outputs=%d" %
+            (args.rounds, args.beam, args.samples, args.max_evals,
+             len(seen_outputs))]) + "\n")
     print("done: best=%s distinct_sources=%d distinct_outputs=%d" %
           (best[0], len(seen_sources), len(seen_outputs)))
 
