@@ -137,7 +137,7 @@ segments:
       - [0xE8C8, c, code/func_8007E8C8]
       - [0xE988, c, code/func_8007E988]
       - [0xE9D0, c, code/path_collision_probe]
-      - [0xED68, asm, main_8007ED68_to_8007F128]
+      - [0xED68, c, code/path_collision_test]
       - [0xF128, c, code/path_waypoint_side]
       - [0xF59C, c, code/path_waypoint_side_select]
       - [0xF774, asm, main_8007F774_to_80080110]

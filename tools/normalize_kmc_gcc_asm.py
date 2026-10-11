@@ -1324,6 +1324,56 @@ def shape_path_waypoint_side_registers(text: str) -> str:
     return text.replace(before, after, 1)
 
 
+def shape_path_collision_probe_boolean(text: str) -> str:
+    """Select the retail boolean and branch forms in ``func_8007ED68``.
+
+    The recovered C produces a normalized boolean in ``v0``.  GCC emits an
+    equivalent xor-with-one for its negation and later selects a branch-likely
+    whose delay-slot narrowing is harmless on both paths.  Retail instead uses
+    ``sltiu`` and the ordinary branch.  Gate both complete function-local
+    patterns and require exactly one occurrence of each.
+    """
+    if "func_8007ED68:" not in text:
+        return text
+    match = re.search(
+        r"func_8007ED68:.*?\n\s*\.end\s+func_8007ED68\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_8007ED68 body not found")
+    body = match.group(0)
+
+    negate_before = (
+        "\tsltu\t$2,$2,1\n"
+        "\tand\t$2,$18,$2\n"
+        "\t.set\tnoreorder\n"
+        "\tj\t.L18\n"
+        "\txori\t$21,$2,0x0001\n"
+    )
+    negate_after = negate_before.replace(
+        "\txori\t$21,$2,0x0001\n", "\tsltu\t$21,$2,1\n"
+    )
+    fires = body.count(negate_before)
+    if fires != 1:
+        raise RuntimeError(
+            f"func_8007ED68 boolean negation fired {fires} times (expected 1)"
+        )
+    body = body.replace(negate_before, negate_after, 1)
+
+    branch_before = (
+        "\t.set\tnoreorder\n"
+        "\tbeql\t$21,$0,.L40\n"
+        "\tandi\t$2,$23,0xffff\n"
+    )
+    branch_after = branch_before.replace("\tbeql\t", "\tbeq\t", 1)
+    fires = body.count(branch_before)
+    if fires != 1:
+        raise RuntimeError(
+            f"func_8007ED68 branch form fired {fires} times (expected 1)"
+        )
+    body = body.replace(branch_before, branch_after, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
 def shape_waypoint_stack_reset_addresses(text: str) -> str:
     """Use the retail operand order for two commutative address additions."""
     if "func_8008A764:" not in text:
@@ -4721,6 +4771,8 @@ def normalize_v3(source: str) -> str:
         text = shape_angle_table_lookup_registers(text)
     if os.environ.get("V3_PATH_WAYPOINT_SIDE_REGISTERS", "1") == "1":
         text = shape_path_waypoint_side_registers(text)
+    if os.environ.get("V3_PATH_COLLISION_PROBE_BOOLEAN", "1") == "1":
+        text = shape_path_collision_probe_boolean(text)
     if os.environ.get("V3_WAYPOINT_STACK_RESET_ADDRESSES", "1") == "1":
         text = shape_waypoint_stack_reset_addresses(text)
     if os.environ.get("V3_MODEL_VERTEX_OFFSET_LOOP_REGISTERS", "1") == "1":

@@ -1369,6 +1369,33 @@ class KmcPipelineTests(unittest.TestCase):
         self.assertIn("\tlhu\t$5,250($18)\n", normalized)
         self.assertIn("\tjal\tSteps_InitStep_Free\n\tmove\t$20,$5\n", normalized)
 
+    def test_path_collision_probe_boolean_forms_are_exact_and_gated(self) -> None:
+        source = (
+            "func_8007ED68:\n"
+            "\tsltu\t$2,$2,1\n\tand\t$2,$18,$2\n"
+            "\t.set\tnoreorder\n\tj\t.L18\n\txori\t$21,$2,0x0001\n"
+            "\t.set\tnoreorder\n\tbeql\t$21,$0,.L40\n"
+            "\tandi\t$2,$23,0xffff\n"
+            "\t.end\tfunc_8007ED68\n"
+        )
+        normalized = MODULE.shape_path_collision_probe_boolean(source)
+        self.assertIn("\tsltu\t$21,$2,1\n", normalized)
+        self.assertIn("\tbeq\t$21,$0,.L40\n", normalized)
+        unrelated = source.replace("func_8007ED68", "func_8007ED64")
+        self.assertEqual(
+            unrelated, MODULE.shape_path_collision_probe_boolean(unrelated)
+        )
+
+    def test_path_collision_probe_boolean_rejects_pattern_drift(self) -> None:
+        source = (
+            "func_8007ED68:\n"
+            "\tsltu\t$2,$2,1\n\tand\t$2,$18,$2\n"
+            "\t.set\tnoreorder\n\tj\t.L18\n\txori\t$21,$2,0x0001\n"
+            "\t.end\tfunc_8007ED68\n"
+        )
+        with self.assertRaisesRegex(RuntimeError, "branch form fired 0 times"):
+            MODULE.shape_path_collision_probe_boolean(source)
+
     def test_waypoint_stack_reset_addresses_require_two_fires(self) -> None:
         source = (
             "func_8008A764:\n"
