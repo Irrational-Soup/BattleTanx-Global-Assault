@@ -4491,7 +4491,8 @@ if false; then
     build/us/src/code/800B3368.c.o \
     build/us/src/code/grid_overlap_query.c.o \
     build/us/src/code/800B3504.c.o \
-    build/us/asm/us/main_800B3748_to_800B4684.s.o \
+    build/us/src/code/grid_contact_query.c.o \
+    build/us/asm/us/main_800B3B60_to_800B4684.s.o \
     build/us/src/code/800B4684_collision_query.c.o \
     build/us/asm/us/main_800B49E0_to_800B4F38.s.o \
     build/us/src/code/func_800B4F38.c.o \

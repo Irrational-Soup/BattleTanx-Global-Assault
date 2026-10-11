@@ -1536,6 +1536,16 @@ class KmcPipelineTests(unittest.TestCase):
                 "func_80095F08:\n\tnop\n\t.end\tfunc_80095F08\n"
             )
 
+    def test_grid_contact_query_ignores_other_functions(self) -> None:
+        source = "other_function:\n\tnop\n\t.end\tother_function\n"
+        self.assertEqual(source, MODULE.shape_grid_contact_query_registers(source))
+
+    def test_grid_contact_query_rejects_partial_function(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "prologue pattern changed"):
+            MODULE.shape_grid_contact_query_registers(
+                "func_800B3748:\n\tnop\n\t.end\tfunc_800B3748\n"
+            )
+
     def test_shell_update_requires_both_schedules(self) -> None:
         with self.assertRaisesRegex(RuntimeError, r"expected \(1, 1\)"):
             MODULE.schedule_shell_update_allocations(

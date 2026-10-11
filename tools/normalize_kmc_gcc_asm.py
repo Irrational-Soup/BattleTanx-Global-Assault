@@ -4064,6 +4064,97 @@ def shape_matrix_scale_curve(text: str) -> str:
     return text[:match.start()] + body + text[match.end():]
 
 
+def shape_grid_contact_query_registers(text: str) -> str:
+    """Use the retail saved-register allocation in ``func_800B3748``.
+
+    The reconstructed C has the retail instruction set, frame, and control-flow
+    graph. GCC gives the incoming growth amount and its post-call copy the
+    opposite tied saved registers. Exchange those two registers only inside the
+    complete function, and fail closed if the compiler output drifts.
+    """
+    if "func_800B3748:" not in text:
+        return text
+    match = re.search(
+        r"func_800B3748:.*?\n\s*\.end\s+func_800B3748\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B3748 body not found")
+    body = match.group(0)
+    before = (
+        "\tsw\t$fp,88($sp)\n\tmove\t$fp,$5\n"
+        "\tsw\t$19,68($sp)\n\tmove\t$19,$7\n"
+        "\tsw\t$23,84($sp)\n\tmove\t$23,$4\n\tsw\t$6,36($sp)\n"
+        "\tandi\t$6,$23,0xffff\n\tsll\t$2,$6,2\n\taddu\t$2,$2,$6\n"
+        "\tsll\t$2,$2,3\n\tla\t$9,D_803978E0\n\tsw\t$16,56($sp)\n"
+        "\taddu\t$16,$2,$9\n\tsw\t$31,92($sp)\n\tsw\t$22,80($sp)\n"
+        "\tsw\t$21,76($sp)\n\tsw\t$20,72($sp)\n\tsw\t$18,64($sp)\n"
+        "\tsw\t$17,60($sp)\n"
+    )
+    after = (
+        "\tsw\t$fp,88($sp)\n\tmove\t$fp,$5\n"
+        "\tsw\t$17,60($sp)\n\tmove\t$17,$7\n"
+        "\tsw\t$23,84($sp)\n\tmove\t$23,$4\n\tsw\t$6,36($sp)\n"
+        "\tandi\t$6,$23,0xffff\n\tsll\t$2,$6,2\n\taddu\t$2,$2,$6\n"
+        "\tsll\t$2,$2,3\n\tla\t$9,D_803978E0\n\tsw\t$16,56($sp)\n"
+        "\taddu\t$16,$2,$9\n\tsw\t$31,92($sp)\n\tsw\t$22,80($sp)\n"
+        "\tsw\t$21,76($sp)\n\tsw\t$20,72($sp)\n\tsw\t$19,68($sp)\n"
+        "\tsw\t$18,64($sp)\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B3748 prologue pattern changed")
+    body = body.replace(before, after, 1)
+    start = body.index(after) + len(after)
+    end_marker = "\tlw\t$31,92($sp)\n"
+    end = body.find(end_marker, start)
+    if end < 0:
+        raise RuntimeError("func_800B3748 epilogue pattern changed")
+    middle = body[start:end]
+    counts = {
+        register: len(re.findall(re.escape(register) + r"(?!\d)", middle))
+        for register in ("$17", "$19")
+    }
+    if counts != {"$17": 12, "$19": 16}:
+        raise RuntimeError(
+            f"func_800B3748 body-register counts changed: {counts}"
+        )
+    middle = (
+        middle.replace("$17", "$__grid_contact_swap")
+        .replace("$19", "$17")
+        .replace("$__grid_contact_swap", "$19")
+    )
+    loop_before = (
+        "\tlhu\t$3,10($20)\n\tandi\t$6,$17,0xffff\n\tmult\t$6,$3\n"
+        "\tmflo\t$3\n\t#nop\n\tsll\t$5,$6,1\n\tla\t$9,D_801166E8\n"
+        "\taddu\t$2,$5,$9\n\tlhu\t$2,0($2)\n\tlw\t$9,52($sp)\n"
+        "\tlhu\t$4,8($20)\n\taddu\t$2,$9,$2\n\tsra\t$2,$2,10\n"
+        "\taddu\t$2,$2,$3\n\tmult\t$2,$4\n\tmflo\t$2\n\t#nop\n"
+        "\tlw\t$9,44($sp)\n\tlui\t$at,%hi(D_801166E0)\n"
+        "\taddu\t$at,$at,$5\n\tlhu\t$3,%lo(D_801166E0)($at)\n"
+        "\tmove\t$7,$fp\n\taddu\t$3,$9,$3\n\tsra\t$3,$3,10\n"
+        "\tlw\t$9,36($sp)\n\taddu\t$2,$2,$3\n\tlw\t$3,12($20)\n"
+        "\tandi\t$2,$2,0xffff\n\tsll\t$2,$2,1\n\taddu\t$2,$2,$3\n"
+        "\tlhu\t$5,2($2)\n"
+    )
+    loop_after = (
+        "\tlhu\t$4,10($20)\n\tmult\t$17,$4\n\tmflo\t$4\n\t#nop\n"
+        "\tandi\t$6,$17,0xffff\n\tsll\t$3,$6,1\n"
+        "\tlui\t$at,%hi(D_801166E8)\n\taddu\t$at,$at,$3\n"
+        "\tlhu\t$2,%lo(D_801166E8)($at)\n\tlw\t$9,52($sp)\n"
+        "\tlhu\t$5,8($20)\n\taddu\t$2,$9,$2\n\tsra\t$2,$2,10\n"
+        "\taddu\t$2,$2,$4\n\tmult\t$2,$5\n\tmflo\t$2\n\t#nop\n"
+        "\tla\t$9,D_801166E0\n\taddu\t$3,$3,$9\n\tlhu\t$3,0($3)\n"
+        "\tlw\t$9,44($sp)\n\tmove\t$7,$fp\n\taddu\t$3,$9,$3\n"
+        "\tsra\t$3,$3,10\n\tlw\t$9,36($sp)\n\taddu\t$2,$2,$3\n"
+        "\tlw\t$3,12($20)\n\tandi\t$2,$2,0xffff\n\tsll\t$2,$2,1\n"
+        "\taddu\t$3,$3,$2\n\tlhu\t$5,2($3)\n"
+    )
+    if middle.count(loop_before) != 1:
+        raise RuntimeError("func_800B3748 grid-index pattern changed")
+    middle = middle.replace(loop_before, loop_after, 1)
+    body = body[:start] + middle + body[end:]
+    return text[:match.start()] + body + text[match.end():]
+
+
 def normalize_v3(source: str) -> str:
     import os
     if os.environ.get("V3_CONTROLS_CONFIG", "1") == "1":
@@ -4233,6 +4324,8 @@ def normalize_v3(source: str) -> str:
         text = shape_effect_mesh_transform_allocations(text)
     if os.environ.get("V3_GRID_NODE_INSERT_ALLOCATIONS", "1") == "1":
         text = shape_grid_node_insert_allocations(text)
+    if os.environ.get("V3_GRID_CONTACT_QUERY_REGISTERS", "1") == "1":
+        text = shape_grid_contact_query_registers(text)
     if os.environ.get("V3_GRID_NODE_CREATE_ALLOCATIONS", "1") == "1":
         text = shape_grid_node_create_allocations(text)
     if os.environ.get("V3_MATRIX_SCALE_CURVE", "1") == "1":
