@@ -58,3 +58,4 @@ tank_input_update	0x80091768	0xFE0	normalizer-assisted
 text_layout_wrap	0x8009700C	0x3D4	normalizer-assisted
 grid_contact_query	0x800B3748	0x418	normalizer-assisted
 race_message_append	0x800CA620	0x3EC	normalizer-assisted
+path_rebuild_from_collision	0x80081C78	0x22C	normalizer-assisted

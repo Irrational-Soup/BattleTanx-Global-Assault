@@ -153,7 +153,7 @@ segments:
       - [0x10CC8, asm, main_80080CC8_to_800817E4]
       - [0x117E4, c, code/func_800817E4]
       - [0x11834, c, code/path_node_rebuild]
-      - [0x11C78, asm, main_80081C78_to_80081EA4]
+      - [0x11C78, c, code/path_rebuild_from_collision]
       - [0x11EA4, c, code/collision_hit_query]
       - [0x11FD8, c, code/object_defaults]
       - [0x12004, c, code/func_80082004]

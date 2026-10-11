@@ -1546,6 +1546,16 @@ class KmcPipelineTests(unittest.TestCase):
                 "func_800B3748:\n\tnop\n\t.end\tfunc_800B3748\n"
             )
 
+    def test_path_rebuild_registers_ignores_other_functions(self) -> None:
+        source = "other_function:\n\tnop\n\t.end\tother_function\n"
+        self.assertEqual(source, MODULE.shape_path_rebuild_registers(source))
+
+    def test_path_rebuild_registers_rejects_compiler_drift(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "compiler output changed"):
+            MODULE.shape_path_rebuild_registers(
+                "func_80081C78:\n\tnop\n\t.end\tfunc_80081C78\n"
+            )
+
     def test_race_message_style_dispatch_ignores_other_functions(self) -> None:
         source = "other_function:\n\tnop\n\t.end\tother_function\n"
         self.assertEqual(source, MODULE.shape_race_message_style_dispatch(source))

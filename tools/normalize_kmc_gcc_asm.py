@@ -12,6 +12,7 @@ that GCC emitted while reorder mode was active.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import re
 import struct
 from pathlib import Path
@@ -4155,6 +4156,129 @@ def shape_grid_contact_query_registers(text: str) -> str:
     return text[:match.start()] + body + text[match.end():]
 
 
+def shape_path_rebuild_registers(text: str) -> str:
+    """Reproduce the retail allocation and delay-slot fill in ``func_80081C78``.
+
+    The recovered C has the retail frame, calls, stack objects, and eight-block
+    control-flow graph.  GCC 2.7.2 nevertheless ranks six long-lived pseudos in
+    a different order, then leaves one otherwise safe branch delay slot empty.
+    Rewrite only the complete, known compiler output.  The body digest makes
+    this rule fail closed if any source or compiler decision drifts.
+    """
+    if "func_80081C78:" not in text:
+        return text
+    match = re.search(
+        r"func_80081C78:.*?\n\s*\.end\s+func_80081C78\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_80081C78 body not found")
+    body = match.group(0)
+    digest = hashlib.sha256(body.encode()).hexdigest()
+    expected = "aa0de4c5fc41e452e78cbb03374a27ba0d90a42e296e86a3b865be94c9f30be4"
+    if digest != expected:
+        raise RuntimeError(
+            f"func_80081C78 compiler output changed: {digest} (expected {expected})"
+        )
+
+    prologue_before = (
+        "\tsw\t$17,108($sp)\n\tmove\t$17,$4\n"
+        "\tsw\t$fp,136($sp)\n\tmove\t$fp,$5\n"
+        "\tsw\t$21,124($sp)\n\tmove\t$21,$0\n"
+        "\tsw\t$23,132($sp)\n\tmove\t$23,$0\n\tmove\t$4,$fp\n"
+        "\tsw\t$31,140($sp)\n\tsw\t$22,128($sp)\n"
+        "\tsw\t$20,120($sp)\n\tsw\t$19,116($sp)\n"
+        "\tsw\t$18,112($sp)\n\tsw\t$16,104($sp)\n"
+    )
+    prologue_after = (
+        "\tsw\t$18,112($sp)\n\tmove\t$18,$4\n"
+        "\tsw\t$fp,136($sp)\n\tmove\t$fp,$5\n"
+        "\tsw\t$21,124($sp)\n\tmove\t$21,$0\n"
+        "\tsw\t$23,132($sp)\n\tmove\t$23,$0\n\tmove\t$4,$fp\n"
+        "\tsw\t$31,140($sp)\n\tsw\t$22,128($sp)\n"
+        "\tsw\t$20,120($sp)\n\tsw\t$19,116($sp)\n"
+        "\tsw\t$17,108($sp)\n\tsw\t$16,104($sp)\n"
+    )
+    if body.count(prologue_before) != 1:
+        raise RuntimeError("func_80081C78 prologue pattern changed")
+    body = body.replace(prologue_before, prologue_after, 1)
+
+    setup_before = (
+        "\taddu\t$19,$17,8\n\tmove\t$4,$19\n\tmove\t$5,$16\n"
+        "\t.set\tnoreorder\n\tjal\tfunc_8007D628\n\tmove\t$6,$18\n"
+        "\t.set\tnoreorder\n\tli\t$3,0x00000001\t\t# 1\n"
+        "\t.set\tnoreorder\n\tbeq\t$2,$3,.L3\n\taddu\t$20,$17,240\n"
+    )
+    setup_after = (
+        "\taddu\t$20,$17,240\n\taddu\t$19,$17,8\n"
+        "\tmove\t$4,$19\n\tmove\t$5,$16\n"
+        "\t.set\tnoreorder\n\tjal\tfunc_8007D628\n\tmove\t$6,$18\n"
+        "\t.set\tnoreorder\n\tli\t$3,0x00000001\t\t# 1\n"
+        "\t.set\tnoreorder\n\tbeq\t$2,$3,.L3\n\tmove\t$4,$17\n"
+    )
+    if body.count(setup_before) != 1:
+        raise RuntimeError("func_80081C78 pointer setup pattern changed")
+    body = body.replace(setup_before, setup_after, 1)
+    first_call_before = (
+        "\tlbu\t$16,148($17)\n\tmove\t$4,$17\n"
+        "\t.set\tnoreorder\n\tjal\tfunc_8007D69C\n"
+    )
+    first_call_after = (
+        "\tlbu\t$16,148($17)\n"
+        "\t.set\tnoreorder\n\tjal\tfunc_8007D69C\n"
+    )
+    if body.count(first_call_before) != 2:
+        raise RuntimeError("func_80081C78 first-call setup pattern changed")
+    body = body.replace(first_call_before, first_call_after, 1)
+
+    branch_before = (
+        "\tbne\t$2,$0,.L3\n\tnop\n\t.set\tnoreorder\n"
+        "\tj\t.L5\n\tmove\t$21,$18\n\t.set\tnoreorder\n"
+        ".L3:\n\tlbu\t$16,148($17)\n\tmove\t$4,$17\n"
+    )
+    branch_after = (
+        "\tbne\t$2,$0,.L3\n\tmove\t$4,$17\n\t.set\tnoreorder\n"
+        "\tj\t.L5\n\tmove\t$21,$18\n\t.set\tnoreorder\n"
+        ".L3:\n\tlbu\t$16,148($17)\n"
+    )
+    if body.count(branch_before) != 1:
+        raise RuntimeError("func_80081C78 first-probe branch pattern changed")
+    body = body.replace(branch_before, branch_after, 1)
+
+    middle_start = body.index("\tlw\t$2,464($17)\n")
+    middle_end = body.index(".L5:\n", middle_start)
+    middle = body[middle_start:middle_end]
+    for old, temporary in (("$17", "$__r17"), ("$18", "$__r18"),
+                           ("$19", "$__r19"), ("$20", "$__r20"),
+                           ("$22", "$__r22")):
+        middle = middle.replace(old, temporary)
+    for temporary, new in (("$__r17", "$18"), ("$__r18", "$19"),
+                           ("$__r19", "$17"), ("$__r20", "$22"),
+                           ("$__r22", "$20")):
+        middle = middle.replace(temporary, new)
+    body = body[:middle_start] + middle + body[middle_end:]
+
+    tail_start = body.index(".L5:\n")
+    tail_end = body.index("\tlw\t$31,140($sp)\n", tail_start)
+    tail = body[tail_start:tail_end]
+    tail = tail.replace("$17", "$__entity").replace("$20", "$22")
+    tail = tail.replace("$__entity", "$18")
+    list_before = "\taddu\t$18,$22,4\n\tmove\t$5,$18\n"
+    list_after = "\taddu\t$17,$22,4\n\tmove\t$5,$17\n"
+    if tail.count(list_before) != 1:
+        raise RuntimeError("func_80081C78 path-list pattern changed")
+    tail = tail.replace(list_before, list_after, 1)
+    if tail.count("\tmove\t$4,$18\n") != 3:
+        raise RuntimeError("func_80081C78 tail entity-use count changed")
+    # The middle occurrence is the reused list pointer; the others are entity calls.
+    first = tail.find("\tmove\t$4,$18\n")
+    middle = tail.find("\tmove\t$4,$18\n", first + 1)
+    tail = tail[:middle] + tail[middle:].replace(
+        "\tmove\t$4,$18\n", "\tmove\t$4,$17\n", 1
+    )
+    body = body[:tail_start] + tail + body[tail_end:]
+    return text[:match.start()] + body + text[match.end():]
+
+
 def shape_race_message_style_dispatch(text: str) -> str:
     """Restore GCC's retail branch form for ``func_800CA620``.
 
@@ -4430,6 +4554,8 @@ def normalize_v3(source: str) -> str:
         text = shape_grid_node_insert_allocations(text)
     if os.environ.get("V3_GRID_CONTACT_QUERY_REGISTERS", "1") == "1":
         text = shape_grid_contact_query_registers(text)
+    if os.environ.get("V3_PATH_REBUILD_REGISTERS", "1") == "1":
+        text = shape_path_rebuild_registers(text)
     if os.environ.get("V3_RACE_MESSAGE_STYLE_DISPATCH", "1") == "1":
         text = shape_race_message_style_dispatch(text)
     if os.environ.get("V3_GRID_NODE_CREATE_ALLOCATIONS", "1") == "1":
