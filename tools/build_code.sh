@@ -294,10 +294,6 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/data/main_800C6918_textbin.s.o .text 0x8 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800C9A3C_to_800CA1A8.s.o asm/us/main_800C9A3C_to_800CA1A8.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800C9A3C_to_800CA1A8.s.o .text 0x76c --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800CB10C_to_800CB110.s.o asm/us/main_800CB10C_to_800CB110.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800CB10C_to_800CB110.s.o .text 0x4 --alignment 4
@@ -313,10 +309,6 @@ python3 tools/trim_elf32_section.py \
     -o build/us/asm/us/main_800D05D8_to_800D05E0.s.o asm/us/main_800D05D8_to_800D05E0.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800D05D8_to_800D05E0.s.o .text 0x8 --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800D0A74_to_800D0DF8.s.o asm/us/main_800D0A74_to_800D0DF8.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800D0A74_to_800D0DF8.s.o .text 0x384 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800D3C64_to_800D404C.s.o asm/us/main_800D3C64_to_800D404C.s
 python3 tools/trim_elf32_section.py \
@@ -4488,13 +4480,13 @@ if false; then
     build/us/src/code/grid_overlap_query.c.o \
     build/us/src/code/800B3504.c.o \
     build/us/src/code/grid_contact_query.c.o \
-    build/us/asm/us/main_800B3B60_to_800B4684.s.o \
+    build/us/src/code/grid_segment_box_test.c.o \
+    build/us/src/code/grid_segment_cell_test.c.o \
     build/us/src/code/800B4684_collision_query.c.o \
-    build/us/asm/us/main_800B49E0_to_800B4F38.s.o \
+    build/us/src/code/grid_segment_walk.c.o \
     build/us/src/code/func_800B4F38.c.o \
     build/us/asm/us/main_800B5130_to_800B5728.s.o \
     build/us/src/code/grid_edge_points.c.o \
-    build/us/src/code/hud_coordinate_constants.c.o \
     build/us/src/code/800B5A10.c.o \
     build/us/src/code/800B5B8C_mover_reflect.c.o \
     build/us/asm/us/main_800B5C48_to_800B5D1C.s.o \
@@ -4661,7 +4653,7 @@ if false; then
     build/us/src/code/race_player_set_mode_icon.c.o \
     build/us/src/code/race_display_value_set.c.o \
     build/us/src/code/race_bar_update.c.o \
-    build/us/asm/us/main_800C9A3C_to_800CA1A8.s.o \
+    build/us/src/code/race_results_hud_draw.c.o \
     build/us/src/code/race_player_reset.c.o \
     build/us/src/code/race_lap_times_clamp.c.o \
     build/us/src/code/race_timer_queries.c.o \
@@ -4722,7 +4714,7 @@ if false; then
     build/us/src/code/spawn_color_lookup.c.o \
     build/us/src/code/spawn_ctl_alloc.c.o \
     build/us/src/code/hud_element_alloc.c.o \
-    build/us/asm/us/main_800D0A74_to_800D0DF8.s.o \
+    build/us/src/code/object_interpolation_update.c.o \
     build/us/src/code/spawn_effect_by_type.c.o \
     build/us/src/code/spawn_nearest_type1.c.o \
     build/us/src/code/spawn_nearest_type28.c.o \
@@ -4756,7 +4748,6 @@ if false; then
     build/us/src/code/hud_scale_constant.c.o \
     build/us/src/code/race_bar_scale_constants.c.o \
     build/us/src/code/race_bar_ratio_constants.c.o \
-    build/us/src/code/results_format_constants.c.o \
     build/us/src/code/effect_draw.c.o \
     build/us/src/code/effect_code_table.c.o \
     build/us/src/code/effect_code_parse.c.o \

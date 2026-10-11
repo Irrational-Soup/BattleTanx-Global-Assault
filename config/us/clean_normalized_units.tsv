@@ -1,4 +1,5 @@
 # unit	vram	text_size	status
+object_interpolation_update	0x800D0A74	0x384	matched
 camera_perspective_setup	0x800A72C0	0x3A4	matched
 lightning_path_subdivide	0x800E5BB8	0x484	matched
 entry_script_dispatch	0x800DFA5C	0x1AE4	matched-mcpu-r8000
@@ -295,3 +296,5 @@ vector_angle	0x8009DDF0	0x1BC	matched
 match_result_check	0x8009B694	0xA04	matched
 waypoint_ref_resolve	0x8008A3F8	0x1EC	matched
 grid_node_separation	0x800B3018	0x350	matched
+grid_segment_box_test	0x800B3B60	0x734	matched
+contact_side_test	0x800B739C	0x118	matched

@@ -133,6 +133,22 @@ dependencies:
   maintained MIPS instruction decoder if the local comparison, boundary-audit,
   or normalizer tests need richer opcode analysis. Prefer it over adding
   hand-maintained instruction masks.
+
+### Asmlift evaluation (2026-10-11)
+
+The current public Asmlift checkout recognizes the `gcc2.7.2kmc` target, but
+cannot presently lift either of the final large grid/physics candidates:
+
+- `func_800B74B4` is declined at its first `bc1t`; the MIPS frontend does not
+  yet model floating-point condition-code branches.
+- `func_800B5130` is declined because it takes the address of a stack local;
+  local stack frames used as data are not supported.
+
+These are frontend declines before candidate generation, not mismatches from
+our compiler command. Re-evaluate Asmlift only after those two capabilities
+land upstream. Until then, `asmlift_prepare.py` remains useful for smaller
+integer-only functions without address-taken locals, but it is not a path to
+closing these targets.
 - [romjudge](https://github.com/jkbenaim/romjudge): potentially useful as an
   additional ROM header/byte-order/checksum sanity check around releases. It
   should supplement, not replace, the known-base-ROM hash and reconstruction

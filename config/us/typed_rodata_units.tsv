@@ -1,10 +1,8 @@
 unit	address	size
 model_ring_identity	0x80074F94	0x50
-hud_coordinate_constants	0x800730A0	0x24
 hud_timing_constants	0x80073120	0x30
 matrix_operation_constants	0x80072660	0x20
-grid_collision_constants	0x80073074	0x1C
+grid_collision_constants	0x80073074	0x4
 path_waypoint_constants	0x80071120	0x4
 race_bar_scale_constants	0x80073EE4	0x8
 race_bar_ratio_constants	0x80073EF0	0x10
-results_format_constants	0x80073F00	0x2C

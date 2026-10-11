@@ -400,7 +400,7 @@ mission_actor_spawn	0x800761C0	0x38
 matrix_scale_curve	0x80071F90	0x48
 vector_angle	0x800725FC	0x10
 vector_distance_normalize	0x800725DC	0x20
-hud_coordinate_constants	0x800730A0	0x24
+grid_segment_walk	0x800730A0	0x24
 object_rotation_update	0x800730F8	0x20
 grid_contact_resolve	0x80073118	0x4
 hud_timing_constants	0x80073120	0x30
@@ -409,7 +409,9 @@ ground_collision_response	0x8007317C	0x8
 matrix_operation_constants	0x80072660	0x20
 area_lighting_build	0x80072D80	0x18
 view_radius_visible	0x80072DA0	0x20
-grid_collision_constants	0x80073074	0x1C
+grid_collision_constants	0x80073074	0x4
+grid_segment_box_test	0x80073078	0xC
+grid_segment_cell_test	0x80073084	0xC
 texture_grid_tile_draw	0x80071090	0x18
 path_waypoint_constants	0x80071120	0x4
 ai_flank_path_update	0x800711C0	0x4C
@@ -430,7 +432,7 @@ race_bar_scale_constants	0x80073EE4	0x8
 race_bar_ratio_constants	0x80073EF0	0x10
 lightning_path_subdivide	0x80075EA8	0x10
 effect_mesh_transform_draw	0x80072AA0	0x4C
-results_format_constants	0x80073F00	0x2C
+race_results_hud_draw	0x80073F00	0x2C
 race_message_append	0x80073F50	0x1C
 match_result_check	0x800724D0	0x3C
 game_mode_update	0x80072518	0x40

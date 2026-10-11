@@ -3,7 +3,8 @@
 
 usage:
   permute.py SRC.c FUNC VRAM [--unit-vram HEX] [--iters N] [--jobs N] [--seed S]
-             [--name NAME] [--max-mut K] [--temp T] [--only kinds,...] [--stop-at-zero]
+             [--name NAME] [--max-mut K] [--temp T] [--only kinds,...]
+             [--metric positional|aligned] [--mutate-func NAME] [--stop-at-zero]
 
 What it does
   1. Preprocesses SRC (system cpp, -P, -I include and the source dir) so pycparser 2.22
@@ -12,8 +13,10 @@ What it does
   2. Applies 1..K random AST mutations to FUNC only (see MUTATIONS) and regenerates C.
   3. Builds each distinct source variant through the production KMC GCC 2.7.2
      compiler and normalizer, then links it at its retail address without masking.
-  4. Scores with tools/decomp_score.py: (mismatch words, |size delta|). Output-hash dedup: a variant whose
-     compiled bytes were already seen is not re-scored.
+  4. Scores with tools/decomp_score.py.  The default retains the historical
+     (mismatch words, |size delta|) metric; --metric aligned instead ranks
+     structural edits/size delta before aligned instruction differences.
+     Output-hash dedup means a compiled output is scored only once.
   5. Hill-climb with permuter-style acceptance: a variant replaces the current base when it scores
      better, or equal with probability --temp. The global best is kept separately.
   6. Every variant whose FUNC has 0 mismatching words is written to search/NAME/exact_*.c and
@@ -54,6 +57,9 @@ def preprocess(src, relax_prototypes=False):
     if p.returncode:
         raise SystemExit("cpp failed:\n" + p.stderr)
     text = p.stdout
+    # Historical matching sources commonly use GCC's alternate inline token;
+    # pycparser accepts the standard spelling and GCC treats them equivalently.
+    text = re.sub(r"\b__inline__\b", "inline", text)
     # pycparser does not accept GCC's __typeof__(expr), but temp candidates
     # must remain reusable as parents in later campaigns.  Parse stable typedef
     # placeholders, then restore the extension after rendering the AST.
@@ -156,6 +162,7 @@ def nodes_of(node, cls):
 
 
 FOCUS = [None]
+SCORE_METRIC = ["positional"]
 
 
 def compounds(fn):
@@ -778,7 +785,9 @@ def evaluate(job):
         b = kmclib.build(src, vram, focus=func, text=text, pipeline=pipeline)
         r = mclass.classify(b, func)
         h = hashlib.sha1(b["text"]).hexdigest()[:16] if isinstance(b.get("text"), (bytes, bytearray)) else b["hash"]
-        return dict(ok=True, words=r["words"], size=r["built_size"], rom=r["rom_size"], hash=h)
+        return dict(ok=True, words=r["words"], aligned=r["aligned_diffs"],
+                    structural=r["structural"], size=r["built_size"],
+                    rom=r["rom_size"], hash=h)
     except Exception as e:  # build errors are expected for some mutations
         # Preserve the complete diagnostic.  Truncating this used to hide the
         # normalizer's actual failure after the command prefix, making a
@@ -789,6 +798,13 @@ def evaluate(job):
 def score(r):
     if not r["ok"]:
         return None
+    if SCORE_METRIC[0] == "aligned":
+        # Structural edits are more disruptive than aligned substitutions, and
+        # a size delta is itself unresolved structure.  Keep those dimensions
+        # ahead of aligned rows so a shifted exact-size candidate cannot beat a
+        # nearly identical candidate merely on positional word count.
+        return (r["structural"] + abs(r["size"] - r["rom"]) // 4,
+                r["aligned"], abs(r["size"] - r["rom"]))
     return (r["words"] + 4 * abs(r["size"] - r["rom"]) // 4, abs(r["size"] - r["rom"]))
 
 
@@ -828,8 +844,16 @@ def main():
     ap.add_argument("--focus-max", type=int, default=2500)
     ap.add_argument("--pipeline", choices=("production", "raw-kmc", "asn64"),
                     default="production")
+    ap.add_argument("--metric", choices=("positional", "aligned"),
+                    default="positional",
+                    help="hill-climb score: legacy positional words, or "
+                         "structural/aligned differences")
+    ap.add_argument("--mutate-func",
+                    help="mutate this function while scoring FUNC (useful for "
+                         "inline helper bodies); defaults to FUNC")
     a = ap.parse_args()
     FOCUS[0] = a.focus; FOCUS_MAX[0] = a.focus_max
+    SCORE_METRIC[0] = a.metric
     vram = int(a.vram, 16); uvram = int(a.unit_vram, 16) if a.unit_vram else vram
     name = a.name or "%s_%s" % (os.path.splitext(os.path.basename(a.src))[0], a.seed)
     outd = os.path.join(ROOT, "build", "decomp_search", name)
@@ -837,13 +861,14 @@ def main():
     rng = random.Random(a.seed)
     mk = markers(a.src)
     base_ast = parse(preprocess(a.src))
+    mutate_func = a.mutate_func or a.func
     gen = c_generator.CGenerator()
     kinds = [k for k in MUTATIONS if not a.only or k in a.only.split(",")]
 
-    if a.focus and not compounds(find_func(base_ast, a.func)):
+    if a.focus and not compounds(find_func(base_ast, mutate_func)):
         raise SystemExit(
             "--focus text does not occur in a mutable compound inside %s: %r"
-            % (a.func, a.focus)
+            % (mutate_func, a.focus)
         )
 
     def render(ast):
@@ -897,7 +922,7 @@ def main():
             for _ in range(batch):
                 generated += 1
                 ast = copy.deepcopy(cur_ast)
-                fn = find_func(ast, a.func)
+                fn = find_func(ast, mutate_func)
                 applied = []
                 for _ in range(rng.randint(1, a.max_mut)):
                     k = rng.choice(kinds)

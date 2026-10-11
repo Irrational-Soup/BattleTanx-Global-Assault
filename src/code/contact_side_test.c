@@ -29,26 +29,33 @@ extern GridNode D_803978E0[];
 Obj *func_800EFC28(Body *b);
 
 int func_800B739C(Contact *list, u16 n) {
-    Contact *c = list;
+    Contact *c;
     Body *b;
     u16 i;
+    u16 count = n;
     int r = 0;
 
-    for (i = 0; i < n; c++, i++) {
-        GridNode *g = &D_803978E0[c->id];
+    c = list;
+    i = 0;
+    if (count) {
+        do {
+            GridNode *g = &D_803978E0[c->id];
 
-        if (g->kind == 0x200000) {
-            b = c->data->body;
-            if (func_800EFC28(b) == c->data) {
-                if (b->dir < 0) {
-                    if (c->side == 2) {
+            if (g->kind == 0x200000) {
+                b = c->data->body;
+                if (func_800EFC28(b) == c->data) {
+                    if (b->dir < 0) {
+                        if (c->side == 2) {
+                            r = 1;
+                        }
+                    } else if (c->side == 1) {
                         r = 1;
                     }
-                } else if (c->side == 1) {
-                    r = 1;
                 }
             }
-        }
+            c++;
+            i++;
+        } while (i < count);
     }
     return r;
 }

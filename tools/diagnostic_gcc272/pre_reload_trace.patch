@@ -1,0 +1,31 @@
+--- global.c
++++ global.c
+@@ -573,5 +573,29 @@
+   /* Do the reloads now while the allocno data still exist, so that we can
+      try to assign new hard regs to any pseudo regs that are spilled.  */
++  /* Diagnostic only: this is the missing boundary in GCC 2.7.2's normal
++     dumps.  The .greg dump is printed after global_alloc returns, but
++     global_alloc calls reload before returning.  Emit the allocator state
++     while allocno metadata and pre-reload reg_renumber are both intact.  */
++  if (getenv ("PRE_RELOAD_TRACE"))
++    {
++      int r;
++      fprintf (stderr, "PRE_RELOAD_BEGIN function=%s max_regno=%d allocnos=%d\n",
++               current_function_name, max_regno, max_allocno);
++      for (r = FIRST_PSEUDO_REGISTER; r < max_regno; r++)
++        {
++          int a = reg_allocno[r];
++          fprintf (stderr,
++                   "PRE_RELOAD_REG function=%s pseudo=%d hard=%d allocno=%d"
++                   " refs=%d live=%d calls=%d\n",
++                   current_function_name, r, reg_renumber[r], a,
++                   a >= 0 ? allocno_n_refs[a] : reg_n_refs[r],
++                   a >= 0 ? allocno_live_length[a] : reg_live_length[r],
++                   reg_n_calls_crossed[r]);
++        }
++      fprintf (stderr, "PRE_RELOAD_END function=%s\n",
++               current_function_name);
++    }
++
+ #if 0 /* We need to eliminate regs even if there is no rtl code,
+   if (n_basic_blocks > 0)

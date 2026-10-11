@@ -189,6 +189,16 @@ class DecompSearchTests(unittest.TestCase):
         self.assertIn("typedef signed int s32;", text)
         self.assertNotIn("M2C_FIELD", text)
 
+    def test_gcc_inline_spelling_is_normalized_for_parser(self):
+        permuter = load("decomp_permuter")
+        with tempfile.NamedTemporaryFile("w", suffix=".c") as fh:
+            fh.write("static __inline__ int helper(int x) { return x; }\n")
+            fh.flush()
+            text = permuter.preprocess(fh.name)
+            permuter.parse(text)
+        self.assertIn("static inline int helper", text)
+        self.assertNotIn("__inline__", text)
+
     def test_m2c_unknown_width_and_null_are_lowered(self):
         permuter = load("decomp_permuter")
         with tempfile.NamedTemporaryFile("w", suffix=".c") as fh:
@@ -240,6 +250,35 @@ class DecompSearchTests(unittest.TestCase):
             permuter.c_generator.CGenerator().visit(ast))
         self.assertIn("__typeof__(x) y", rendered)
         self.assertNotIn("decomp_typeof_", rendered)
+
+    def test_permuter_aligned_metric_prioritizes_structure_then_alignment(self):
+        permuter = load("decomp_permuter")
+        result = {
+            "ok": True, "words": 99, "aligned": 7, "structural": 2,
+            "size": 0x104, "rom": 0x100,
+        }
+        permuter.SCORE_METRIC[0] = "aligned"
+        try:
+            self.assertEqual(permuter.score(result), (3, 7, 4))
+        finally:
+            permuter.SCORE_METRIC[0] = "positional"
+
+    def test_permuter_positional_metric_remains_backward_compatible(self):
+        permuter = load("decomp_permuter")
+        result = {
+            "ok": True, "words": 9, "aligned": 1, "structural": 0,
+            "size": 0x108, "rom": 0x100,
+        }
+        self.assertEqual(permuter.score(result), (17, 8))
+
+    def test_permuter_exposes_aligned_metric_and_helper_mutation(self):
+        proc = subprocess.run(
+            [sys.executable, os.path.join(ROOT, "tools", "decomp_permuter.py"),
+             "--help"],
+            cwd=ROOT, check=True, capture_output=True, text=True,
+        )
+        self.assertIn("--metric", proc.stdout)
+        self.assertIn("--mutate-func", proc.stdout)
 
     def test_campaign_summary_score(self):
         campaign = load("decomp_campaign")

@@ -2825,69 +2825,6 @@ def allocate_flag_dispatch_output_to_a3(text: str) -> str:
     return text
 
 
-def shape_contact_side_test_frame(text: str) -> str:
-    """Reproduce func_800B739C's retail 56-byte saved-register frame.
-
-    The C body already emits the retail instruction stream.  GCC allocates an
-    otherwise unused eight-byte frame slot, shifting only the prologue and
-    epilogue.  Keep this gated to the function label and require both complete
-    frame patterns exactly once so source or compiler drift fails loudly.
-    """
-    if "func_800B739C:" not in text:
-        return text
-
-    patterns = (
-        (
-            "\tsubu\t$sp,$sp,64\n"
-            "\tsw\t$18,32($sp)\n\tmove\t$18,$4\n"
-            "\tsw\t$19,36($sp)\n\tmove\t$19,$0\n"
-            "\tsw\t$20,40($sp)\n\tmove\t$20,$0\n"
-            "\tandi\t$5,$5,0xffff\n"
-            "\tsw\t$31,60($sp)\n\tsw\t$fp,56($sp)\n"
-            "\tsw\t$23,52($sp)\n\tsw\t$22,48($sp)\n"
-            "\tsw\t$21,44($sp)\n\tsw\t$17,28($sp)\n",
-            "\tsubu\t$sp,$sp,56\n"
-            "\tsw\t$20,32($sp)\n\tmove\t$20,$0\n"
-            "\tsw\t$18,24($sp)\n\tmove\t$18,$4\n"
-            "\tsw\t$19,28($sp)\n\tmove\t$19,$0\n"
-            "\tandi\t$5,$5,0xffff\n"
-            "\tsw\t$31,52($sp)\n\tsw\t$fp,48($sp)\n"
-            "\tsw\t$23,44($sp)\n\tsw\t$22,40($sp)\n"
-            "\tsw\t$21,36($sp)\n\tsw\t$17,20($sp)\n",
-            "prologue",
-        ),
-        (
-            "\tlw\t$31,60($sp)\n\tlw\t$fp,56($sp)\n"
-            "\tlw\t$23,52($sp)\n\tlw\t$22,48($sp)\n"
-            "\tlw\t$21,44($sp)\n\tlw\t$20,40($sp)\n"
-            "\tlw\t$19,36($sp)\n\tlw\t$18,32($sp)\n"
-            "\tlw\t$17,28($sp)\n\tlw\t$16,24($sp)\n"
-            "\taddu\t$sp,$sp,64\n",
-            "\tlw\t$31,52($sp)\n\tlw\t$fp,48($sp)\n"
-            "\tlw\t$23,44($sp)\n\tlw\t$22,40($sp)\n"
-            "\tlw\t$21,36($sp)\n\tlw\t$20,32($sp)\n"
-            "\tlw\t$19,28($sp)\n\tlw\t$18,24($sp)\n"
-            "\tlw\t$17,20($sp)\n\tlw\t$16,16($sp)\n"
-            "\taddu\t$sp,$sp,56\n",
-            "epilogue",
-        ),
-    )
-    for old, new, name in patterns:
-        count = text.count(old)
-        if count != 1:
-            raise RuntimeError(
-                f"func_800B739C {name} rule fired {count} times; expected 1"
-            )
-        text = text.replace(old, new, 1)
-    delay_save = "\tsw\t$16,24($sp)\n"
-    if text.count(delay_save) != 1:
-        raise RuntimeError(
-            f"func_800B739C delay-save rule fired {text.count(delay_save)} times; expected 1"
-        )
-    text = text.replace(delay_save, "\tsw\t$16,16($sp)\n", 1)
-    return text
-
-
 def shape_curve_mode_dispatches(text: str) -> str:
     """Reproduce the retail case-2 switch layout in the curve helpers."""
     if "func_80079AFC:" not in text:
@@ -4907,8 +4844,6 @@ def normalize_v3(source: str) -> str:
         text = shape_ground_collision_response(text)
     if os.environ.get("V3_EFFECT_MESH_DRAW_REGISTERS", "1") == "1":
         text = shape_effect_mesh_draw_registers(text)
-    if os.environ.get("V3_CONTACT_SIDE_TEST_FRAME", "1") == "1":
-        text = shape_contact_side_test_frame(text)
     if os.environ.get("V3_CURVE_MODE_DISPATCHES", "1") == "1":
         text = shape_curve_mode_dispatches(text)
     if os.environ.get("V3_SPOTTER_FRAME_SETUP_PROLOGUE", "1") == "1":
@@ -5017,6 +4952,12 @@ def normalize_v3(source: str) -> str:
         text = shape_alt_player_setup_pair_address(text)
     if os.environ.get("V3_STEP_POOL_RELEASE_REGISTERS", "1") == "1":
         text = shape_step_pool_release_registers(text)
+    if os.environ.get("V3_GRID_SEGMENT_CELL_TEST", "1") == "1":
+        text = shape_grid_segment_cell_test(text)
+    if os.environ.get("V3_RACE_RESULTS_HUD_VALUE_SPILL", "1") == "1":
+        text = shape_race_results_hud_value_spill(text)
+    if os.environ.get("V3_GRID_SEGMENT_WALK_COUNTER", "1") == "1":
+        text = shape_grid_segment_walk_counter(text)
     if os.environ.get("V3_MATRIX_ROTATE_SETUP", "1") == "1":
         text = schedule_matrix_rotate_setup(text)
     if os.environ.get("V3_SPRITE_PHASE_LIFETIMES", "1") == "1":
@@ -5738,6 +5679,111 @@ def schedule_player_setup(text: str) -> str:
         if fires != 1:
             raise RuntimeError(
                 f"func_800A7D70 {name} schedule fired {fires} times (expected 1)"
+            )
+        text = text.replace(before, after, 1)
+    return text
+
+
+def shape_grid_segment_cell_test(text: str) -> str:
+    """Reproduce three tied sign-extension choices in ``func_800B4294``.
+
+    GCC assigns the node id through two outer control-flow arms.  Retail keeps
+    the first sign-extension shift in the branch delay slot and shares only the
+    arithmetic right shift at the join; KMC GCC emits an equivalent temporary
+    copy and a redundant left shift.  Require every exact sequence once so the
+    rule fails loudly if the recovered source changes.
+    """
+    if "func_800B4294:" not in text:
+        return text
+    patterns = (
+        (
+            "delay-slot left shift",
+            "\tbeq\t$2,$0,.L29\n\tmove\t$2,$6\n",
+            "\tbeq\t$2,$0,.L29\n\tsll\t$2,$6,16\n",
+        ),
+        (
+            "fallthrough sign extension",
+            "\tbc1f\t.L32\n\tsll\t$2,$2,16\n",
+            "\tbc1f\t.L32\n\tsra\t$2,$2,16\n",
+        ),
+        (
+            "joined sign extension",
+            ".L29:\n\tsll\t$2,$2,16\n.L32:\n\tsra\t$2,$2,16\n",
+            ".L29:\n\tsra\t$2,$2,16\n.L32:\n",
+        ),
+    )
+    for name, before, after in patterns:
+        fires = text.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800B4294 {name} rewrite fired {fires} times (expected 1)"
+            )
+        text = text.replace(before, after, 1)
+    return text
+
+
+def shape_race_results_hud_value_spill(text: str) -> str:
+    """Match the narrow stack spill used by ``func_800C9A3C``.
+
+    The defined reconstruction keeps the discovered object value in an s32,
+    although every reaching definition is an unsigned halfword. Retail uses a
+    halfword spill and reload for that same value. Reproduce only those three
+    exact stack operations; the rule is safe for the value's proven range and
+    fails loudly if its source context changes.
+    """
+    if "func_800C9A3C:" not in text:
+        return text
+    patterns = (
+        ("found-value spill", "\tsw\t$4,52($sp)\n", "\tsh\t$4,54($sp)\n"),
+        ("zero-value spill", "\tsw\t$0,52($sp)\n", "\tsh\t$0,54($sp)\n"),
+        ("sprintf value reload", "\tlw\t$7,52($sp)\n", "\tlhu\t$7,54($sp)\n"),
+    )
+    for name, before, after in patterns:
+        fires = text.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800C9A3C {name} rewrite fired {fires} times (expected 1)"
+            )
+        text = text.replace(before, after, 1)
+    return text
+
+
+def shape_grid_segment_walk_counter(text: str) -> str:
+    """Match three equivalent loop choices in ``func_800B49E0``.
+
+    Retail multiplies the raw u16 loop value before materializing its masked
+    call argument, schedules the independent increment after cell-coordinate
+    formation, and chooses the opposite destination for one commutative
+    address add. Require each complete context once.
+    """
+    if "func_800B49E0:" not in text:
+        return text
+    patterns = (
+        (
+            "counter multiply",
+            "\tlhu\t$4,10($19)\n\tandi\t$7,$16,0xffff\n"
+            "\tmult\t$7,$4\n\tmflo\t$4\n",
+            "\tlhu\t$4,10($19)\n\tmult\t$16,$4\n"
+            "\tmflo\t$4\n\tandi\t$7,$16,0xffff\n",
+        ),
+        (
+            "counter increment",
+            "\tlhu\t$3,0($3)\n\taddu\t$16,$16,1\n"
+            "\taddu\t$3,$18,$3\n\tsra\t$3,$3,10\n",
+            "\tlhu\t$3,0($3)\n\taddu\t$3,$18,$3\n"
+            "\tsra\t$3,$3,10\n\taddu\t$16,$16,1\n",
+        ),
+        (
+            "cell address add",
+            "\tsll\t$2,$2,1\n\taddu\t$2,$2,$3\n\tlhu\t$6,2($2)\n",
+            "\tsll\t$2,$2,1\n\taddu\t$3,$3,$2\n\tlhu\t$6,2($3)\n",
+        ),
+    )
+    for name, before, after in patterns:
+        fires = text.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_800B49E0 {name} rewrite fired {fires} times (expected 1)"
             )
         text = text.replace(before, after, 1)
     return text

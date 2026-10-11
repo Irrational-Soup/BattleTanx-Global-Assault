@@ -1,4 +1,7 @@
 # unit	vram	text_size	status
+grid_segment_walk	0x800B49E0	0x558	normalizer-assisted
+race_results_hud_draw	0x800C9A3C	0x76C	normalizer-assisted
+grid_segment_cell_test	0x800B4294	0x3F0	normalizer-assisted
 alternate_player_setup	0x800A80AC	0x5E4	normalizer-assisted
 task_class_init	0x800A22CC	0x8A8	normalizer-assisted
 step_pool_release	0x8007DBE0	0x174	normalizer-assisted
@@ -36,7 +39,6 @@ spotter_update	0x800A6C20	0x3B0	normalizer-assisted
 spotter_frame_setup	0x800A6FD0	0x5C	normalizer-assisted
 progress_level_advance	0x8009C31C	0x208	normalizer-assisted
 grid_node_remove	0x800B0F4C	0x150	normalizer-assisted
-contact_side_test	0x800B739C	0x118	normalizer-assisted
 curve_mode	0x80079AFC	0xFC	normalizer-assisted
 func_800A1384	0x800A1384	0x88	normalizer-assisted
 grid_collision_push	0x800B2488	0x408	normalizer-assisted
