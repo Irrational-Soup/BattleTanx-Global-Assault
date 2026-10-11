@@ -4751,7 +4751,6 @@ if false; then
     build/us/src/code/func_800D6508.c.o \
     build/us/src/code/model_ring_identity.c.o \
     build/us/src/code/path_waypoint_constants.c.o \
-    build/us/src/code/path_route_constants.c.o \
     build/us/src/code/path_search_constants.c.o \
     build/us/src/code/object_mode_constants.c.o \
     build/us/src/code/tank_motion_constant.c.o \

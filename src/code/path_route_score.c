@@ -1,11 +1,12 @@
 /* SPAN 0x80080818 */
 /* RODATA_VRAM 0x800711A4 */
+/* LDSYM Steps_InitStep_Free=0x8007DA5C */
 typedef unsigned char u8; typedef unsigned short u16;
 typedef struct Node { u8 type; char p1; u16 link; float x; float y; } Node;
 typedef struct { char p0[0x110]; float start[2]; float goal[2]; } Ent;
 typedef struct { char p0[4]; float key; float dist; } Item;
 Node *Steps_InitStep_Free(int);
-float func_8007F774(Ent *, Item *);
+float func_8007F774(Ent *, float *);
 #define ABS(x) ((x) > 0.0f ? (x) : -(x))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
@@ -20,6 +21,6 @@ static inline float *node_pos(Ent *e, Node *n) {
 }
 
 void func_80080110(Ent *e, Item *it) {
-    it->key = func_8007F774(e, it);
+    it->key = func_8007F774(e, (float *)it);
     it->dist = DIST(node_pos(e, (Node *)it)[0] - e->goal[0], node_pos(e, (Node *)it)[1] - e->goal[1]);
 }

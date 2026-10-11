@@ -1125,6 +1125,48 @@ class KmcPipelineTests(unittest.TestCase):
             normalized,
         )
 
+    def test_path_route_distance_hazards_are_function_gated(self) -> None:
+        source = (
+            "func_8007F770:\n"
+            "\tadd.s\t$f0,$f2,$f0\n"
+            ".L7:\n"
+            "\tmul.s\t$f0,$f0,$f28\n"
+            "\t.end\tfunc_8007F770\n"
+        )
+        self.assertEqual(
+            source, MODULE.suppress_path_route_distance_label_hazards(source)
+        )
+
+    def test_path_route_distance_hazards_require_four_fires(self) -> None:
+        source = (
+            "func_8007F774:\n"
+            "\tadd.s\t$f0,$f2,$f0\n"
+            ".L7:\n"
+            "\tmul.s\t$f0,$f0,$f28\n"
+            "\t.end\tfunc_8007F774\n"
+        )
+        with self.assertRaisesRegex(RuntimeError, "fired 1 times"):
+            MODULE.suppress_path_route_distance_label_hazards(source)
+
+    def test_path_route_distance_hazards_preserve_targets(self) -> None:
+        sites = []
+        for index in range(4):
+            op = "add.s" if index < 2 else "neg.s"
+            operands = "$f0,$f2,$f0" if op == "add.s" else "$f0,$f0"
+            sites.append(
+                f"\t{op}\t{operands}\n"
+                f"\t.set\tnoreorder\n.L{index + 1}:\n"
+                "\tmul.s\t$f0,$f0,$f28\n"
+            )
+        source = (
+            "func_8007F774:\n" + "".join(sites) +
+            "\t.end\tfunc_8007F774\n"
+        )
+        normalized = MODULE.suppress_path_route_distance_label_hazards(source)
+        for index in range(4):
+            self.assertIn(f".L{index + 1} = . + 4\n", normalized)
+        self.assertEqual(4, normalized.count("\tmul.s\t$f0,$f0,$f28\n"))
+
     def test_distance_multiply_hazard_requires_declared_fire_count(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "fired 0 times"):
             MODULE.suppress_distance_multiply_hazard_nops(

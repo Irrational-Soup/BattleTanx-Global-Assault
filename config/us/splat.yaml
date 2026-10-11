@@ -140,7 +140,7 @@ segments:
       - [0xED68, c, code/path_collision_test]
       - [0xF128, c, code/path_waypoint_side]
       - [0xF59C, c, code/path_waypoint_side_select]
-      - [0xF774, asm, main_8007F774_to_80080110]
+      - [0xF774, c, code/path_route_distance]
       - [0x10110, c, code/path_route_score]
       - [0x10818, c, code/func_80080818]
       - [0x108B4, c, code/func_800808B4]
