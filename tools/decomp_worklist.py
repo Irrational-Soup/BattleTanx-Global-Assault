@@ -13,12 +13,14 @@ import decomp_compile  # noqa: E402
 
 
 NEXT = {
-    "source_structure": "reconstruct CFG/types using matched siblings; do not permute",
+    # Retain legacy key for previously captured contexts; it was only a hint.
+    "source_structure": "legacy size/CFG hint: verify compiler/reload/assembler origin before rewriting C",
+    "size_or_cfg_difference": "compare raw assembly, assembler hazards and pre/post reload; audit source CFG only with evidence",
     "instruction_selection_or_types": "audit field widths, signedness, casts and packed layout",
     "stack_layout_or_lifetime": "capture RTL allocation stages; test scope/lifetime hypotheses",
     "control_flow_or_calls": "audit branch/call structure and observable call effects",
     "linking_rodata_or_ownership": "resolve TU ownership, constants, relocations and alignment",
-    "register_allocation": "compare allocation RTL with matched corpus; then bounded lifetime search",
+    "register_allocation": "inspect quantities and reg_renumber; distinguish pre-reload allocation from reload repairs",
     "instruction_scheduling": "compare scheduler RTL and assembler output separately",
     "mixed_codegen": "capture RTL stages and isolate the first divergent compiler pass",
     "infrastructure": "repair or replace the non-building draft before scoring",

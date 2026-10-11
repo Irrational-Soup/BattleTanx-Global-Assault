@@ -25,7 +25,6 @@ align_8007248C	0x8007248C	0x4
 # authored data object nor executable code. Some bytes retain stale fragments
 # from neighboring strings because the original toolchain aligned the next
 # input section without clearing the gap.
-align_8007253C	0x8007253C	0x4
 align_800725BC	0x800725BC	0x4
 align_80072634	0x80072634	0xC
 align_80072694	0x80072694	0xC

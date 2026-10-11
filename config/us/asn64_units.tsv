@@ -12,3 +12,5 @@ effect_sprite_ring_draw	0x800A42C8	0x1A0	asn64-clean
 800B4684_collision_query	0x800B4684	0x35C	asn64-clean
 800B5B8C_mover_reflect	0x800B5B8C	0xBC	asn64-clean
 mover_advance	0x800B66E0	0x254	asn64-clean
+tank_steering_update	0x80090DCC	0x99C	asn64-clean
+camera_shake_falloff	0x800A7090	0x1FC	asn64-clean

@@ -1,4 +1,11 @@
 # unit	vram	text_size	status
+lightning_path_subdivide	0x800E5BB8	0x484	matched
+entry_script_dispatch	0x800DFA5C	0x1AE4	matched-mcpu-r8000
+grid_contact_resolve	0x800B6F40	0x45C	matched
+object_rotation_update	0x800B69F4	0x2D0	matched
+grid_corner_sweep	0x800B6CC4	0x27C	matched
+grid_tile_walk	0x8007C718	0x2A0	matched
+path_node_rebuild	0x80081834	0x444	matched
 vector_distance_normalize	0x8009DB2C	0x2C4	matched
 view_project_point	0x800ACCB4	0x1B8	matched
 grid_surface_height	0x800B83A8	0x3F8	matched
@@ -275,3 +282,5 @@ world_object_draw	0x800AF978	0x8F0	matched
 world_edge_register	0x800AB980	0x4EC	matched
 ground_corner_probe	0x800B9094	0x310	matched
 grid_edge_points	0x800B5728	0x2E8	matched
+game_mode_update	0x8009C524	0xC20	matched
+model_group_display_patch	0x80095FE0	0x270	matched

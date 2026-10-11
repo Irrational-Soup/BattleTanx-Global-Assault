@@ -1566,5 +1566,74 @@ class KmcPipelineTests(unittest.TestCase):
                 "func_800B1898:\n\tnop\n\t.end\tfunc_800B1898\n"
             )
 
+    def test_grid_node_move_pointer_spill_is_exact_and_gated(self) -> None:
+        sequence = (
+            "\tsw\t$21,60($sp)\n"
+            "\tlh\t$3,16($21)\n"
+            "\tlh\t$4,0($16)\n"
+            "\tlh\t$2,18($21)\n"
+            "\tlh\t$5,2($16)\n"
+            "\tmove\t$17,$0\n"
+        )
+        source = "func_800B129C:\n" + sequence + "\t.end\tfunc_800B129C\n"
+        normalized = MODULE.schedule_grid_node_move_pointer_spill(source)
+        self.assertIn(
+            "\tlh\t$3,16($21)\n"
+            "\tlh\t$4,0($16)\n"
+            "\tlh\t$2,18($21)\n"
+            "\tlh\t$5,2($16)\n"
+            "\tmove\t$17,$0\n"
+            "\tsw\t$21,60($sp)\n",
+            normalized,
+        )
+        unrelated = source.replace("func_800B129C", "func_800B1298")
+        self.assertEqual(
+            unrelated,
+            MODULE.schedule_grid_node_move_pointer_spill(unrelated),
+        )
+
+    def test_grid_node_move_pointer_spill_rejects_drift(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "fired 0 times"):
+            MODULE.schedule_grid_node_move_pointer_spill(
+                "func_800B129C:\n\tsw\t$21,56($sp)\n"
+            )
+
+    def test_tank_input_update_rejects_partial_allocation_shape(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "multiply hazard fired 0 times"):
+            MODULE.shape_tank_input_update_allocations(
+                "func_80091768:\n\tnop\n\t.end\tfunc_80091768\n"
+            )
+
+    def test_text_layout_wrap_allocation_is_exact_and_gated(self) -> None:
+        source = (
+            "func_8009700C:\n"
+            "\tmove\t$16,$0\n\tmove\t$19,$0\n\tmove\t$20,$0\n"
+            "\tmove\t$17,$0\n"
+            "\tbne\t$4,$13,.L6\n\tmove\t$23,$0\n"
+            + "\tmove\t$23,$16\n" * 4
+            + "\tsll\t$2,$23,16\n\t.set\tnoreorder\n"
+            "\tbne\t$2,$0,.L21\n\tmove\t$fp,$23\n"
+            "\taddu\t$2,$16,-1\n\tmove\t$fp,$2\n"
+            + "\tj\t.L49\n\tsll\t$2,$fp,16\n"
+            ".L50:\n\tsll\t$2,$fp,16\n"
+            + "\tbne\t$2,$0,.L36\n\taddu\t$8,$8,$fp\n"
+            ".L36:\n\tsll\t$2,$23,16\n"
+            "\t.end\tfunc_8009700C\n"
+        )
+        normalized = MODULE.shape_text_layout_wrap_allocations(source)
+        self.assertIn("\tmove\t$fp,$0\n", normalized)
+        self.assertEqual(normalized.count("\tmove\t$fp,$16\n"), 4)
+        self.assertIn("\tmove\t$23,$fp\n", normalized)
+        self.assertIn("\taddu\t$8,$8,$23\n", normalized)
+        unrelated = source.replace("func_8009700C", "func_80097008")
+        self.assertEqual(unrelated,
+                         MODULE.shape_text_layout_wrap_allocations(unrelated))
+
+    def test_text_layout_wrap_allocation_rejects_drift(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "outer counters fired 0 times"):
+            MODULE.shape_text_layout_wrap_allocations(
+                "func_8009700C:\n\tnop\n\t.end\tfunc_8009700C\n"
+            )
+
 if __name__ == "__main__":
     unittest.main()

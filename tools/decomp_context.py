@@ -74,11 +74,12 @@ def tool_inputs(pipeline):
 
 
 def diagnosis(result):
+    """Return a triage hint, never an established compiler-pass diagnosis."""
     if result["words"] == 0 and result["built_size"] == result["rom_size"]:
         return "exact"
     classes = result["classes"]
     if result["built_size"] != result["rom_size"] or result["blocks"]["built"] != result["blocks"]["rom"]:
-        return "source_structure"
+        return "size_or_cfg_difference"
     if classes.get("branch_inv", 0) or classes.get("call", 0):
         return "control_flow_or_calls"
     if result["pure_regname"] or (classes.get("regname", 0) and result["opcode_identical"]):
@@ -92,6 +93,25 @@ def diagnosis(result):
     if any(classes.get(k, 0) for k in ("insert", "delete", "replace")):
         return "instruction_selection_or_types"
     return "mixed_codegen"
+
+
+def diagnostic_evidence(result):
+    """Keep output observations separate from unproved causal hypotheses.
+
+    Retail has no available RTL or allocation tables. Final instruction diffs
+    alone cannot establish which compiler/assembler phase produced a change.
+    In GCC 2.7.2 the .greg dump is after reload, not a pre-reload checkpoint.
+    """
+    return {
+        "basis": "final_output_only",
+        "established_producer": None,
+        "size_delta": result["built_size"] - result["rom_size"],
+        "block_count_delta": result["blocks"]["built"] - result["blocks"]["rom"],
+        "instruction_difference_classes": dict(result["classes"]),
+        "possible_producers": (["source_or_types", "compiler_allocation_or_reload",
+                                 "compiler_scheduling", "assembler_or_linker"]
+                                if diagnosis(result) != "exact" else []),
+    }
 
 
 def evaluate(source, function, vram, unit_vram, pipeline, capture_dumps=False,
@@ -127,6 +147,7 @@ def evaluate(source, function, vram, unit_vram, pipeline, capture_dumps=False,
     result = {
         "schema": SCHEMA, "context": context, "status": "MATCH" if exact else "DIFF",
         "exact": exact, "diagnosis": diagnosis(classified),
+        "diagnostic_evidence": diagnostic_evidence(classified),
         "comparison": classified,
         "actual": {"size": len(actual), "sha256": sha256_bytes(actual)},
         "assembly": {"raw_sha256": sha256_bytes(built["raw_s"].encode()),

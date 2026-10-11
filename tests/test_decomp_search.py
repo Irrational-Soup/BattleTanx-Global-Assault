@@ -34,7 +34,22 @@ class DecompSearchTests(unittest.TestCase):
         }
         self.assertEqual(context.diagnosis(base), "register_allocation")
         structural = dict(base, built_size=12, pure_regname=False)
-        self.assertEqual(context.diagnosis(structural), "source_structure")
+        self.assertEqual(context.diagnosis(structural), "size_or_cfg_difference")
+
+    def test_extra_instruction_does_not_establish_source_cause(self):
+        context = load("decomp_context")
+        extra_nop = {
+            "words": 1, "built_size": 20, "rom_size": 16,
+            "classes": {"insert": 1}, "blocks": {"built": 1, "rom": 1},
+            "pure_regname": False, "opcode_identical": False, "structural": 1,
+        }
+        self.assertEqual(context.diagnosis(extra_nop), "size_or_cfg_difference")
+        evidence = context.diagnostic_evidence(extra_nop)
+        self.assertIsNone(evidence["established_producer"])
+        self.assertEqual(evidence["size_delta"], 4)
+        self.assertEqual(evidence["block_count_delta"], 0)
+        self.assertIn("compiler_allocation_or_reload", evidence["possible_producers"])
+        self.assertIn("assembler_or_linker", evidence["possible_producers"])
 
     def test_sibling_similarity_prefers_identical_features(self):
         siblings = load("decomp_siblings")
@@ -46,7 +61,7 @@ class DecompSearchTests(unittest.TestCase):
 
     def test_worklist_has_actions_for_every_diagnosis(self):
         worklist = load("decomp_worklist")
-        expected = {"source_structure", "instruction_selection_or_types",
+        expected = {"source_structure", "size_or_cfg_difference", "instruction_selection_or_types",
                     "stack_layout_or_lifetime", "control_flow_or_calls",
                     "linking_rodata_or_ownership", "register_allocation",
                     "instruction_scheduling", "mixed_codegen",

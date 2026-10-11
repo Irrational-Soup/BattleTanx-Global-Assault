@@ -9,7 +9,7 @@ grid_node_insert	0x800B0E38	0x114	normalizer-assisted
 func_800D6508	0x800D6508	0x2E8	normalizer-assisted
 func_800F01F0	0x800F01F0	0x428	normalizer-assisted
 func_8009060C	0x8009060C	0x3C0	normalizer-assisted
-func_8009299C	0x8009299C	0x29C	normalizer-assisted
+func_8009299C	0x8009299C	0x1DA8	normalizer-assisted
 func_8007D5B0	0x8007D5B0	0x78	normalizer-assisted
 spatial_sound_play	0x80097FB4	0x188	normalizer-assisted
 path_sequence_init	0x80082D98	0x184	normalizer-assisted
@@ -52,3 +52,6 @@ billboard_command_update	0x800EBDA0	0x1E0	normalizer-assisted
 ai_object_search_update	0x80084278	0x48C	normalizer-assisted
 matrix_scale_curve	0x8009277C	0x220	normalizer-assisted
 grid_node_create	0x800B1898	0x510	normalizer-assisted
+grid_node_move	0x800B129C	0x20C	normalizer-assisted
+tank_input_update	0x80091768	0xFE0	normalizer-assisted
+text_layout_wrap	0x8009700C	0x3D4	normalizer-assisted

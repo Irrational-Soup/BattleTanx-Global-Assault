@@ -84,9 +84,13 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_8007B8EC_to_8007BCF0.s.o .text 0x404 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_8007C364_to_8007D33C.s.o asm/us/main_8007C364_to_8007D33C.s
+    -o build/us/asm/us/main_8007C364_to_8007C718.s.o asm/us/main_8007C364_to_8007C718.s
 python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_8007C364_to_8007D33C.s.o .text 0xfd8 --alignment 4
+    build/us/asm/us/main_8007C364_to_8007C718.s.o .text 0x3b4 --alignment 4
+"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
+    -o build/us/asm/us/main_8007C9B8_to_8007D33C.s.o asm/us/main_8007C9B8_to_8007D33C.s
+python3 tools/trim_elf32_section.py \
+    build/us/asm/us/main_8007C9B8_to_8007D33C.s.o .text 0x990 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_8007D468_to_8007D470.s.o asm/us/main_8007D468_to_8007D470.s
 python3 tools/trim_elf32_section.py \
@@ -407,10 +411,6 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800DF0C4_to_800DF0D0.s.o .text 0xc --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800DFA5C_to_800E1540.s.o asm/us/main_800DFA5C_to_800E1540.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800DFA5C_to_800E1540.s.o .text 0x1ae4 --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800E16D8_to_800E18D8.s.o asm/us/main_800E16D8_to_800E18D8.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800E16D8_to_800E18D8.s.o .text 0x200 --alignment 4
@@ -443,9 +443,9 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800E58C4_to_800E58D0.s.o .text 0xc --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800E5BB8_to_800E6040.s.o asm/us/main_800E5BB8_to_800E6040.s
+    -o build/us/asm/us/main_800E603C_to_800E6040.s.o asm/us/main_800E603C_to_800E6040.s
 python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800E5BB8_to_800E6040.s.o .text 0x488 --alignment 4
+    build/us/asm/us/main_800E603C_to_800E6040.s.o .text 0x4 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800E64EC_to_800E64F0.s.o asm/us/main_800E64EC_to_800E64F0.s
 python3 tools/trim_elf32_section.py \
@@ -1624,8 +1624,16 @@ while IFS=$'\t' read -r unit address text_size status; do
     case "$unit" in
         \#*|unit|'') continue ;;
     esac
+    extra_cflags=()
+    case "$status" in
+        matched-mcpu-r8000)
+            # This original TU uses BRANCH_COST 1 while retaining R4000-style
+            # scheduling; GCC 2.7.2's r8000 model is the exact combination.
+            extra_cflags+=(-mcpu=r8000)
+            ;;
+    esac
     .toolchain/kmc-gcc-2.7.2/gcc -B.toolchain/kmc-gcc-2.7.2/ -S \
-        -O2 -G0 -mips3 -mgp32 -mfp32 -Iinclude \
+        -O2 -G0 -mips3 -mgp32 -mfp32 "${extra_cflags[@]}" -Iinclude \
         -o "build/us/src/code/${unit}.raw.s" "src/code/${unit}.c"
     python3 tools/normalize_kmc_gcc_asm.py \
         "build/us/src/code/${unit}.raw.s" "build/us/src/code/${unit}.s"
@@ -4170,7 +4178,9 @@ if false; then
     build/us/src/code/asset_load.c.o \
     build/us/src/code/video_mode.c.o \
     build/us/src/code/texture_tile.c.o \
-    build/us/asm/us/main_8007C364_to_8007D470.s.o \
+    build/us/asm/us/main_8007C364_to_8007C718.s.o \
+    build/us/src/code/grid_tile_walk.c.o \
+    build/us/asm/us/main_8007C9B8_to_8007D33C.s.o \
     build/us/src/code/small_state.c.o \
     build/us/src/code/mapped_record.c.o \
     build/us/src/code/small_state_copy.c.o \
@@ -4396,7 +4406,8 @@ if false; then
     build/us/src/code/spotter_update.c.o \
     build/us/src/code/spotter_frame_setup.c.o \
     build/us/src/code/func_800A702C.c.o \
-    build/us/asm/us/main_800A7090_to_800A7290.s.o \
+    build/us/src/code/camera_shake_falloff.c.o \
+    build/us/asm/us/main_800A728C_to_800A7290.s.o \
     build/us/src/code/camera_perspective_constants.c.o \
     build/us/src/code/object_init.c.o \
     build/us/asm/us/main_800A72C0_to_800A7664.s.o \
@@ -4516,8 +4527,9 @@ if false; then
     build/us/src/code/800B61B8.c.o \
     build/us/src/code/mover_advance.c.o \
     build/us/src/code/func_800B6934.c.o \
-    build/us/asm/us/main_800B69F4_to_800B739C.s.o \
-    build/us/src/code/hud_layout_constants.c.o \
+    build/us/src/code/object_rotation_update.c.o \
+    build/us/src/code/grid_corner_sweep.c.o \
+    build/us/src/code/grid_contact_resolve.c.o \
     build/us/src/code/hud_timing_constants.c.o \
     build/us/src/code/contact_side_test.c.o \
     build/us/asm/us/main_800B74B4_to_800B8100.s.o \
@@ -4767,11 +4779,9 @@ if false; then
     build/us/src/code/waypoint_stack_constants.c.o \
     build/us/src/code/object_mode_constants.c.o \
     build/us/src/code/tank_motion_constant.c.o \
-    build/us/src/code/camera_probe_constants.c.o \
     build/us/src/code/hud_scale_constant.c.o \
     build/us/src/code/race_bar_scale_constants.c.o \
     build/us/src/code/race_bar_ratio_constants.c.o \
-    build/us/src/code/lightning_segment_constants.c.o \
     build/us/src/code/results_format_constants.c.o \
     build/us/src/code/effect_draw.c.o \
     build/us/src/code/effect_code_table.c.o \
@@ -4855,7 +4865,7 @@ if false; then
     build/us/src/code/slot_entry_lookup.c.o \
     build/us/src/code/level_prop_points_find.c.o \
     build/us/src/code/800DF89C_entry_helpers.c.o \
-    build/us/asm/us/main_800DFA5C_to_800E1540.s.o \
+    build/us/src/code/entry_script_dispatch.c.o \
     build/us/src/code/foliage_prop_create.c.o \
     build/us/src/code/800E16D8_foliage_prop_destroy.c.o \
     build/us/src/code/player_message_hit.c.o \
@@ -4892,7 +4902,8 @@ if false; then
     build/us/src/code/bridge_create_handlers.c.o \
     build/us/asm/us/main_800E58C4_to_800E58D0.s.o \
     build/us/src/code/bridge_segments_init.c.o \
-    build/us/asm/us/main_800E5BB8_to_800E6040.s.o \
+    build/us/src/code/lightning_path_subdivide.c.o \
+    build/us/asm/us/main_800E603C_to_800E6040.s.o \
     build/us/src/code/bridge_piece_spawn.c.o \
     build/us/src/code/lightning_arc_update.c.o \
     build/us/asm/us/main_800E64EC_to_800E64F0.s.o \

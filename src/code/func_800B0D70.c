@@ -10,7 +10,8 @@ extern LinkEntryB0D70 D_803978E0;
 #define ENTRY_LINK(index, link_index) \
     ((&D_803978E0)[(index)].links[(link_index)])
 
-s32 func_800B0D70(u16 target, u16 *head, u16 link_index) {
+s32 func_800B0D70(u32 raw_target, u16 *head, u16 link_index) {
+    u16 target = raw_target;
     u16 initial;
     u16 current;
     u16 next;

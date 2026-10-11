@@ -17,7 +17,3 @@ const float D_800711FC = 8.0f;
 const float D_80071200 = 3.0f;
 const float D_80071204 = 8.0f;
 const float D_80071208 = 100.0f;
-const float D_8007120C = 3.0f;
-const float D_80071210 = 8.0f;
-const float D_80071214 = 3.0f;
-const float D_80071218 = 8.0f;

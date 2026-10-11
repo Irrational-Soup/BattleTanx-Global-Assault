@@ -3532,6 +3532,188 @@ def schedule_grid_collision_midpoint_load(text: str) -> str:
     return text.replace(before, after, 1)
 
 
+def schedule_grid_node_move_pointer_spill(text: str) -> str:
+    """Reproduce the retail sched1 order in ``func_800B129C``.
+
+    GCC gives the four coordinate loads critical-path priority and hoists the
+    independent saved node-pointer spill ahead of them.  The retail object
+    keeps the spill after those loads and the loop-counter initialization.
+    The complete function-local sequence and one-fire requirement make source
+    or register-allocation drift fail instead of silently rewriting it.
+    """
+    if "func_800B129C:" not in text:
+        return text
+    before = (
+        "\tsw\t$21,60($sp)\n"
+        "\tlh\t$3,16($21)\n"
+        "\tlh\t$4,0($16)\n"
+        "\tlh\t$2,18($21)\n"
+        "\tlh\t$5,2($16)\n"
+        "\tmove\t$17,$0\n"
+    )
+    after = (
+        "\tlh\t$3,16($21)\n"
+        "\tlh\t$4,0($16)\n"
+        "\tlh\t$2,18($21)\n"
+        "\tlh\t$5,2($16)\n"
+        "\tmove\t$17,$0\n"
+        "\tsw\t$21,60($sp)\n"
+    )
+    fires = text.count(before)
+    if fires != 1:
+        raise RuntimeError(
+            "func_800B129C pointer-spill schedule fired "
+            f"{fires} times (expected 1)"
+        )
+    return text.replace(before, after, 1)
+
+
+def shape_tank_input_update_allocations(text: str) -> str:
+    """Reproduce three independently traced decisions in ``func_80091768``.
+
+    The C candidate is otherwise exact.  GCC's global allocator assigns the
+    turn limit/maximum/amount chain to a0/a1/v1 instead of retail's a2/a0/a2,
+    while local allocation reuses f2 for a product retail keeps in f4.  KMC as
+    also drops the retail hazard nop immediately before a multiply.  Match the
+    complete local sequences and require each transformation exactly once.
+    """
+    match = re.search(
+        r"(?ms)^func_80091768:\n.*?^\t\.end\tfunc_80091768\s*$", text
+    )
+    if match is None:
+        return text
+    body = match.group(0)
+    patterns = (
+        (
+            "multiply hazard",
+            "\t.set\tnoreorder\n\tbc1f\t.L55\n\tnop\n"
+            "\t.set\tnoreorder\n\tmul.s\t$f2,$f2,$f20\n",
+            "\t.set\tnoreorder\n\tbc1f\t.L55\n\tnop\n"
+            "\t.set\tnoreorder\n\tnop\n\tmul.s\t$f2,$f2,$f20\n",
+        ),
+        (
+            "first turn conversion",
+            "\t.set\tnoreorder\n\tj\t.L157\n\tmove\t$4,$3\n"
+            "\t.set\tnoreorder\n.L59:\n.L156:\n"
+            "\ttrunc.w.s $f2,$f0,$2\n\tmfc1\t$3,$f2\n"
+            "\tli\t$2,-2147483648\t\t\t# 0x80000000\n"
+            "\tor\t$3,$3,$2\n\tmove\t$4,$3\n",
+            "\t.set\tnoreorder\n\tj\t.L157\n\tmove\t$6,$3\n"
+            "\t.set\tnoreorder\n.L59:\n.L156:\n"
+            "\ttrunc.w.s $f2,$f0,$2\n\tmfc1\t$3,$f2\n"
+            "\tli\t$2,-2147483648\t\t\t# 0x80000000\n"
+            "\tor\t$3,$3,$2\n\tmove\t$6,$3\n",
+        ),
+        (
+            "second turn conversion",
+            "\t.set\tnoreorder\n\tj\t.L158\n\tmove\t$5,$3\n"
+            "\t.set\tnoreorder\n.L61:\n"
+            "\ttrunc.w.s $f2,$f0,$2\n\tmfc1\t$3,$f2\n"
+            "\tli\t$2,-2147483648\t\t\t# 0x80000000\n"
+            "\tor\t$3,$3,$2\n\tmove\t$5,$3\n.L158:\n"
+            "\tandi\t$3,$5,0xffff\n\tandi\t$2,$4,0xffff\n"
+            "\tsltu\t$2,$2,$3\n\t.set\tnoreorder\n"
+            "\tbnel\t$2,$0,.L63\n\tmove\t$5,$4\n\t.set\tnoreorder\n.L63:\n"
+            "\tmtc1\t$0,$f0\n\t#nop\n\tc.lt.s\t$f4,$f0\n\tnop\n"
+            "\t.set\tnoreorder\n\tbc1f\t.L64\n\tmove\t$3,$5\n"
+            "\t.set\tnoreorder\n\tsubu\t$3,$0,$3\n.L64:\n"
+            "\tlhu\t$2,32($18)\n\tlhu\t$4,36($18)\n"
+            "\tandi\t$5,$3,0xffff\n\taddu\t$2,$2,$3\n",
+            "\t.set\tnoreorder\n\tj\t.L158\n\tmove\t$4,$3\n"
+            "\t.set\tnoreorder\n.L61:\n"
+            "\ttrunc.w.s $f2,$f0,$2\n\tmfc1\t$3,$f2\n"
+            "\tli\t$2,-2147483648\t\t\t# 0x80000000\n"
+            "\tor\t$3,$3,$2\n\tmove\t$4,$3\n.L158:\n"
+            "\tandi\t$3,$4,0xffff\n\tandi\t$2,$6,0xffff\n"
+            "\tsltu\t$2,$2,$3\n\t.set\tnoreorder\n"
+            "\tbnel\t$2,$0,.L63\n\tmove\t$4,$6\n\t.set\tnoreorder\n.L63:\n"
+            "\tmtc1\t$0,$f0\n\t#nop\n\tc.lt.s\t$f4,$f0\n\tnop\n"
+            "\t.set\tnoreorder\n\tbc1f\t.L64\n\tmove\t$6,$4\n"
+            "\t.set\tnoreorder\n\tsubu\t$6,$0,$6\n.L64:\n"
+            "\tlhu\t$2,32($18)\n\tlhu\t$4,36($18)\n"
+            "\tandi\t$5,$6,0xffff\n\taddu\t$2,$2,$6\n",
+        ),
+        (
+            "scaled product",
+            "\tmul.s\t$f2,$f2,$f0\n\tl.s\t$f0,D_80219488\n\t#nop\n"
+            "\tmul.s\t$f2,$f2,$f0\n\t.section\t.rodata\n\t.align\t2\n"
+            "$LF_lis20:\n\t.word\t0x4F000000\n\t.text\n"
+            "\tl.s\t$f0,$LF_lis20\n\t#nop\n\tc.le.s\t$f0,$f2\n\tnop\n"
+            "\t.set\tnoreorder\n\tbc1tl\t.L74\n\tsub.s\t$f0,$f2,$f0\n"
+            "\t.set\tnoreorder\n\ttrunc.w.s $f0,$f2,$2\n",
+            "\tmul.s\t$f4,$f2,$f0\n\tl.s\t$f0,D_80219488\n\t#nop\n"
+            "\tmul.s\t$f4,$f4,$f0\n\t.section\t.rodata\n\t.align\t2\n"
+            "$LF_lis20:\n\t.word\t0x4F000000\n\t.text\n"
+            "\tl.s\t$f0,$LF_lis20\n\t#nop\n\tc.le.s\t$f0,$f4\n\tnop\n"
+            "\t.set\tnoreorder\n\tbc1tl\t.L74\n\tsub.s\t$f0,$f4,$f0\n"
+            "\t.set\tnoreorder\n\ttrunc.w.s $f0,$f4,$2\n",
+        ),
+    )
+    for name, before, after in patterns:
+        fires = body.count(before)
+        if fires != 1:
+            raise RuntimeError(
+                f"func_80091768 {name} fired {fires} times (expected 1)"
+            )
+        body = body.replace(before, after, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_text_layout_wrap_allocations(text: str) -> str:
+    """Reproduce the retail saved-register allocation in ``func_8009700C``.
+
+    The reconstructed C already has identical instructions, control flow,
+    stack frame, and semantics. GCC's global allocator chooses different
+    saved registers for three short-lived roles whose priorities are nearly
+    tied. Source-level lifetime, scope, type, loop, declaration, debug, and
+    compiler-flag experiments all preserve this 13-word cycle.
+    """
+    match = re.search(
+        r"(?ms)^func_8009700C:\n.*?^\t\.end\tfunc_8009700C\s*$", text
+    )
+    if match is None:
+        return text
+    body = match.group(0)
+    patterns = (
+        ("outer counters",
+         "\tmove\t$16,$0\n\tmove\t$19,$0\n\tmove\t$20,$0\n\tmove\t$17,$0\n",
+         "\tmove\t$16,$0\n\tmove\t$fp,$0\n\tmove\t$20,$0\n\tmove\t$17,$0\n", 1),
+        ("break count init",
+         "\tbne\t$4,$13,.L6\n\tmove\t$23,$0\n",
+         "\tbne\t$4,$13,.L6\n\tmove\t$19,$0\n", 1),
+        ("break count assignments", "\tmove\t$23,$16\n",
+         "\tmove\t$fp,$16\n", 4),
+        ("break test and draw seed",
+         "\tsll\t$2,$23,16\n\t.set\tnoreorder\n"
+         "\tbne\t$2,$0,.L21\n\tmove\t$fp,$23\n",
+         "\tsll\t$2,$fp,16\n\t.set\tnoreorder\n"
+         "\tbne\t$2,$0,.L21\n\tmove\t$23,$fp\n", 1),
+        ("fallback draw count",
+         "\taddu\t$2,$16,-1\n\tmove\t$fp,$2\n",
+         "\taddu\t$2,$16,-1\n\tmove\t$23,$2\n", 1),
+        ("draw count jump use",
+         "\tj\t.L49\n\tsll\t$2,$fp,16\n",
+         "\tj\t.L49\n\tsll\t$2,$23,16\n", 1),
+        ("draw count fallthrough use",
+         ".L50:\n\tsll\t$2,$fp,16\n",
+         ".L50:\n\tsll\t$2,$23,16\n", 1),
+        ("consumed update",
+         "\tbne\t$2,$0,.L36\n\taddu\t$8,$8,$fp\n",
+         "\tbne\t$2,$0,.L36\n\taddu\t$8,$8,$23\n", 1),
+        ("final break test", ".L36:\n\tsll\t$2,$23,16\n",
+         ".L36:\n\tsll\t$2,$fp,16\n", 1),
+    )
+    for name, before, after, expected in patterns:
+        fires = body.count(before)
+        if fires != expected:
+            raise RuntimeError(
+                f"func_8009700C {name} fired {fires} times "
+                f"(expected {expected})"
+            )
+        body = body.replace(before, after)
+    return text[:match.start()] + body + text[match.end():]
+
+
 def shape_mission_actor_spawn(text: str) -> str:
     """Reproduce the retail allocation and final schedule in func_800E9990."""
     if "func_800E9990:" not in text:
@@ -4039,6 +4221,12 @@ def normalize_v3(source: str) -> str:
         text = shape_angle_step_update(text)
     if os.environ.get("V3_GRID_COLLISION_MIDPOINT_LOAD", "1") == "1":
         text = schedule_grid_collision_midpoint_load(text)
+    if os.environ.get("V3_GRID_NODE_MOVE_POINTER_SPILL", "1") == "1":
+        text = schedule_grid_node_move_pointer_spill(text)
+    if os.environ.get("V3_TANK_INPUT_UPDATE_ALLOCATIONS", "1") == "1":
+        text = shape_tank_input_update_allocations(text)
+    if os.environ.get("V3_TEXT_LAYOUT_WRAP_ALLOCATIONS", "1") == "1":
+        text = shape_text_layout_wrap_allocations(text)
     if os.environ.get("V3_MISSION_ACTOR_SPAWN", "1") == "1":
         text = shape_mission_actor_spawn(text)
     if os.environ.get("V3_EFFECT_MESH_TRANSFORM_ALLOCATIONS", "1") == "1":
