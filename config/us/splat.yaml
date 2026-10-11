@@ -538,7 +538,7 @@ segments:
       - [0x372C0, c, code/camera_perspective_setup]
       - [0x37664, c, code/player_perspective_update]
       - [0x37794, c, code/800A7794]
-      - [0x377A8, asm, main_800A77A8_to_800A7D70]
+      - [0x377A8, c, code/player_setup]
       - [0x37D70, c, code/player_setup_init]
       - [0x380AC, c, code/alternate_player_setup]
       - [0x38690, c, code/800A8690]

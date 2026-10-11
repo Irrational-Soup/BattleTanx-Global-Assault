@@ -287,6 +287,7 @@ level_reset	0x800AF43C	0x53C	matched
 world_object_draw	0x800AF978	0x8F0	matched
 world_edge_register	0x800AB980	0x4EC	matched
 ground_corner_probe	0x800B9094	0x310	matched
+player_setup	0x800A77A8	0x5C8	matched
 grid_edge_points	0x800B5728	0x2E8	matched
 game_mode_update	0x8009C524	0xC20	matched
 model_group_display_patch	0x80095FE0	0x270	matched

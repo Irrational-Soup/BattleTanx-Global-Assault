@@ -4390,7 +4390,7 @@ if false; then
     build/us/src/code/camera_perspective_setup.c.o \
     build/us/src/code/player_perspective_update.c.o \
     build/us/src/code/800A7794.c.o \
-    build/us/asm/us/main_800A77A8_to_800A8690.s.o \
+    build/us/src/code/player_setup.c.o \
     build/us/src/code/800A8690.c.o \
     build/us/src/code/800A87BC.c.o \
     build/us/src/code/800A89B0.c.o \
