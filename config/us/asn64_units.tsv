@@ -14,3 +14,5 @@ effect_sprite_ring_draw	0x800A42C8	0x1A0	asn64-clean
 mover_advance	0x800B66E0	0x254	asn64-clean
 tank_steering_update	0x80090DCC	0x99C	asn64-clean
 camera_shake_falloff	0x800A7090	0x1FC	asn64-clean
+visibility_pair_update	0x80089684	0x60C	asn64-clean
+texture_grid_tile_draw	0x8007C364	0x3B4	asn64-clean

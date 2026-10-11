@@ -1,4 +1,5 @@
 # unit	vram	text_size	status
+alternate_player_setup	0x800A80AC	0x5E4	normalizer-assisted
 task_class_init	0x800A22CC	0x8A8	normalizer-assisted
 step_pool_release	0x8007DBE0	0x174	normalizer-assisted
 matrix_rotate_translate	0x8009FCCC	0x250	normalizer-assisted

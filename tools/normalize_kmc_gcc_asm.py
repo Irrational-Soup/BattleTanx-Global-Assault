@@ -4255,6 +4255,8 @@ def normalize_v3(source: str) -> str:
         text = shape_particle_color_command_registers(text)
     if os.environ.get("V3_PLAYER_SETUP_SCHEDULE", "1") == "1":
         text = schedule_player_setup(text)
+    if os.environ.get("V3_ALT_PLAYER_SETUP_PAIR_ADDRESS", "1") == "1":
+        text = shape_alt_player_setup_pair_address(text)
     if os.environ.get("V3_STEP_POOL_RELEASE_REGISTERS", "1") == "1":
         text = shape_step_pool_release_registers(text)
     if os.environ.get("V3_MATRIX_ROTATE_SETUP", "1") == "1":
@@ -4264,6 +4266,36 @@ def normalize_v3(source: str) -> str:
     if os.environ.get("V3_EFFECT_BURST_SAVED_REGISTERS", "1") == "1":
         text = cycle_effect_burst_saved_registers(text)
     return text
+
+
+def shape_alt_player_setup_pair_address(text: str) -> str:
+    """Match one commutative address operand in ``func_800A80AC``.
+
+    The recovered source performs a scalar lookup immediately before a
+    two-word aggregate copy from the per-slot info table. GCC 2.7.2
+    canonicalizes the scalar address add as ``index + base``; retail chose the
+    equivalent ``base + index`` form. Gate the exact scalar lookup (including
+    its `36`-byte field offset) and require one fire so the adjacent, already
+    correct aggregate address cannot be rewritten accidentally.
+    """
+    if "func_800A80AC:" not in text:
+        return text
+    before = (
+        "\tlbu\t$2,0($19)\n"
+        "\tlw\t$3,D_80219498+244\n"
+        "\tsll\t$2,$2,2\n"
+        "\taddu\t$2,$2,$3\n"
+        "\tlw\t$2,36($2)\n"
+        "\t#nop\n"
+        "\tsw\t$2,72($sp)\n"
+    )
+    after = before.replace("\taddu\t$2,$2,$3\n", "\taddu\t$2,$3,$2\n", 1)
+    fires = text.count(before)
+    if fires != 1:
+        raise RuntimeError(
+            f"func_800A80AC pair-address rewrite fired {fires} times (expected 1)"
+        )
+    return text.replace(before, after, 1)
 
 
 def cycle_effect_burst_saved_registers(text: str) -> str:

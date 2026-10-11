@@ -84,14 +84,6 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_8007B8EC_to_8007BCF0.s.o .text 0x404 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_8007C364_to_8007C718.s.o asm/us/main_8007C364_to_8007C718.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_8007C364_to_8007C718.s.o .text 0x3b4 --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_8007C9B8_to_8007D33C.s.o asm/us/main_8007C9B8_to_8007D33C.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_8007C9B8_to_8007D33C.s.o .text 0x990 --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_8007D468_to_8007D470.s.o asm/us/main_8007D468_to_8007D470.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_8007D468_to_8007D470.s.o .text 0x8 --alignment 4
@@ -148,8 +140,7 @@ for spec in \
     main_8009700C_to_800973E0:0x3d4 \
     main_8009755C_to_80097560:0x4 \
     main_8009859C_to_800985A0:0x4 \
-    main_80099824_to_80099830:0xc \
-    main_8009B694_to_8009C098:0xa04
+    main_80099824_to_80099830:0xc
 do
     unit="${spec%%:*}"
     size="${spec##*:}"
@@ -182,10 +173,6 @@ python3 tools/trim_elf32_section.py \
     -o build/us/asm/us/main_8009DAB0_to_8009DB0C.s.o asm/us/main_8009DAB0_to_8009DB0C.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_8009DAB0_to_8009DB0C.s.o .text 0x5c --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_8009DDF0_to_8009DFAC.s.o asm/us/main_8009DDF0_to_8009DFAC.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_8009DDF0_to_8009DFAC.s.o .text 0x1bc --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800ACE6C_to_800ACE70.s.o asm/us/main_800ACE6C_to_800ACE70.s
 python3 tools/trim_elf32_section.py \
@@ -242,10 +229,6 @@ python3 tools/trim_elf32_section.py \
     -o build/us/asm/us/main_800A6B7C_to_800A7290.s.o asm/us/main_800A6B7C_to_800A7290.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800A6B7C_to_800A7290.s.o .text 0x714 --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800A72C0_to_800A8B14.s.o asm/us/main_800A72C0_to_800A8B14.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800A72C0_to_800A8B14.s.o .text 0x17b8 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800A9080_to_800A974C.s.o asm/us/main_800A9080_to_800A974C.s
 python3 tools/trim_elf32_section.py \
@@ -4178,9 +4161,9 @@ if false; then
     build/us/src/code/asset_load.c.o \
     build/us/src/code/video_mode.c.o \
     build/us/src/code/texture_tile.c.o \
-    build/us/asm/us/main_8007C364_to_8007C718.s.o \
+    build/us/src/code/texture_grid_tile_draw.c.o \
     build/us/src/code/grid_tile_walk.c.o \
-    build/us/asm/us/main_8007C9B8_to_8007D33C.s.o \
+    build/us/src/code/texture_grid_draw.c.o \
     build/us/src/code/small_state.c.o \
     build/us/src/code/mapped_record.c.o \
     build/us/src/code/small_state_copy.c.o \
@@ -4318,7 +4301,7 @@ if false; then
     build/us/src/code/player_state_modes.c.o \
     build/us/src/code/8009B434.c.o \
     build/us/src/code/func_8009B62C.c.o \
-    build/us/asm/us/main_8009B694_to_8009C098.s.o \
+    build/us/src/code/match_result_check.c.o \
     build/us/src/code/8009C098.c.o \
     build/us/src/code/session_queries.c.o \
     build/us/src/code/progress_level_advance.c.o \
@@ -4340,8 +4323,7 @@ if false; then
     build/us/asm/us/main_8009DAB0_to_8009DB0C.s.o \
     build/us/src/code/vector2_scale.c.o \
     build/us/src/code/vector_distance_normalize.c.o \
-    build/us/asm/us/main_8009DDF0_to_8009DFAC.s.o \
-    build/us/src/code/distance_metric_constants.c.o \
+    build/us/src/code/vector_angle.c.o \
     build/us/src/code/vector2_motion.c.o \
     build/us/asm/us/main_8009E0E8_to_8009EEA0.s.o \
     build/us/src/code/game_queue.c.o \
@@ -4408,9 +4390,8 @@ if false; then
     build/us/src/code/func_800A702C.c.o \
     build/us/src/code/camera_shake_falloff.c.o \
     build/us/asm/us/main_800A728C_to_800A7290.s.o \
-    build/us/src/code/camera_perspective_constants.c.o \
     build/us/src/code/object_init.c.o \
-    build/us/asm/us/main_800A72C0_to_800A7664.s.o \
+    build/us/src/code/camera_perspective_setup.c.o \
     build/us/src/code/player_perspective_update.c.o \
     build/us/src/code/800A7794.c.o \
     build/us/asm/us/main_800A77A8_to_800A8690.s.o \
@@ -4772,11 +4753,9 @@ if false; then
     build/us/src/code/800D5E2C_script_particle_update.c.o \
     build/us/src/code/func_800D6508.c.o \
     build/us/src/code/model_ring_identity.c.o \
-    build/us/src/code/font_render_constants.c.o \
     build/us/src/code/path_waypoint_constants.c.o \
     build/us/src/code/path_route_constants.c.o \
     build/us/src/code/path_search_constants.c.o \
-    build/us/src/code/waypoint_stack_constants.c.o \
     build/us/src/code/object_mode_constants.c.o \
     build/us/src/code/tank_motion_constant.c.o \
     build/us/src/code/hud_scale_constant.c.o \

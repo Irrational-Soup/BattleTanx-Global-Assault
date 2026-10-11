@@ -1,6 +1,6 @@
 # unit	rodata_vram	rodata_size
 model_ring_identity	0x80074F94	0x50
-camera_perspective_constants	0x80072C8C	0x3C
+camera_perspective_setup	0x80072C8C	0x3C
 world_object_draw	0x80072F64	0x2C
 # See tools/place_unit_rodata.py. Listed C units own [vram, vram+size) of
 # main-segment rodata; make verify-code proves the C bytes equal the ROM.
@@ -396,7 +396,7 @@ camera_mode_update	0x80072D28	0x3C
 effect_runtime_tables	0x80072BA0	0xEC
 mission_actor_spawn	0x800761C0	0x38
 matrix_scale_curve	0x80071F90	0x48
-distance_metric_constants	0x800725FC	0x10
+vector_angle	0x800725FC	0x10
 vector_distance_normalize	0x800725DC	0x20
 hud_coordinate_constants	0x800730A0	0x24
 object_rotation_update	0x800730F8	0x20
@@ -408,14 +408,14 @@ matrix_operation_constants	0x80072660	0x20
 area_lighting_build	0x80072D80	0x18
 view_radius_visible	0x80072DA0	0x20
 grid_collision_constants	0x80073074	0x1C
-font_render_constants	0x80071090	0x14
+texture_grid_tile_draw	0x80071090	0x18
 path_waypoint_constants	0x80071120	0x4
 path_route_constants	0x8007119C	0x8
 path_search_constants	0x800711C0	0x4C
 func_800854C4	0x8007135C	0x8
 ai_angle_arc_build	0x800715FC	0xC
 ai_target_scan_update	0x800716A0	0x4
-waypoint_stack_constants	0x800718A0	0x18
+visibility_pair_update	0x800718A0	0x18
 func_8008A1A4	0x800718EC	0x4
 object_mode_tail_constants	0x800718F0	0x18
 func_8008F874	0x80071DAC	0x4
@@ -432,7 +432,7 @@ lightning_path_subdivide	0x80075EA8	0x10
 effect_mesh_transform_draw	0x80072AA0	0x4C
 results_format_constants	0x80073F00	0x2C
 race_message_style_jump_table	0x80073F50	0x1C
-object_state_jump_table	0x800724D0	0x3C
+match_result_check	0x800724D0	0x3C
 game_mode_update	0x80072518	0x40
 camera_mode_jump_table	0x80072CE0	0x20
 view_segment_clip	0x80072DC8	0xB4
