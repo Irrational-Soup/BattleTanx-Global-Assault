@@ -1,4 +1,8 @@
 # unit	vram	text_size	status
+view_state_build	0x800AC9E8	0x2CC	asn64-clean
+func_800AA5D0	0x800AA5D0	0x94	asn64-clean
+view_radius_visible	0x800AA664	0x244	asn64-clean
+view_segment_clip	0x800AAEA0	0x63C	asn64-clean
 nearest_live_entity	0x80083230	0x1EC	asn64-clean
 ai_target_bit_select	0x80084CC8	0x480	asn64-clean
 func_8008A1A4	0x8008A1A4	0x1A0	asn64-clean
@@ -7,3 +11,4 @@ font_number_draw	0x80096BDC	0x238	asn64-clean
 effect_sprite_ring_draw	0x800A42C8	0x1A0	asn64-clean
 800B4684_collision_query	0x800B4684	0x35C	asn64-clean
 800B5B8C_mover_reflect	0x800B5B8C	0xBC	asn64-clean
+mover_advance	0x800B66E0	0x254	asn64-clean

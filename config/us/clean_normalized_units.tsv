@@ -1,4 +1,9 @@
 # unit	vram	text_size	status
+vector_distance_normalize	0x8009DB2C	0x2C4	matched
+view_project_point	0x800ACCB4	0x1B8	matched
+grid_surface_height	0x800B83A8	0x3F8	matched
+area_lighting_build	0x800AA058	0x540	matched
+world_edge_register_unculled	0x800AB58C	0x3F4	matched
 800902C0	0x800902C0	0x208	matched
 func_8008F874	0x8008F874	0x7CC	matched
 func_800854C4	0x800854C4	0x32C	matched
@@ -265,3 +270,8 @@ func_80087798	0x80087798	0x8C	matched
 path_visibility_queries	0x800AC198	0x850	matched
 model_lod_draw	0x800AE184	0x34C	matched
 model_view_draw	0x800AE8EC	0xA78	matched
+level_reset	0x800AF43C	0x53C	matched
+world_object_draw	0x800AF978	0x8F0	matched
+world_edge_register	0x800AB980	0x4EC	matched
+ground_corner_probe	0x800B9094	0x310	matched
+grid_edge_points	0x800B5728	0x2E8	matched

@@ -1,3 +1,4 @@
+/* SPAN 0x800AA664 */
 #include "types.h"
 
 typedef struct {
@@ -15,7 +16,7 @@ typedef struct {
 
 s32 func_800AA5D0(f32 x, f32 y, u8 kind, Region800AA5D0 *region) {
     f32 distance;
-    register f32 extent __asm__("$f0");
+    f32 extent;
 
     if (region->kind != kind) {
         return 0;
@@ -31,11 +32,14 @@ s32 func_800AA5D0(f32 x, f32 y, u8 kind, Region800AA5D0 *region) {
         return 0;
     }
     extent = region->axis1_x * x - region->axis1_y * y;
-    if (!(0.0f < extent)) {
-        extent = -extent;
-    }
-    if (distance <= extent) {
-        return 0;
+    if (extent > 0.0f) {
+        if (distance <= extent) {
+            return 0;
+        }
+    } else {
+        if (distance <= -extent) {
+            return 0;
+        }
     }
     return 1;
 }

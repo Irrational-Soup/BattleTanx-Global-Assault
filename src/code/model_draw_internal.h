@@ -8,7 +8,9 @@ typedef struct { float x, y; } ModelDrawVec2;
 
 typedef struct {
     ModelDrawVec2 pos;
-    char pad08[0x20];
+    char pad08[0x1E];
+    u8 high;
+    u8 pad27;
 } ModelDrawView;
 
 typedef struct {

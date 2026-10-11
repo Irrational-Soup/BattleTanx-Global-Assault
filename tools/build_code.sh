@@ -179,9 +179,13 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_8009DAB0_to_8009DB0C.s.o .text 0x5c --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_8009DB2C_to_8009E044.s.o asm/us/main_8009DB2C_to_8009E044.s
+    -o build/us/asm/us/main_8009DDF0_to_8009DFAC.s.o asm/us/main_8009DDF0_to_8009DFAC.s
 python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_8009DB2C_to_8009E044.s.o .text 0x518 --alignment 4
+    build/us/asm/us/main_8009DDF0_to_8009DFAC.s.o .text 0x1bc --alignment 4
+"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
+    -o build/us/asm/us/main_800ACE6C_to_800ACE70.s.o asm/us/main_800ACE6C_to_800ACE70.s
+python3 tools/trim_elf32_section.py \
+    build/us/asm/us/main_800ACE6C_to_800ACE70.s.o .text 0x4 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_8009E0E8_to_8009EEA0.s.o asm/us/main_8009E0E8_to_8009EEA0.s
 python3 tools/trim_elf32_section.py \
@@ -1817,7 +1821,6 @@ for function_name in \
         func_800A97FC \
         func_800A9A44 \
         func_800A9A98 \
-        func_800AA5D0 \
         func_800ABE6C \
         func_800ACFE0 \
         func_800AD088 \
@@ -1850,7 +1853,7 @@ for function_name in \
         func_8008A350|func_8008B6D0|func_8008B788|func_8008BEC4|func_8008E6E0|func_8008E620|func_8008F3FC|func_800947C4|func_8009660C|func_80096F48|func_800976AC|func_80097844|func_800979F4|func_80098F24|\
         func_80097CC8|func_80097EE4|func_80098250|func_80098334|func_8009836C|func_80098454|func_80098BF8|func_80099028|func_8009A650|func_8009ACDC|func_8009AD7C|func_8009D4B0|func_8009D75C|func_8009F090|func_8009F334|func_8009F5AC|func_8009F8A0|func_800A1150|func_800A1290|\
         func_8009D960|func_8009DAB0|func_8009DFAC|func_8009E0E8|func_8009E19C|func_8009EC0C|func_800A140C|func_800A15F0|func_800A18D0|func_800A19DC|\
-        func_800A1B44|func_800A2B9C|func_800A2EF0|func_800A2F0C|func_800A60E0|func_800A6B7C|func_800A8D54|func_800A8E84|func_800A8F34|func_800A9660|func_800A96B8|func_800A9A98|func_800ACF20|func_800ACFE0|func_800AD088|func_800AA5D0|func_800ABE6C|func_800B22F8|\
+        func_800A1B44|func_800A2B9C|func_800A2EF0|func_800A2F0C|func_800A60E0|func_800A6B7C|func_800A8D54|func_800A8E84|func_800A8F34|func_800A9660|func_800A96B8|func_800A9A98|func_800ACF20|func_800ACFE0|func_800AD088|func_800ABE6C|func_800B22F8|\
         func_800B0D70|func_800B6934|func_800B9F44|func_800BDA30|func_800C04C8|func_800C0564|\
         func_800C0ADC|func_800C0B78|func_800C0C38|func_800C13BC|\
         func_800C180C|func_800E82AC)
@@ -4326,7 +4329,8 @@ if false; then
     build/us/src/code/vector2.c.o \
     build/us/asm/us/main_8009DAB0_to_8009DB0C.s.o \
     build/us/src/code/vector2_scale.c.o \
-    build/us/asm/us/main_8009DB2C_to_8009E044.s.o \
+    build/us/src/code/vector_distance_normalize.c.o \
+    build/us/asm/us/main_8009DDF0_to_8009DFAC.s.o \
     build/us/src/code/distance_metric_constants.c.o \
     build/us/src/code/vector2_motion.c.o \
     build/us/asm/us/main_8009E0E8_to_8009EEA0.s.o \
@@ -4429,25 +4433,25 @@ if false; then
     build/us/src/code/light_display_list_build.c.o \
     build/us/asm/us/main_800A9EC0_to_800A9F10.s.o \
     build/us/src/code/800A9F10.c.o \
-    build/us/asm/us/main_800AA058_to_800AA598.s.o \
-    build/us/src/code/object_transform_constants.c.o \
+    build/us/src/code/area_lighting_build.c.o \
     build/us/src/code/object_table_lookup.c.o \
     build/us/asm/us/main_800AA5C4_to_800AA5D0.s.o \
     build/us/src/code/func_800AA5D0.c.o \
-    build/us/asm/us/main_800AA664_to_800AA8A8.s.o \
-    build/us/src/code/object_distance_constants.c.o \
+    build/us/src/code/view_radius_visible.c.o \
     build/us/src/code/800AA8A8.c.o \
     build/us/src/code/800AAAE0.c.o \
     build/us/src/code/func_800AAC14.c.o \
-    build/us/asm/us/main_800AAEA0_to_800AB4DC.s.o \
+    build/us/src/code/view_segment_clip.c.o \
     build/us/src/code/800AB4DC.c.o \
-    build/us/asm/us/main_800AB58C_to_800ABE6C.s.o \
+    build/us/src/code/world_edge_register_unculled.c.o \
+    build/us/src/code/world_edge_register.c.o \
     build/us/src/code/func_800ABE6C.c.o \
     build/us/src/code/nearest_path_test.c.o \
     build/us/src/code/800AC0F4.c.o \
     build/us/src/code/path_visibility_queries.c.o \
     build/us/src/code/view_state_build.c.o \
-    build/us/asm/us/main_800ACCB4_to_800ACE70.s.o \
+    build/us/src/code/view_project_point.c.o \
+    build/us/asm/us/main_800ACE6C_to_800ACE70.s.o \
     build/us/src/code/func_800ACE70.c.o \
     build/us/src/code/func_800ACEB4.c.o \
     build/us/src/code/func_800ACEFC.c.o \
@@ -4463,9 +4467,9 @@ if false; then
     build/us/src/code/func_800AE4D0.c.o \
     build/us/src/code/800AE710.c.o \
     build/us/src/code/model_view_draw.c.o \
-    build/us/src/code/world_collision_thresholds.c.o \
     build/us/src/code/800AF364.c.o \
-    build/us/asm/us/main_800AF43C_to_800B0268.s.o \
+    build/us/src/code/level_reset.c.o \
+    build/us/src/code/world_object_draw.c.o \
     build/us/src/code/func_800B0268.c.o \
     build/us/src/code/bounds_pair.c.o \
     build/us/src/code/func_800B03F4.c.o \
@@ -4499,7 +4503,8 @@ if false; then
     build/us/src/code/800B4684_collision_query.c.o \
     build/us/asm/us/main_800B49E0_to_800B4F38.s.o \
     build/us/src/code/func_800B4F38.c.o \
-    build/us/asm/us/main_800B5130_to_800B5A10.s.o \
+    build/us/asm/us/main_800B5130_to_800B5728.s.o \
+    build/us/src/code/grid_edge_points.c.o \
     build/us/src/code/hud_coordinate_constants.c.o \
     build/us/src/code/800B5A10.c.o \
     build/us/src/code/800B5B8C_mover_reflect.c.o \
@@ -4509,7 +4514,7 @@ if false; then
     build/us/src/code/turn_adjust.c.o \
     build/us/src/code/mover_collision_response.c.o \
     build/us/src/code/800B61B8.c.o \
-    build/us/asm/us/main_800B66E0_to_800B6934.s.o \
+    build/us/src/code/mover_advance.c.o \
     build/us/src/code/func_800B6934.c.o \
     build/us/asm/us/main_800B69F4_to_800B739C.s.o \
     build/us/src/code/hud_layout_constants.c.o \
@@ -4519,10 +4524,11 @@ if false; then
     build/us/src/code/mover_step_response.c.o \
     build/us/src/code/hud_animation_limits.c.o \
     build/us/src/code/vector_angle_from_xy.c.o \
-    build/us/asm/us/main_800B83A8_to_800B87A0.s.o \
+    build/us/src/code/grid_surface_height.c.o \
     build/us/src/code/800B87A0.c.o \
     build/us/src/code/grid_node_height.c.o \
-    build/us/asm/us/main_800B88DC_to_800B93A4.s.o \
+    build/us/asm/us/main_800B88DC_to_800B9094.s.o \
+    build/us/src/code/ground_corner_probe.c.o \
     build/us/src/code/grid_height_query.c.o \
     build/us/asm/us/main_800B95C8_to_800B99AC.s.o \
     build/us/src/code/display_registry.c.o \
@@ -4762,7 +4768,6 @@ if false; then
     build/us/src/code/object_mode_constants.c.o \
     build/us/src/code/tank_motion_constant.c.o \
     build/us/src/code/camera_probe_constants.c.o \
-    build/us/src/code/object_collision_constants.c.o \
     build/us/src/code/hud_scale_constant.c.o \
     build/us/src/code/race_bar_scale_constants.c.o \
     build/us/src/code/race_bar_ratio_constants.c.o \

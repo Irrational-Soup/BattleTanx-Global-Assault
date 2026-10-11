@@ -70,11 +70,9 @@ void func_800AC9E8(void) {
     float len;
     float ax;
     float ay;
-    View *v;
 
     _bzero(D_80219498.teamMask, 6);
-    v = D_80219498.views;
-    for (i = 0; i < n; v++, i++) {
+    for (i = 0; i < n; i++) {
         pl = (i == 127) ? 0 : &D_80235F00[i];
         D_80219498.teamMask[pl->obj.team] |= 1 << i;
         D_80219498.views[i].x = pl->obj.x;
@@ -90,7 +88,7 @@ void func_800AC9E8(void) {
         len = sqrtf(dx * dx + dy * dy);
         D_80219498.views[i].high = o->z > 105.0f;
         if (len < ((0.0f < dz) ? dz : -dz)) {
-            v->active = 1;
+            D_80219498.views[i].active = 1;
             continue;
         }
         ax = dy / len;
@@ -103,6 +101,6 @@ void func_800AC9E8(void) {
         D_80219498.views[i].offset_x = -o->y;
         D_80219498.views[i].player = i;
         D_80219498.views[i].kind = o->team;
-        v->active = 0;
+        D_80219498.views[i].active = 0;
     }
 }

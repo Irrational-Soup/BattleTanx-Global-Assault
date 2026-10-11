@@ -11,6 +11,7 @@ import copy
 import csv
 import hashlib
 import json
+import math
 import os
 import random
 import sys
@@ -23,6 +24,31 @@ import decomp_permuter as perm  # noqa: E402
 
 def source_hash(text):
     return hashlib.sha1(text.encode()).hexdigest()
+
+
+def bounded_samples(requested, max_evals, parent_count, kind_count):
+    """Cap mutations per family before expensive AST copies are created."""
+    if not max_evals or not parent_count or not kind_count:
+        return requested
+    return min(requested, max(1, math.ceil(max_evals / (parent_count * kind_count))))
+
+
+def update_family_stat(stats, kind, baseline, result):
+    row = stats.setdefault(kind, {
+        "generated": 0, "build_errors": 0, "compiled": 0,
+        "distinct_outputs": set(), "best": None, "improvements": 0,
+    })
+    row["generated"] += 1
+    if not result.get("ok"):
+        row["build_errors"] += 1
+        return
+    row["compiled"] += 1
+    row["distinct_outputs"].add(result["hash"])
+    value = perm.score(result)
+    if row["best"] is None or value < row["best"]:
+        row["best"] = value
+    if value < baseline:
+        row["improvements"] += 1
 
 
 def render(ast, markers, generator):
@@ -114,17 +140,31 @@ def main():
     seen_sources = {source_hash(base_text)}
     seen_outputs = {base_result["hash"]: perm.score(base_result)}
     ledger_path = os.path.join(outdir, "ledger.tsv")
+    errors_path = os.path.join(outdir, "errors.tsv")
     fields = ("round", "parent", "mutation", "sample", "words", "size_delta",
               "source_hash", "output_hash", "accepted")
     plateau = 0
-    with open(ledger_path, "w", newline="") as ledger:
+    family_stats = {}
+    with open(ledger_path, "w", newline="") as ledger, \
+            open(errors_path, "w", newline="") as errors:
         writer = csv.DictWriter(ledger, fields, delimiter="\t", lineterminator="\n")
         writer.writeheader()
+        error_writer = csv.DictWriter(
+            errors, ("round", "parent", "mutation", "sample", "source_hash", "error"),
+            delimiter="\t", lineterminator="\n")
+        error_writer.writeheader()
+        ledger.flush(); errors.flush()
         for round_no in range(1, args.rounds + 1):
             score_before = best[0]
             candidates = []
+            # Respect the compile budget while generating mutations.  The old
+            # implementation deep-copied every AST for beam*kinds*samples and
+            # discarded the excess afterward; on a large TU that spent minutes
+            # producing candidates which could never be compiled.
+            effective_samples = bounded_samples(
+                args.samples, args.max_evals, len(beam), len(kinds))
             for parent_index, (_, ast, _, _, _, _) in enumerate(beam):
-                edges = expand(ast, args.func, kinds, args.samples,
+                edges = expand(ast, args.func, kinds, effective_samples,
                     args.seed + round_no * 10000019 + parent_index * 20000003,
                     markers, generator)
                 for child_ast, text, kind, sample, digest in edges:
@@ -145,7 +185,12 @@ def main():
             with concurrent.futures.ProcessPoolExecutor(args.jobs) as pool:
                 for row, result in zip(candidates, pool.map(perm.evaluate, jobs)):
                     parent_index, ast, text, kind, sample, digest = row
+                    update_family_stat(family_stats, kind, score_before, result)
                     if not result.get("ok"):
+                        error_writer.writerow({"round": round_no, "parent": parent_index,
+                            "mutation": kind, "sample": sample,
+                            "source_hash": digest[:16],
+                            "error": result.get("err", "unknown")})
                         continue
                     compiled += 1
                     value = perm.score(result)
@@ -172,6 +217,9 @@ def main():
                         "size_delta": result["size"] - result["rom"],
                         "source_hash": digest[:16], "output_hash": result["hash"],
                         "accepted": int(not duplicate)})
+            # Make a running campaign auditable instead of keeping its evidence
+            # buffered until the process exits.
+            ledger.flush(); errors.flush()
             survivors.sort(key=lambda x: (x[0], x[4]))
             beam = []
             output_hashes = set()
@@ -181,9 +229,9 @@ def main():
                 output_hashes.add(item[3]); beam.append(item)
                 if len(beam) == args.beam:
                     break
-            print("round %d: generated=%d sampled=%d compiled=%d outputs=%d beam_best=%s" %
+            print("round %d: generated=%d sampled=%d compiled=%d outputs=%d beam_best=%s samples_per_family=%d" %
                   (round_no, generated, len(candidates), compiled,
-                   len(seen_outputs), beam[0][0]), flush=True)
+                   len(seen_outputs), beam[0][0], effective_samples), flush=True)
             if best[0] == (0, 0):
                 exact_path = os.path.join(outdir, "exact.c")
                 open(exact_path, "w").write(best[2])
@@ -214,6 +262,21 @@ def main():
             "beam rounds=%d width=%d samples=%d max_evals=%d outputs=%d" %
             (args.rounds, args.beam, args.samples, args.max_evals,
              len(seen_outputs))]) + "\n")
+    with open(os.path.join(outdir, "family_results.tsv"), "w", newline="") as fh:
+        fields = ("mutation", "generated", "compiled", "build_errors",
+                  "distinct_outputs", "best_words", "best_size_delta",
+                  "improvements")
+        writer = csv.DictWriter(fh, fields, delimiter="\t", lineterminator="\n")
+        writer.writeheader()
+        for kind in sorted(family_stats):
+            row = family_stats[kind]
+            best_score = row["best"]
+            writer.writerow({"mutation": kind, "generated": row["generated"],
+                "compiled": row["compiled"], "build_errors": row["build_errors"],
+                "distinct_outputs": len(row["distinct_outputs"]),
+                "best_words": "" if best_score is None else best_score[0],
+                "best_size_delta": "" if best_score is None else best_score[1],
+                "improvements": row["improvements"]})
     print("done: best=%s distinct_sources=%d distinct_outputs=%d" %
           (best[0], len(seen_sources), len(seen_outputs)))
 

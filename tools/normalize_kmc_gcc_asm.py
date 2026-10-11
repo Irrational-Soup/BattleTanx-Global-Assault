@@ -546,32 +546,6 @@ def schedule_owner_search_prologue(text: str) -> str:
     return text.replace(before, after, 1)
 
 
-def select_region_early_exit_likely(text: str) -> str:
-    """Use the retail branch-likely encoding in ``func_800AA5D0``.
-
-    GCC emits an ordinary ``bc1t`` for the first early exit even though its
-    delay-slot zero is dead on the fallthrough path.  The retail object uses
-    ``bc1tl`` at this site.  The surrounding FP comparison gates this single
-    opcode rename; the later, similar exit remains an ordinary ``bc1t``.
-    """
-    if "func_800AA5D0:" not in text:
-        return text
-    before = (
-        "\tc.le.s\t$f4,$f6\n"
-        "\tnop\n"
-        "\t.set\tnoreorder\n"
-        "\tbc1t\t.L7\n"
-        "\tmove\t$2,$0\n"
-    )
-    after = before.replace("\tbc1t\t.L7\n", "\tbc1tl\t.L7\n")
-    fires = text.count(before)
-    if fires != 1:
-        raise RuntimeError(
-            f"func_800AA5D0 early-exit branch rename fired {fires} times (expected 1)"
-        )
-    return text.replace(before, after, 1)
-
-
 def schedule_vector_angle_prologue(text: str) -> str:
     """Reproduce the retail save schedule in ``func_8009DFAC``.
 
@@ -3908,55 +3882,6 @@ def shape_matrix_scale_curve(text: str) -> str:
     return text[:match.start()] + body + text[match.end():]
 
 
-def schedule_view_state_build(text: str) -> str:
-    """Reproduce the retail preheader and ASN64 likely-slot scheduling.
-
-    The source has the correct loop and value flow.  GCC's loop pass emits the
-    reduced view pointer two instructions later than retail, while ASN64 moves
-    each independent multiply ahead of its likely branch and leaves the delay
-    slot empty.  Keep the rewrite limited to the complete function patterns.
-    """
-    if "func_800AC9E8:" not in text:
-        return text
-
-    preheader_before = (
-        "\tli\t$23,0x00000001\t\t# 1\n"
-        "\tmtc1\t$0,$f26\n"
-        "\tmove\t$17,$0\n"
-        "\tmove\t$21,$0\n"
-        "\taddu\t$20,$16,51\n"
-    )
-    preheader_after = (
-        "\tli\t$23,0x00000001\t\t# 1\n"
-        "\tmtc1\t$0,$f26\n"
-        "\taddu\t$20,$16,51\n"
-        "\tmove\t$17,$0\n"
-        "\tmove\t$21,$0\n"
-    )
-    likely_patterns = (
-        (
-            "\tbeql\t$2,$0,.L17\n\tmul.s\t$f2,$f20,$f20\n",
-            "\tmul.s\t$f2,$f20,$f20\n\tbeql\t$2,$0,.L17\n\tnop\n",
-        ),
-        (
-            "\tbc1fl\t.L17\n\tmul.s\t$f2,$f20,$f20\n",
-            "\tmul.s\t$f2,$f20,$f20\n\tbc1fl\t.L17\n\tnop\n",
-        ),
-    )
-    preheader_fires = text.count(preheader_before)
-    likely_fires = [text.count(before) for before, _ in likely_patterns]
-    if preheader_fires != 1 or likely_fires != [1, 1]:
-        raise RuntimeError(
-            "func_800AC9E8 schedule fired "
-            f"preheader={preheader_fires}, likely={likely_fires} "
-            "(expected 1, [1, 1])"
-        )
-    text = text.replace(preheader_before, preheader_after, 1)
-    for before, after in likely_patterns:
-        text = text.replace(before, after, 1)
-    return text
-
-
 def normalize_v3(source: str) -> str:
     import os
     if os.environ.get("V3_CONTROLS_CONFIG", "1") == "1":
@@ -3982,8 +3907,6 @@ def normalize_v3(source: str) -> str:
         text = schedule_resource_copy_prologue(text)
     if os.environ.get("V3_OWNER_SEARCH_PROLOGUE", "1") == "1":
         text = schedule_owner_search_prologue(text)
-    if os.environ.get("V3_REGION_EARLY_EXIT", "1") == "1":
-        text = select_region_early_exit_likely(text)
     if os.environ.get("V3_VECTOR_ANGLE_PROLOGUE", "1") == "1":
         text = schedule_vector_angle_prologue(text)
     if os.environ.get("V3_SNAPSHOT_RECORD_ADDRESS", "1") == "1":
@@ -4152,8 +4075,6 @@ def normalize_v3(source: str) -> str:
         text = shape_sprite_phase_lifetimes(text)
     if os.environ.get("V3_EFFECT_BURST_SAVED_REGISTERS", "1") == "1":
         text = cycle_effect_burst_saved_registers(text)
-    if os.environ.get("V3_VIEW_STATE_BUILD_SCHEDULE", "1") == "1":
-        text = schedule_view_state_build(text)
     return text
 
 

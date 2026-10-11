@@ -1,7 +1,7 @@
 # unit	rodata_vram	rodata_size
 model_ring_identity	0x80074F94	0x50
 camera_perspective_constants	0x80072C8C	0x3C
-world_collision_thresholds	0x80072F64	0x2C
+world_object_draw	0x80072F64	0x2C
 # See tools/place_unit_rodata.py. Listed C units own [vram, vram+size) of
 # main-segment rodata; make verify-code proves the C bytes equal the ROM.
 800902C0	0x80071DCC	0x8
@@ -396,14 +396,16 @@ camera_mode_update	0x80072D28	0x3C
 effect_runtime_tables	0x80072BA0	0xEC
 mission_actor_spawn	0x800761C0	0x38
 matrix_scale_curve	0x80071F90	0x48
-distance_metric_constants	0x800725DC	0x30
+distance_metric_constants	0x800725FC	0x10
+vector_distance_normalize	0x800725DC	0x20
 hud_coordinate_constants	0x800730A0	0x24
 hud_layout_constants	0x800730F8	0x24
-hud_timing_constants	0x80073120	0x38
+hud_timing_constants	0x80073120	0x30
+grid_surface_height	0x80073150	0x2C
 hud_animation_limits	0x8007317C	0x8
 matrix_operation_constants	0x80072660	0x20
-object_transform_constants	0x80072D80	0x14
-object_distance_constants	0x80072DA0	0x1C
+area_lighting_build	0x80072D80	0x18
+view_radius_visible	0x80072DA0	0x20
 grid_collision_constants	0x80073074	0x1C
 font_render_constants	0x80071090	0x14
 path_waypoint_constants	0x80071120	0x4
@@ -418,7 +420,7 @@ object_mode_tail_constants	0x800718F0	0x18
 func_8008F874	0x80071DAC	0x4
 func_800A4468	0x80072A10	0xC
 camera_probe_constants	0x80072B90	0x8
-object_collision_constants	0x80072E8C	0x4
+view_project_point	0x80072E8C	0x4
 model_lod_draw	0x80072EE4	0x10
 view_state_build	0x80072E84	0x8
 model_view_draw	0x80072F04	0x60
@@ -433,10 +435,8 @@ object_state_jump_table	0x800724D0	0x3C
 object_update_primary_jump_table	0x80072518	0x1C
 object_update_secondary_jump_table	0x80072540	0x18
 camera_mode_jump_table	0x80072CE0	0x20
-hud_animation_jump_table	0x80073158	0x24
 object_update_timing_constants	0x80072534	0x8
-effect_dispatch_jump_tables	0x80072DC8	0x40
-effect_dispatch_parameters	0x80072E08	0x74
+view_segment_clip	0x80072DC8	0xB4
 entry_script_dispatch_jump_table	0x80075950	0xC0
 entry_script_threshold_dispatch	0x80075A10	0x1C
 tank_steering_dispatch_data	0x80071E58	0x88

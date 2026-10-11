@@ -780,7 +780,10 @@ def evaluate(job):
         h = hashlib.sha1(b["text"]).hexdigest()[:16] if isinstance(b.get("text"), (bytes, bytearray)) else b["hash"]
         return dict(ok=True, words=r["words"], size=r["built_size"], rom=r["rom_size"], hash=h)
     except Exception as e:  # build errors are expected for some mutations
-        return dict(ok=False, err=str(e)[:200])
+        # Preserve the complete diagnostic.  Truncating this used to hide the
+        # normalizer's actual failure after the command prefix, making a
+        # toolchain/context failure look like an invalid source mutation.
+        return dict(ok=False, err=str(e))
 
 
 def score(r):

@@ -52,4 +52,3 @@ billboard_command_update	0x800EBDA0	0x1E0	normalizer-assisted
 ai_object_search_update	0x80084278	0x48C	normalizer-assisted
 matrix_scale_curve	0x8009277C	0x220	normalizer-assisted
 grid_node_create	0x800B1898	0x510	normalizer-assisted
-view_state_build	0x800AC9E8	0x2CC	normalizer-assisted

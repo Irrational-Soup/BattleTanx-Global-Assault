@@ -1,15 +1,12 @@
 unit	address	size
 model_ring_identity	0x80074F94	0x50
 camera_perspective_constants	0x80072C8C	0x3C
-world_collision_thresholds	0x80072F64	0x2C
-distance_metric_constants	0x800725DC	0x30
+distance_metric_constants	0x800725FC	0x10
 hud_coordinate_constants	0x800730A0	0x24
 hud_layout_constants	0x800730F8	0x24
-hud_timing_constants	0x80073120	0x38
+hud_timing_constants	0x80073120	0x30
 hud_animation_limits	0x8007317C	0x8
 matrix_operation_constants	0x80072660	0x20
-object_transform_constants	0x80072D80	0x14
-object_distance_constants	0x80072DA0	0x1C
 grid_collision_constants	0x80073074	0x1C
 font_render_constants	0x80071090	0x14
 path_waypoint_constants	0x80071120	0x4
@@ -18,7 +15,6 @@ path_search_constants	0x800711C0	0x5C
 waypoint_stack_constants	0x800718A0	0x18
 object_mode_tail_constants	0x800718F0	0x18
 camera_probe_constants	0x80072B90	0x8
-object_collision_constants	0x80072E8C	0x4
 hud_scale_constant	0x8007318C	0x4
 race_bar_scale_constants	0x80073EE4	0x8
 race_bar_ratio_constants	0x80073EF0	0x10
@@ -29,10 +25,7 @@ object_state_jump_table	0x800724D0	0x3C
 object_update_primary_jump_table	0x80072518	0x1C
 object_update_secondary_jump_table	0x80072540	0x18
 camera_mode_jump_table	0x80072CE0	0x20
-hud_animation_jump_table	0x80073158	0x24
 object_update_timing_constants	0x80072534	0x8
-effect_dispatch_jump_tables	0x80072DC8	0x40
-effect_dispatch_parameters	0x80072E08	0x74
 entry_script_dispatch_jump_table	0x80075950	0xC0
 entry_script_threshold_dispatch	0x80075A10	0x1C
 tank_steering_dispatch_data	0x80071E58	0x88

@@ -651,22 +651,6 @@ class KmcPipelineTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "fired 0 times"):
             MODULE.normalize_v3("func_80083DF0:\n\tnop\n")
 
-    def test_region_early_exit_renames_one_branch(self) -> None:
-        source = (
-            "func_800AA5D0:\n"
-            "\tc.le.s\t$f4,$f6\n"
-            "\tnop\n"
-            "\t.set\tnoreorder\n"
-            "\tbc1t\t.L7\n"
-            "\tmove\t$2,$0\n"
-        )
-        normalized = MODULE.normalize_v3(source)
-        self.assertIn("\tbc1tl\t.L7\n\tmove\t$2,$0\n", normalized)
-
-    def test_region_early_exit_requires_one_fire(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, "fired 0 times"):
-            MODULE.normalize_v3("func_800AA5D0:\n\tnop\n")
-
     def test_vector_angle_prologue_requires_all_patterns(self) -> None:
         with self.assertRaisesRegex(RuntimeError, "fired 0 times"):
             MODULE.normalize_v3("func_8009DFAC:\n\tnop\n")
@@ -1581,46 +1565,6 @@ class KmcPipelineTests(unittest.TestCase):
             MODULE.shape_grid_node_create_allocations(
                 "func_800B1898:\n\tnop\n\t.end\tfunc_800B1898\n"
             )
-
-    def test_view_state_build_reproduces_preheader_and_likely_slots(self) -> None:
-        source = (
-            "func_800AC9E8:\n"
-            "\tli\t$23,0x00000001\t\t# 1\n"
-            "\tmtc1\t$0,$f26\n"
-            "\tmove\t$17,$0\n"
-            "\tmove\t$21,$0\n"
-            "\taddu\t$20,$16,51\n"
-            "\tbeql\t$2,$0,.L17\n\tmul.s\t$f2,$f20,$f20\n"
-            "\tbc1fl\t.L17\n\tmul.s\t$f2,$f20,$f20\n"
-        )
-        normalized = MODULE.schedule_view_state_build(source)
-        self.assertIn(
-            "\tmtc1\t$0,$f26\n\taddu\t$20,$16,51\n"
-            "\tmove\t$17,$0\n\tmove\t$21,$0\n",
-            normalized,
-        )
-        self.assertIn(
-            "\tmul.s\t$f2,$f20,$f20\n"
-            "\tbeql\t$2,$0,.L17\n\tnop\n",
-            normalized,
-        )
-        self.assertIn(
-            "\tmul.s\t$f2,$f20,$f20\n"
-            "\tbc1fl\t.L17\n\tnop\n",
-            normalized,
-        )
-
-    def test_view_state_build_rejects_partial_schedule(self) -> None:
-        with self.assertRaisesRegex(RuntimeError, r"likely=\[0, 0\]"):
-            MODULE.schedule_view_state_build(
-                "func_800AC9E8:\n"
-                "\tli\t$23,0x00000001\t\t# 1\n"
-                "\tmtc1\t$0,$f26\n"
-                "\tmove\t$17,$0\n"
-                "\tmove\t$21,$0\n"
-                "\taddu\t$20,$16,51\n"
-            )
-
 
 if __name__ == "__main__":
     unittest.main()

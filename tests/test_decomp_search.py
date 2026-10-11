@@ -257,6 +257,45 @@ class DecompSearchTests(unittest.TestCase):
         self.assertEqual(len({x[4] for x in first}), len(first))
         self.assertGreaterEqual(len(first), 2)
 
+    def test_beam_caps_generation_before_ast_expansion(self):
+        beam = load("decomp_beam")
+        self.assertEqual(beam.bounded_samples(28, 500, 12, 8), 6)
+        self.assertEqual(beam.bounded_samples(28, 0, 12, 8), 28)
+        self.assertEqual(beam.bounded_samples(28, 500, 0, 8), 28)
+
+    def test_permuter_preserves_complete_build_diagnostic(self):
+        permuter = load("decomp_permuter")
+        original = permuter.kmclib.build
+        diagnostic = "command prefix: " + ("x" * 300) + "\nactual cause"
+        try:
+            def fail(*args, **kwargs):
+                raise RuntimeError(diagnostic)
+            permuter.kmclib.build = fail
+            result = permuter.evaluate(("unused.c", "int x;", 0, "f", "production"))
+        finally:
+            permuter.kmclib.build = original
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["err"], diagnostic)
+
+    def test_beam_aggregates_mutation_family_evidence(self):
+        beam = load("decomp_beam")
+        stats = {}
+        beam.update_family_stat(stats, "swap_decls", (10, 0), {
+            "ok": True, "words": 8, "size": 16, "rom": 16, "hash": "a",
+        })
+        beam.update_family_stat(stats, "swap_decls", (10, 0), {
+            "ok": True, "words": 8, "size": 16, "rom": 16, "hash": "a",
+        })
+        beam.update_family_stat(stats, "swap_decls", (10, 0), {
+            "ok": False, "err": "bad source",
+        })
+        self.assertEqual(stats["swap_decls"]["generated"], 3)
+        self.assertEqual(stats["swap_decls"]["compiled"], 2)
+        self.assertEqual(stats["swap_decls"]["build_errors"], 1)
+        self.assertEqual(stats["swap_decls"]["distinct_outputs"], {"a"})
+        self.assertEqual(stats["swap_decls"]["best"], (8, 0))
+        self.assertEqual(stats["swap_decls"]["improvements"], 2)
+
     def test_integer_type_mutations_cover_locals_and_parameters(self):
         permuter = load("decomp_permuter")
         with tempfile.NamedTemporaryFile("w", suffix=".c") as fh:
