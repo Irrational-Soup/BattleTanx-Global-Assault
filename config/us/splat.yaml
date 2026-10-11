@@ -302,7 +302,7 @@ segments:
       - [0x1AE04, c, code/object_spawn]
       - [0x1B6D0, c, code/func_8008B6D0]
       - [0x1B788, c, code/func_8008B788]
-      - [0x1B82C, asm, main_8008B82C_to_8008BD5C]
+      - [0x1B82C, c, code/object_destroy]
       - [0x1BD5C, c, code/tank_damage_motion]
       - [0x1C5BC, c, code/func_8008C5BC]
       - [0x1C5D8, c, code/8008C5D8_tank_fire_weapon]
