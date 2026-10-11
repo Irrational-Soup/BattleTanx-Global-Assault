@@ -596,6 +596,16 @@ class KmcPipelineTests(unittest.TestCase):
             unrelated, MODULE.shape_grid_node_insert_allocations(unrelated)
         )
 
+    def test_ground_slope_probe_rule_is_function_gated(self) -> None:
+        unrelated = "func_800B95C4:\n\tnop\n\t.end\tfunc_800B95C4\n"
+        self.assertEqual(unrelated, MODULE.shape_ground_slope_probe(unrelated))
+
+    def test_ground_slope_probe_rule_rejects_source_drift(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "saved-register slots changed"):
+            MODULE.shape_ground_slope_probe(
+                "func_800B95C8:\n\tnop\n\t.end\tfunc_800B95C8\n"
+            )
+
     def test_uses_at_for_indexed_symbol_load(self) -> None:
         source = "\tlbu\t$2,D_801146D4+8($5)\n"
         self.assertEqual(

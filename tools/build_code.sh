@@ -627,9 +627,9 @@ while IFS= read -r -d '' asm_source; do
     mkdir -p "$(dirname "$asm_object")"
     "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
         -o "$asm_object" "$asm_source"
-    if [[ "$asm_name" =~ ^main_([0-9A-Fa-f]{8})_to_([0-9A-Fa-f]{8})$ ]]; then
-        range_start=$((16#${BASH_REMATCH[1]}))
-        range_end=$((16#${BASH_REMATCH[2]}))
+    if [[ "$asm_name" =~ ^(main|data)_([0-9A-Fa-f]{8})_to_([0-9A-Fa-f]{8})$ ]]; then
+        range_start=$((16#${BASH_REMATCH[2]}))
+        range_end=$((16#${BASH_REMATCH[3]}))
         python3 tools/trim_elf32_section.py "$asm_object" .text \
             "$((range_end - range_start))" --alignment 4
     elif [[ "$asm_name" =~ _textbin$ ]]; then

@@ -1728,6 +1728,119 @@ def reproduce_vector_angle_join_label(text: str) -> str:
     return text[:match.start()] + body + text[match.end():]
 
 
+def shape_ground_slope_probe(text: str) -> str:
+    """Reproduce the retail allocation and inlined angle helper in 800B95C8.
+
+    The recovered C is structurally exact, but GCC gives the four-iteration
+    counter priority over the retained corner-array base.  Retail made the
+    opposite global-allocation choice.  The four inlined copies of
+    ``func_800B8310`` also use the retail result-selection form, and ASN64
+    suppresses a label-adjacent multiply hazard nop that KMC ``as`` inserts.
+    Every rewrite is scoped to this one function and has an exact fire count.
+    """
+    if "func_800B95C8:" not in text:
+        return text
+    match = re.search(
+        r"func_800B95C8:.*?\n\s*\.end\s+func_800B95C8\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B95C8 body not found")
+    body = match.group(0)
+
+    if body.count("108($sp)") != 2 or body.count("112($sp)") != 2:
+        raise RuntimeError("func_800B95C8 saved-register slots changed")
+    body = body.replace("108($sp)", "$__slot108")
+    body = body.replace("112($sp)", "108($sp)")
+    body = body.replace("$__slot108", "112($sp)")
+    if body.count("$17") != 7 or body.count("$18") != 6:
+        raise RuntimeError("func_800B95C8 saved-register uses changed")
+    body = body.replace("$17", "$__s1")
+    body = body.replace("$18", "$17")
+    body = body.replace("$__s1", "$18")
+
+    width = re.compile(
+        r"\tmove\t\$5,\$2\n\tsubu\t\$2,\$2,\$3\n"
+        r"\t\.set\tnoreorder\n"
+        r"\tblez\t\$2,(\.L\d+)\n\tmove\t\$4,\$3\n"
+        r"\t\.set\tnoreorder\n\t\.set\tnoreorder\n"
+        r"\tj\t(\.L\d+)\n\tsubu\t\$2,\$5,\$4\n"
+        r"\t\.set\tnoreorder\n"
+        r"\1:\n\tsubu\t\$2,\$4,\$5\n\2:\n"
+        r"\tsh\t\$2,64\(\$sp\)\n"
+        r"\tlh\t\$2,28\(\$6\)\n\tlh\t\$3,26\(\$6\)\n"
+    )
+    width_repl = (
+        "\tmove\t$5,$2\n\tsubu\t$2,$2,$3\n"
+        "\t.set\tnoreorder\n"
+        "\tblez\t$2,\\1\n\tmove\t$4,$3\n"
+        "\t.set\tnoreorder\n\t.set\tnoreorder\n"
+        "\tj\t\\2\n\tsubu\t$4,$5,$4\n"
+        "\t.set\tnoreorder\n"
+        "\\1:\n\tsubu\t$4,$4,$5\n\\2:\n"
+        "\tlh\t$2,28($6)\n\tlh\t$3,26($6)\n\tsh\t$4,64($sp)\n"
+    )
+    body, fires = width.subn(width_repl, body)
+    if fires != 1:
+        raise RuntimeError(
+            f"func_800B95C8 width-result rewrite fired {fires} times (expected 1)"
+        )
+
+    select = re.compile(
+        r"\tsrl\t\$3,\$2,1\n\tandi\t\$2,\$16,0xffff\n"
+        r"\t\.set\tnoreorder\n"
+        r"\tbeq\t\$2,\$0,(\.L\d+)\n\tmove\t\$4,\$3\n"
+        r"\t\.set\tnoreorder\n"
+        r"\tnor\t\$4,\$0,\$3\n\1:\n"
+    )
+    select_repl = (
+        "\tsrl\t$4,$2,1\n\tandi\t$2,$16,0xffff\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,\\1\n\tmove\t$3,$4\n"
+        "\t.set\tnoreorder\n"
+        "\txori\t$3,$4,0xffff\n\\1:\n"
+    )
+    body, fires = select.subn(select_repl, body)
+    if fires != 4:
+        raise RuntimeError(
+            f"func_800B95C8 result-select rewrite fired {fires} times (expected 4)"
+        )
+
+    body, direct_uses = re.subn(
+        r"(\.L\d+:\n)\tsh\t\$4,0\(\$(21|22)\)\n",
+        r"\1\tsh\t$3,0($\2)\n",
+        body,
+    )
+    body, accumulated_uses = re.subn(
+        r"(\.L\d+:\n\tlhu\t\$2,0\(\$(21|22)\)\n)\tandi\t\$3,\$4,0xffff\n",
+        r"\1\tandi\t$3,$3,0xffff\n",
+        body,
+    )
+    if direct_uses != 2 or accumulated_uses != 2:
+        raise RuntimeError(
+            "func_800B95C8 result uses changed: "
+            f"direct={direct_uses}, accumulated={accumulated_uses}"
+        )
+
+    epilogue_before = "\tlw\t$17,108($sp)\n\tlw\t$18,112($sp)\n"
+    epilogue_after = "\tlw\t$18,112($sp)\n\tlw\t$17,108($sp)\n"
+    if body.count(epilogue_before) != 1:
+        raise RuntimeError("func_800B95C8 epilogue restore order changed")
+    body = body.replace(epilogue_before, epilogue_after, 1)
+
+    label_mul = re.compile(
+        r"(\t\.set\tnoreorder\n\.L\d+:\n)\tmove\t\$16,\$0\n"
+        r"(\.L\d+):\n(\tmul\.s\t\$f2,\$f20,\$f20\n)"
+    )
+    body, fires = label_mul.subn(
+        r"\1\2 = . + 4\n\tmove\t$16,$0\n\3", body
+    )
+    if fires != 4:
+        raise RuntimeError(
+            f"func_800B95C8 label-multiply rewrite fired {fires} times (expected 4)"
+        )
+    return text[:match.start()] + body + text[match.end():]
+
+
 def shape_effect_mesh_draw_registers(text: str) -> str:
     """Match saved constant allocation and first-call scheduling in 800F8AAC."""
     if "func_800F8AAC:" not in text:
@@ -4472,6 +4585,8 @@ def normalize_v3(source: str) -> str:
         text = shape_tank_aim_refresh_registers(text)
     if os.environ.get("V3_VECTOR_ANGLE_JOIN_LABEL", "1") == "1":
         text = reproduce_vector_angle_join_label(text)
+    if os.environ.get("V3_GROUND_SLOPE_PROBE", "1") == "1":
+        text = shape_ground_slope_probe(text)
     if os.environ.get("V3_EFFECT_MESH_DRAW_REGISTERS", "1") == "1":
         text = shape_effect_mesh_draw_registers(text)
     if os.environ.get("V3_CONTACT_SIDE_TEST_FRAME", "1") == "1":

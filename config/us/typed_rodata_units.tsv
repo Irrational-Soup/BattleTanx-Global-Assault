@@ -9,7 +9,6 @@ path_waypoint_constants	0x80071120	0x4
 path_route_constants	0x8007119C	0x8
 path_search_constants	0x800711C0	0x4C
 object_mode_tail_constants	0x800718F0	0x18
-hud_scale_constant	0x8007318C	0x4
 race_bar_scale_constants	0x80073EE4	0x8
 race_bar_ratio_constants	0x80073EF0	0x10
 results_format_constants	0x80073F00	0x2C

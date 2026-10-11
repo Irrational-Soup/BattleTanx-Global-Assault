@@ -20,6 +20,7 @@ unit_command_candidate	0x80086CEC	0x308	normalizer-assisted
 unit_command_search	0x80086FF4	0x248	normalizer-assisted
 tank_aim_refresh	0x80082198	0x3C8	normalizer-assisted
 vector_angle_from_xy	0x800B8310	0x98	normalizer-assisted
+ground_slope_probe	0x800B95C8	0x3DC	normalizer-assisted
 effect_mesh_draw	0x800F8AAC	0x2F8	normalizer-assisted
 model_vertex_offset_copy	0x800EBA98	0x210	normalizer-assisted
 entity_selection_create	0x800ED990	0x270	normalizer-assisted
