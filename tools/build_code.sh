@@ -298,10 +298,6 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800C9A3C_to_800CA1A8.s.o .text 0x76c --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800CA620_to_800CAA0C.s.o asm/us/main_800CA620_to_800CAA0C.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800CA620_to_800CAA0C.s.o .text 0x3ec --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800CB10C_to_800CB110.s.o asm/us/main_800CB10C_to_800CB110.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800CB10C_to_800CB110.s.o .text 0x4 --alignment 4
@@ -4670,7 +4666,7 @@ if false; then
     build/us/src/code/race_lap_times_clamp.c.o \
     build/us/src/code/race_timer_queries.c.o \
     build/us/src/code/race_slot_set_digit.c.o \
-    build/us/asm/us/main_800CA620_to_800CAA0C.s.o \
+    build/us/src/code/race_message_append.c.o \
     build/us/src/code/race_popup_show.c.o \
     build/us/src/code/race_popup_setup.c.o \
     build/us/src/code/race_flag_queries.c.o \

@@ -431,7 +431,7 @@ race_bar_ratio_constants	0x80073EF0	0x10
 lightning_path_subdivide	0x80075EA8	0x10
 effect_mesh_transform_draw	0x80072AA0	0x4C
 results_format_constants	0x80073F00	0x2C
-race_message_style_jump_table	0x80073F50	0x1C
+race_message_append	0x80073F50	0x1C
 match_result_check	0x800724D0	0x3C
 game_mode_update	0x80072518	0x40
 camera_mode_jump_table	0x80072CE0	0x20

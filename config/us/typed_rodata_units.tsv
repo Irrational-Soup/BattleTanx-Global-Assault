@@ -13,5 +13,4 @@ hud_scale_constant	0x8007318C	0x4
 race_bar_scale_constants	0x80073EE4	0x8
 race_bar_ratio_constants	0x80073EF0	0x10
 results_format_constants	0x80073F00	0x2C
-race_message_style_jump_table	0x80073F50	0x1C
 camera_mode_jump_table	0x80072CE0	0x20

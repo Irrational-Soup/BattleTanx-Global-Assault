@@ -816,7 +816,7 @@ segments:
       - [0x5A2BC, c, code/race_lap_times_clamp]
       - [0x5A3F0, c, code/race_timer_queries]
       - [0x5A4A0, c, code/race_slot_set_digit]
-      - [0x5A620, asm, main_800CA620_to_800CAA0C]
+      - [0x5A620, c, code/race_message_append]
       - [0x5AA0C, c, code/race_popup_show]
       - [0x5AA48, c, code/race_popup_setup]
       - [0x5AB44, c, code/race_flag_queries]

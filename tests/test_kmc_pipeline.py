@@ -1546,6 +1546,16 @@ class KmcPipelineTests(unittest.TestCase):
                 "func_800B3748:\n\tnop\n\t.end\tfunc_800B3748\n"
             )
 
+    def test_race_message_style_dispatch_ignores_other_functions(self) -> None:
+        source = "other_function:\n\tnop\n\t.end\tother_function\n"
+        self.assertEqual(source, MODULE.shape_race_message_style_dispatch(source))
+
+    def test_race_message_style_dispatch_rejects_partial_function(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "fired 0 times"):
+            MODULE.shape_race_message_style_dispatch(
+                "func_800CA620:\n\tnop\n\t.end\tfunc_800CA620\n"
+            )
+
     def test_shell_update_requires_both_schedules(self) -> None:
         with self.assertRaisesRegex(RuntimeError, r"expected \(1, 1\)"):
             MODULE.schedule_shell_update_allocations(

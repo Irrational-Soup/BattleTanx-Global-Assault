@@ -4155,6 +4155,110 @@ def shape_grid_contact_query_registers(text: str) -> str:
     return text[:match.start()] + body + text[match.end():]
 
 
+def shape_race_message_style_dispatch(text: str) -> str:
+    """Restore GCC's retail branch form for ``func_800CA620``.
+
+    The reconstructed switch is semantically exact, but GCC's first jump pass
+    folds two assignment diamonds into flag arithmetic.  The retail build kept
+    those diamonds.  Replace only the complete, function-local dispatch and
+    fail closed if any instruction or label in the compiler output changes.
+    """
+    if "func_800CA620:" not in text:
+        return text
+    match = re.search(
+        r"func_800CA620:.*?\n\s*\.end\s+func_800CA620\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800CA620 body not found")
+    body = match.group(0)
+    before = (
+        "\tli\t$2,0x00000001\t\t# 1\n\t.set\tnoreorder\n"
+        "\tbeq\t$7,$2,.L20\n\tslt\t$2,$7,2\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tbne\t$2,$0,.L30\n"
+        "\tli\t$2,0x00000002\t\t# 2\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tbeq\t$7,$2,.L25\n"
+        "\tli\t$2,0x00000003\t\t# 3\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tbeq\t$7,$2,.L22\n"
+        "\tli\t$4,0x00000006\t\t# 6\n\t.set\tnoreorder\n"
+        "\tj\t.L30\n\tnop\n.L20:\n\tlb\t$3,D_80117EB0\n"
+        "\tli\t$2,0x00000003\t\t# 3\n\t.set\tnoreorder\n"
+        "\tbeq\t$3,$2,.L61\n\tslt\t$2,$3,4\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tbeq\t$2,$0,.L23\n"
+        "\tli\t$2,0x00000004\t\t# 4\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tj\t.L22\n"
+        "\tli\t$4,0x00000002\t\t# 2\n\t.set\tnoreorder\n.L23:\n"
+        "\t.set\tnoreorder\n\tbne\t$3,$2,.L22\n"
+        "\tli\t$4,0x00000001\t\t# 1\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tj\t.L22\n"
+        "\tli\t$4,0x00000004\t\t# 4\n\t.set\tnoreorder\n.L25:\n"
+        "\tlb\t$3,D_80117EB0\n\t#nop\n\t.set\tnoreorder\n"
+        "\tbne\t$3,$7,.L26\n\tli\t$2,0x00000004\t\t# 4\n"
+        "\t.set\tnoreorder\n\t.set\tnoreorder\n\tj\t.L22\n"
+        "\tli\t$4,0x00000006\t\t# 6\n\t.set\tnoreorder\n.L26:\n"
+        "\t.set\tnoreorder\n\tbne\t$3,$2,.L22\n"
+        "\tli\t$4,0x00000002\t\t# 2\n\t.set\tnoreorder\n.L61:\n"
+        "\t.set\tnoreorder\n\tj\t.L22\n"
+        "\tli\t$4,0x00000005\t\t# 5\n\t.set\tnoreorder\n.L30:\n"
+        "\tlb\t$3,D_80117EB0\n\t#nop\n\tslt\t$2,$3,4\n"
+        "\t.set\tnoreorder\n\tbeq\t$2,$0,.L31\n\tslt\t$2,$3,2\n"
+        "\t.set\tnoreorder\n\t.set\tnoreorder\n\tj\t.L22\n"
+        "\txori\t$4,$2,0x0001\n\t.set\tnoreorder\n.L31:\n"
+        "\txori\t$2,$3,0x0004\n\tsltu\t$2,$2,1\n"
+        "\tsubu\t$2,$0,$2\n\tandi\t$4,$2,0x0003\n.L22:\n"
+        "\tandi\t$3,$10,0xffff\n"
+    )
+    after = (
+        "\tli\t$2,0x00000001\t\t# 1\n\t.set\tnoreorder\n"
+        "\tbeq\t$7,$2,.Lca620_case1\n\tslt\t$2,$7,2\n"
+        "\t.set\tnoreorder\n\t.set\tnoreorder\n"
+        "\tbne\t$2,$0,.Lca620_default\n"
+        "\tli\t$2,0x00000002\t\t# 2\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tbeq\t$7,$2,.Lca620_case2\n"
+        "\tli\t$2,0x00000003\t\t# 3\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tbeq\t$7,$2,.Lca620_style_done\n"
+        "\tli\t$4,0x00000006\t\t# 6\n\t.set\tnoreorder\n"
+        "\tj\t.Lca620_default\n\tnop\n.Lca620_case1:\n"
+        "\tlb\t$3,D_80117EB0\n\tli\t$2,0x00000003\t\t# 3\n"
+        "\t.set\tnoreorder\n\tbeq\t$3,$2,.Lca620_style5\n"
+        "\tslt\t$2,$3,4\n\t.set\tnoreorder\n\t.set\tnoreorder\n"
+        "\tbne\t$2,$0,.Lca620_style_done\n"
+        "\tli\t$4,0x00000002\t\t# 2\n\t.set\tnoreorder\n"
+        "\tli\t$2,0x00000004\t\t# 4\n\t.set\tnoreorder\n"
+        "\tbeql\t$3,$2,.Lca620_style_done\n"
+        "\tli\t$4,0x00000004\t\t# 4\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tj\t.Lca620_after_style\n"
+        "\tandi\t$3,$10,0xffff\n\t.set\tnoreorder\n"
+        ".Lca620_case2:\n\tlb\t$3,D_80117EB0\n\t#nop\n"
+        "\t.set\tnoreorder\n\tbeq\t$3,$2,.Lca620_style_done\n"
+        "\tli\t$4,0x00000006\t\t# 6\n\t.set\tnoreorder\n"
+        "\tli\t$2,0x00000004\t\t# 4\n\t.set\tnoreorder\n"
+        "\tbne\t$3,$2,.Lca620_after_style\n"
+        "\tandi\t$3,$10,0xffff\n\t.set\tnoreorder\n"
+        ".Lca620_style5:\n\t.set\tnoreorder\n\tj\t.Lca620_style_done\n"
+        "\tli\t$4,0x00000005\t\t# 5\n\t.set\tnoreorder\n"
+        ".Lca620_default:\n\tlb\t$3,D_80117EB0\n\t#nop\n"
+        "\tslt\t$2,$3,4\n\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.Lca620_default_ge4\n\tslt\t$2,$3,2\n"
+        "\t.set\tnoreorder\n\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.Lca620_style_done\n"
+        "\tli\t$4,0x00000001\t\t# 1\n\t.set\tnoreorder\n"
+        "\t.set\tnoreorder\n\tj\t.Lca620_style_done\n\tmove\t$4,$0\n"
+        "\t.set\tnoreorder\n.Lca620_default_ge4:\n"
+        "\tli\t$2,0x00000004\t\t# 4\n\t.set\tnoreorder\n"
+        "\tbeq\t$3,$2,.Lca620_style_done\n"
+        "\tli\t$4,0x00000003\t\t# 3\n\t.set\tnoreorder\n"
+        "\tmove\t$4,$0\n.Lca620_style_done:\n"
+        "\tandi\t$3,$10,0xffff\n.Lca620_after_style:\n"
+    )
+    fires = body.count(before)
+    if fires != 1:
+        raise RuntimeError(
+            f"func_800CA620 style dispatch fired {fires} times (expected 1)"
+        )
+    body = body.replace(before, after, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
 def normalize_v3(source: str) -> str:
     import os
     if os.environ.get("V3_CONTROLS_CONFIG", "1") == "1":
@@ -4326,6 +4430,8 @@ def normalize_v3(source: str) -> str:
         text = shape_grid_node_insert_allocations(text)
     if os.environ.get("V3_GRID_CONTACT_QUERY_REGISTERS", "1") == "1":
         text = shape_grid_contact_query_registers(text)
+    if os.environ.get("V3_RACE_MESSAGE_STYLE_DISPATCH", "1") == "1":
+        text = shape_race_message_style_dispatch(text)
     if os.environ.get("V3_GRID_NODE_CREATE_ALLOCATIONS", "1") == "1":
         text = shape_grid_node_create_allocations(text)
     if os.environ.get("V3_MATRIX_SCALE_CURVE", "1") == "1":
