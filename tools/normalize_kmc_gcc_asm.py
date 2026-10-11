@@ -1182,6 +1182,55 @@ def suppress_path_route_distance_label_hazards(text: str) -> str:
     return text[:match.start()] + body + text[match.end():]
 
 
+def suppress_ai_flank_path_label_hazards(text: str) -> str:
+    """Suppress three non-retail label-adjacent ``mul.s`` hazard nops.
+
+    ASN64 assembles the compiler output for ``func_80080CC8`` exactly. KMC
+    ``as`` instead inserts a nop when one of three branch-target labels sits
+    directly before the distance macro's multiply. Define each label one
+    instruction earlier as ``. + 4`` so its address is unchanged while the
+    assembler no longer treats it as a multiply-hazard boundary.
+    """
+    if "func_80080CC8:" not in text:
+        return text
+    match = re.search(
+        r"func_80080CC8:.*?\n\s*\.end\s+func_80080CC8\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_80080CC8 body not found for label hazards")
+    lines = match.group(0).split("\n")
+    fires = 0
+    index = 0
+    while index < len(lines):
+        if (
+            re.fullmatch(r"\.L\d+:", lines[index])
+            and index + 1 < len(lines)
+            and lines[index + 1] == "\tmul.s\t$f0,$f0,$f22"
+        ):
+            label = lines[index][:-1]
+            previous = index - 1
+            while previous >= 0 and (
+                not lines[previous].startswith("\t")
+                or lines[previous].startswith("\t.set")
+            ):
+                previous -= 1
+            if previous < 0:
+                raise RuntimeError(
+                    f"func_80080CC8 has no instruction before {label}"
+                )
+            del lines[index]
+            lines.insert(previous, f"{label} = . + 4")
+            fires += 1
+        index += 1
+    if fires != 3:
+        raise RuntimeError(
+            f"func_80080CC8 label-multiply hazards fired {fires} times "
+            "(expected 3)"
+        )
+    body = "\n".join(lines)
+    return text[:match.start()] + body + text[match.end():]
+
+
 def suppress_distance_multiply_hazard_nops(text: str) -> str:
     """Encode branch-target ``mul.s`` instructions without KMC's extra nop.
 
@@ -4814,6 +4863,8 @@ def normalize_v3(source: str) -> str:
         text = reproduce_sprite_ring_label_hazard(text)
     if os.environ.get("V3_PATH_ROUTE_DISTANCE_LABEL_HAZARDS", "1") == "1":
         text = suppress_path_route_distance_label_hazards(text)
+    if os.environ.get("V3_AI_FLANK_PATH_LABEL_HAZARDS", "1") == "1":
+        text = suppress_ai_flank_path_label_hazards(text)
     if os.environ.get("V3_DISTANCE_MULTIPLY_HAZARDS", "1") == "1":
         text = suppress_distance_multiply_hazard_nops(text)
     if os.environ.get("V3_VEHICLE_EXTENT_MULTIPLY_HAZARD", "1") == "1":

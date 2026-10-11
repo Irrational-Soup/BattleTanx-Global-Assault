@@ -34,6 +34,7 @@ path_goal_check	0x8007E2D4	0x378	matched
 path_collision_probe	0x8007E9D0	0x398	matched
 path_waypoint_side	0x8007F128	0x474	matched
 path_route_distance	0x8007F774	0x99C	normalizer-assisted
+ai_flank_path_update	0x80080CC8	0xB1C	normalizer-assisted
 path_route_score	0x80080110	0x708	matched
 path_target_reachable	0x80082870	0x214	matched
 ai_movement_start	0x8008355C	0x2B0	matched

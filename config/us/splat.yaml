@@ -150,7 +150,7 @@ segments:
       - [0x10BBC, asm, main_80080BBC_to_80080BC0]
       - [0x10BC0, c, code/func_80080BC0]
       - [0x10C04, c, code/func_80080C04]
-      - [0x10CC8, asm, main_80080CC8_to_800817E4]
+      - [0x10CC8, c, code/ai_flank_path_update]
       - [0x117E4, c, code/func_800817E4]
       - [0x11834, c, code/path_node_rebuild]
       - [0x11C78, c, code/path_rebuild_from_collision]
