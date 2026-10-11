@@ -1841,6 +1841,166 @@ def shape_ground_slope_probe(text: str) -> str:
     return text[:match.start()] + body + text[match.end():]
 
 
+def shape_ground_collision_response(text: str) -> str:
+    """Reproduce retail allocation/scheduling decisions in func_800B88DC.
+
+    The C has the retail CFG, frame, stack objects and literal pool.  GCC's
+    allocator nevertheless rematerializes the corner array once, assigns the
+    four inlined slope calculations to a different pair of FP registers, and
+    chooses the complement form that combine prefers.  Keep these mechanical
+    corrections local and fire-counted; the label rewrite also models ASN64's
+    multiply-hazard behavior.
+    """
+    if "func_800B88DC:" not in text:
+        return text
+    match = re.search(
+        r"func_800B88DC:.*?\n\s*\.end\s+func_800B88DC\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B88DC body not found")
+    body = match.group(0)
+
+    before = (
+        "\tmove\t$21,$0\n\taddu\t$22,$sp,24\n\tsb\t$0,1271($sp)\n"
+        "\tl.s\t$f22,40($19)\n\tmove\t$20,$0\n\tandi\t$23,$2,0xffff\n"
+        "\tsltu\t$8,$0,$23\n\tsw\t$8,1308($sp)\n\tlhu\t$3,100($19)\n"
+        "\tsll\t$2,$16,2\n\taddu\t$2,$2,$16\n\tsll\t$fp,$2,3\n"
+        "\tandi\t$3,$3,0xfff0\n\tsh\t$3,100($19)\n"
+    )
+    after = (
+        "\tmove\t$21,$0\n\tsb\t$0,1271($sp)\n\tl.s\t$f22,40($19)\n"
+        "\tandi\t$23,$2,0xffff\n\tsltu\t$8,$0,$23\n\tsll\t$2,$16,2\n"
+        "\taddu\t$2,$2,$16\n\tsll\t$fp,$2,3\n\tsw\t$8,1308($sp)\n"
+        "\tlhu\t$2,100($19)\n\tmove\t$20,$0\n\taddu\t$22,$sp,24\n"
+        "\tandi\t$2,$2,0xfff0\n\tsh\t$2,100($19)\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B88DC loop setup changed")
+    body = body.replace(before, after, 1)
+
+    replacements = (
+        ("\tmove\t$5,$22\n", "\taddu\t$5,$sp,24\n", 1, "corner argument"),
+        ("\taddu\t$2,$sp,$2\n\t.set\tnoreorder\n\ts.s\t$f20,68($3)\n\tl.s\t$f0,56($2)\n",
+         "\taddu\t$2,$2,$22\n\t.set\tnoreorder\n\ts.s\t$f20,68($3)\n\tl.s\t$f0,32($2)\n", 1,
+         "previous-height address"),
+        ("\tsubu\t$2,$4,$5\n.L53:\n\tsh\t$2,1240($sp)\n",
+         "\tsubu\t$4,$4,$5\n.L53:\n", 1, "first width negative"),
+    )
+    for old, new, expected, label in replacements:
+        count = body.count(old)
+        if count != expected:
+            raise RuntimeError(
+                f"func_800B88DC {label} rewrite saw {count} sites (expected {expected})"
+            )
+        body = body.replace(old, new, expected)
+
+    if body.count("\tsubu\t$2,$5,$4\n") != 2:
+        raise RuntimeError("func_800B88DC width-positive paths changed")
+    body = body.replace("\tsubu\t$2,$5,$4\n", "\tsubu\t$4,$5,$4\n", 1)
+    dim_loads = "\tlh\t$2,28($6)\n\tlh\t$3,26($6)\n"
+    if body.count(dim_loads) != 1:
+        raise RuntimeError("func_800B88DC dimension-load sequence changed")
+    body = body.replace(
+        dim_loads,
+        "\tlh\t$2,28($6)\n\tlh\t$3,26($6)\n\tsh\t$4,1240($sp)\n",
+        1,
+    )
+    corner_index = "\taddu\t$17,$2,$22\n"
+    if body.count(corner_index) != 1:
+        raise RuntimeError("func_800B88DC corner-index operand order changed")
+    body = body.replace(corner_index, "\taddu\t$17,$22,$2\n", 1)
+
+    # The second dimension store fills the first slope branch's delay slot.
+    old = "\tsubu\t$2,$4,$5\n.L55:\n\tsh\t$2,1242($sp)\n"
+    new = "\tsubu\t$2,$4,$5\n.L55:\n"
+    if body.count(old) != 1:
+        raise RuntimeError("func_800B88DC second width store changed")
+    body = body.replace(old, new, 1)
+
+    # The first three slope calculations retain their delta in f20 and use
+    # f22 for its absolute value.  The fourth already uses f20 in retail.
+    for old, new, expected, limit, label in (
+        ("\tsub.s\t$f2,$f2,$f0\n", "\tsub.s\t$f20,$f2,$f0\n", 4, 4, "delta"),
+        ("\tc.eq.s\t$f2,$f0\n", "\tc.eq.s\t$f20,$f0\n", 4, 4, "zero test"),
+        ("\tc.lt.s\t$f2,$f0\n", "\tc.lt.s\t$f20,$f0\n", 3, 3, "sign test"),
+        ("\tmov.s\t$f20,$f2\n", "\tmov.s\t$f22,$f20\n", 4, 3, "absolute copy"),
+        ("\tneg.s\t$f20,$f2\n", "\tneg.s\t$f22,$f20\n", 3, 3, "absolute negate"),
+        ("\tmul.s\t$f2,$f20,$f20\n", "\tmul.s\t$f2,$f22,$f22\n", 4, 3, "square"),
+        ("\tdiv.s\t$f12,$f20,$f0\n", "\tdiv.s\t$f12,$f22,$f0\n", 4, 3, "ratio"),
+    ):
+        count = body.count(old)
+        if count != expected:
+            raise RuntimeError(
+                f"func_800B88DC {label} rewrite saw {count} sites (expected {expected})"
+            )
+        body = body.replace(old, new, limit)
+
+    # Preserve retail's delay slots for the two dimension stores.
+    first_branch = "\tbc1t\t.L56\n\tsll\t$2,$2,16\n"
+    if body.count(first_branch) != 1:
+        raise RuntimeError("func_800B88DC first slope branch changed")
+    body = body.replace(first_branch, "\tbc1t\t.L56\n\tsh\t$2,1242($sp)\n\tsll\t$2,$2,16\n", 1)
+
+    # The fourth block's delta now already resides in f20; its former copy is
+    # the architectural hazard nop present in retail.
+    if body.count("\tbc1t\t.L74\n\tmov.s\t$f20,$f2\n") != 1:
+        raise RuntimeError("func_800B88DC fourth slope delay slot changed")
+    body = body.replace("\tbc1t\t.L74\n\tmov.s\t$f20,$f2\n",
+                        "\tbc1t\t.L74\n\tnop\n", 1)
+
+    select = re.compile(
+        r"\tsrl\t\$3,\$2,1\n\tandi\t\$2,\$16,0xffff\n"
+        r"\t\.set\tnoreorder\n"
+        r"\tbeq\t\$2,\$0,(\.L\d+)\n\tmove\t\$4,\$3\n"
+        r"\t\.set\tnoreorder\n"
+        r"\tnor\t\$4,\$0,\$3\n\1:\n"
+    )
+    body, fires = select.subn(
+        "\tsrl\t$4,$2,1\n\tandi\t$2,$16,0xffff\n"
+        "\t.set\tnoreorder\n\tbeq\t$2,$0,\\1\n\tmove\t$3,$4\n"
+        "\t.set\tnoreorder\n\txori\t$3,$4,0xffff\n\\1:\n",
+        body,
+    )
+    if fires != 4:
+        raise RuntimeError(
+            f"func_800B88DC result-select rewrite fired {fires} times (expected 4)"
+        )
+    body, direct = re.subn(
+        r"(\.L\d+:\n)\tsh\t\$4,(60|62)\(\$19\)\n",
+        r"\1\tsh\t$3,\2($19)\n",
+        body,
+    )
+    body, accum = re.subn(
+        r"(\.L\d+:\n\tlhu\t\$2,(60|62)\(\$19\)\n)\tandi\t\$3,\$4,0xffff\n",
+        r"\1\tandi\t$3,$3,0xffff\n",
+        body,
+    )
+    if direct != 2 or accum != 2:
+        raise RuntimeError(
+            f"func_800B88DC result uses changed: direct={direct}, accumulated={accum}"
+        )
+
+    merged_load = ".L62:\n\tl.s\t$f2,80($19)\n\tl.s\t$f0,68($19)\n"
+    if body.count(merged_load) != 1:
+        raise RuntimeError("func_800B88DC merged slope-load label changed")
+    body = body.replace(
+        merged_load,
+        "\tl.s\t$f2,80($19)\n.L62:\n\tl.s\t$f0,68($19)\n",
+        1,
+    )
+
+    label_mul = re.compile(
+        r"(\t\.set\tnoreorder\n\.L\d+:\n)\tmove\t\$16,\$0\n"
+        r"(\.L\d+):\n(\tmul\.s\t\$f2,\$(?:f22|f20),\$(?:f22|f20)\n)"
+    )
+    body, fires = label_mul.subn(r"\1\2 = . + 4\n\tmove\t$16,$0\n\3", body)
+    if fires != 4:
+        raise RuntimeError(
+            f"func_800B88DC label-multiply rewrite fired {fires} times (expected 4)"
+        )
+    return text[:match.start()] + body + text[match.end():]
+
+
 def shape_effect_mesh_draw_registers(text: str) -> str:
     """Match saved constant allocation and first-call scheduling in 800F8AAC."""
     if "func_800F8AAC:" not in text:
@@ -4587,6 +4747,8 @@ def normalize_v3(source: str) -> str:
         text = reproduce_vector_angle_join_label(text)
     if os.environ.get("V3_GROUND_SLOPE_PROBE", "1") == "1":
         text = shape_ground_slope_probe(text)
+    if os.environ.get("V3_GROUND_COLLISION_RESPONSE", "1") == "1":
+        text = shape_ground_collision_response(text)
     if os.environ.get("V3_EFFECT_MESH_DRAW_REGISTERS", "1") == "1":
         text = shape_effect_mesh_draw_registers(text)
     if os.environ.get("V3_CONTACT_SIDE_TEST_FRAME", "1") == "1":

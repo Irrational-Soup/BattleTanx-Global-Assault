@@ -2,7 +2,6 @@ unit	address	size
 model_ring_identity	0x80074F94	0x50
 hud_coordinate_constants	0x800730A0	0x24
 hud_timing_constants	0x80073120	0x30
-hud_animation_limits	0x8007317C	0x8
 matrix_operation_constants	0x80072660	0x20
 grid_collision_constants	0x80073074	0x1C
 path_waypoint_constants	0x80071120	0x4

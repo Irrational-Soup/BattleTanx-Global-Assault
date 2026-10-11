@@ -606,6 +606,18 @@ class KmcPipelineTests(unittest.TestCase):
                 "func_800B95C8:\n\tnop\n\t.end\tfunc_800B95C8\n"
             )
 
+    def test_ground_collision_response_rule_is_function_gated(self) -> None:
+        unrelated = "func_800B88D8:\n\tnop\n\t.end\tfunc_800B88D8\n"
+        self.assertEqual(
+            unrelated, MODULE.shape_ground_collision_response(unrelated)
+        )
+
+    def test_ground_collision_response_rule_rejects_source_drift(self) -> None:
+        with self.assertRaisesRegex(RuntimeError, "loop setup changed"):
+            MODULE.shape_ground_collision_response(
+                "func_800B88DC:\n\tnop\n\t.end\tfunc_800B88DC\n"
+            )
+
     def test_uses_at_for_indexed_symbol_load(self) -> None:
         source = "\tlbu\t$2,D_801146D4+8($5)\n"
         self.assertEqual(

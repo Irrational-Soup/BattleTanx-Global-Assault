@@ -663,7 +663,7 @@ segments:
       - [0x483A8, c, code/grid_surface_height]
       - [0x487A0, c, code/800B87A0]
       - [0x48870, c, code/grid_node_height]
-      - [0x488DC, asm, main_800B88DC_to_800B9094]
+      - [0x488DC, c, code/ground_collision_response]
       - [0x49094, c, code/ground_corner_probe]
       - [0x493A4, c, code/grid_height_query]
       - [0x495C8, c, code/ground_slope_probe]
