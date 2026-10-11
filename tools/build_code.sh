@@ -4483,7 +4483,7 @@ if false; then
     build/us/src/code/grid_collision_push.c.o \
     build/us/src/code/grid_collision_constants.c.o \
     build/us/src/code/800B2890.c.o \
-    build/us/asm/us/main_800B3018_to_800B3368.s.o \
+    build/us/src/code/grid_node_separation.c.o \
     build/us/src/code/800B3368.c.o \
     build/us/src/code/grid_overlap_query.c.o \
     build/us/src/code/800B3504.c.o \

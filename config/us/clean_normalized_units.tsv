@@ -288,3 +288,5 @@ game_mode_update	0x8009C524	0xC20	matched
 model_group_display_patch	0x80095FE0	0x270	matched
 vector_angle	0x8009DDF0	0x1BC	matched
 match_result_check	0x8009B694	0xA04	matched
+waypoint_ref_resolve	0x8008A3F8	0x1EC	matched
+grid_node_separation	0x800B3018	0x350	matched
