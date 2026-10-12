@@ -86,6 +86,8 @@ python3 tools/decomp_register_atlas.py built.json reference.json \
   --group 's0,s1,s2=s0,s1,s2' --group 'f20,f22=f20,f22'
 python3 tools/decomp_register_atlas.py built.json reference.json \
   --single-swaps --improving-only --group 's0,s1,s2=s0,s1,s2'
+python3 tools/decomp_register_atlas.py built.json reference.json \
+  --regional-swaps --group 's0,s1,s2=s0,s1,s2'
 python3 tools/audit_assembly_segments.py --splat config/us/splat.yaml \
   --asm-root asm/us --json build/us/assembly-inventory.json
 make assembly-report

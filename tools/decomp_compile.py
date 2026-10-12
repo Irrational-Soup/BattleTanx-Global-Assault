@@ -56,6 +56,19 @@ def markers(text):
                 data=mk("DATA_VRAM"), ldsyms=re.findall(r"LDSYM (\w+)=(0x[0-9A-Fa-f]+)", text))
 
 
+def parse_span(value):
+    """Accept either a legacy byte count or the canonical START..END marker."""
+    if not value:
+        return None
+    match = re.fullmatch(r"(0x[0-9A-Fa-f]+)\.\.(0x[0-9A-Fa-f]+)", value)
+    if match:
+        start, end = (int(item, 16) for item in match.groups())
+        if end < start:
+            raise ValueError("SPAN end precedes start: %s" % value)
+        return end - start
+    return int(value, 16)
+
+
 class BuildError(Exception):
     pass
 
@@ -170,7 +183,7 @@ def build(src, vram, focus=None, workdir=None, dumps=False, text=None, keep=Fals
             raw_s = fh.read()
         with open(t + "/n.s") as fh:
             norm_s = fh.read()
-        res = dict(src=src, vram=vram, link_vram=link_vram, focus=focus, span=int(span, 16) if span else None,
+        res = dict(src=src, vram=vram, link_vram=link_vram, focus=focus, span=parse_span(span),
                    text=tb, tsz=tsz, rodata=ro, rodata_vram=int(M["rodata"], 16) if M["rodata"] else None,
                    funcs=funcs, syms=syms, raw_s=raw_s, norm_s=norm_s,
                    relocs=_run([B + "readelf", "-rW", t + "/o.o"], R, log), log=log, workdir=t)

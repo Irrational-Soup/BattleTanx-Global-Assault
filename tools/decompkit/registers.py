@@ -16,6 +16,15 @@ class MappingResult:
     mapping: dict[str, str]
 
 
+@dataclass(frozen=True)
+class WindowMappingResult:
+    mismatches: int
+    improvement: int
+    start: int
+    end: int
+    mapping: dict[str, str]
+
+
 def register_tokens(instructions: Sequence[Instruction]) -> set[str]:
     """Return register-like operand tokens seen in an instruction stream.
 
@@ -67,6 +76,64 @@ def single_register_swaps(
                 if not improving_only or cost < baseline:
                     ranked.append(MappingResult(cost, mapping))
     ranked.sort(key=lambda item: (item.mismatches, sorted(item.mapping.items())))
+    return ranked[:keep]
+
+
+def regional_register_swaps(
+    built: Sequence[Instruction],
+    reference: Sequence[Instruction],
+    groups: Sequence[Sequence[str]],
+    *,
+    keep: int = 100,
+) -> list[WindowMappingResult]:
+    """Find the best contiguous instruction window for every one-pair swap.
+
+    A compiler allocation often differs for one pseudo's lifetime rather than
+    for an entire function.  For each pair this uses a minimum-subarray scan of
+    per-instruction mismatch deltas, yielding the globally best half-open
+    ``[start, end)`` window without enumerating every possible window.
+    """
+    if keep < 1:
+        raise ValueError("keep must be positive")
+    if len(built) != len(reference):
+        raise ValueError("regional swap search requires equal instruction counts")
+    seen: set[str] = set()
+    baseline = mapping_cost(built, reference, {})
+    ranked: list[WindowMappingResult] = []
+    for group in groups:
+        current = tuple(group)
+        if len(set(current)) != len(current):
+            raise ValueError("register groups must not contain duplicates")
+        overlap = seen.intersection(current)
+        if overlap:
+            raise ValueError(f"registers occur in multiple groups: {sorted(overlap)}")
+        seen.update(current)
+        for left_index, left in enumerate(current):
+            for right in current[left_index + 1 :]:
+                mapping = {left: right, right: left}
+                deltas = [
+                    mapping_cost([lhs], [rhs], mapping)
+                    - mapping_cost([lhs], [rhs], {})
+                    for lhs, rhs in zip(built, reference)
+                ]
+                best_sum = current_sum = 0
+                best_start = best_end = current_start = 0
+                for index, delta in enumerate(deltas):
+                    if current_sum + delta >= 0:
+                        current_sum = 0
+                        current_start = index + 1
+                    else:
+                        current_sum += delta
+                        if current_sum < best_sum:
+                            best_sum = current_sum
+                            best_start, best_end = current_start, index + 1
+                if best_sum < 0:
+                    ranked.append(WindowMappingResult(
+                        baseline + best_sum, -best_sum, best_start, best_end, mapping
+                    ))
+    ranked.sort(key=lambda item: (
+        item.mismatches, item.end - item.start, item.start, sorted(item.mapping.items())
+    ))
     return ranked[:keep]
 
 

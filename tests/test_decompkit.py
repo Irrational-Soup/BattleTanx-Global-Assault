@@ -15,7 +15,8 @@ from decompkit.gcc_alloc import (  # noqa: E402
 )
 from decompkit.image import compare_bytes  # noqa: E402
 from decompkit.registers import (  # noqa: E402
-    exhaustive_register_maps, mapping_cost, single_register_swaps,
+    exhaustive_register_maps, mapping_cost, regional_register_swaps,
+    single_register_swaps,
 )
 from decompkit.report import build_report  # noqa: E402
 from decompkit.rewrite import function_body, permute_lines, rename_tokens, replace_exact  # noqa: E402
@@ -165,6 +166,25 @@ class DecompkitPortabilityTests(unittest.TestCase):
         self.assertEqual(rows[0].mismatches, 0)
         self.assertEqual(rows[0].mapping, {"r1": "r2", "r2": "r1"})
         self.assertEqual(len(rows), 10)  # identity + C(4,2) + C(3,2)
+
+    def test_register_atlas_finds_best_regional_swap_window(self):
+        built = [
+            ("use", ("r1",)),
+            ("use", ("r1", "r2")),
+            ("use", ("r2", "r1")),
+            ("use", ("r1",)),
+        ]
+        reference = [
+            ("use", ("r1",)),
+            ("use", ("r2", "r1")),
+            ("use", ("r1", "r2")),
+            ("use", ("r1",)),
+        ]
+        rows = regional_register_swaps(built, reference, [["r1", "r2"]])
+        self.assertEqual(len(rows), 1)
+        self.assertEqual((rows[0].start, rows[0].end), (1, 3))
+        self.assertEqual(rows[0].improvement, 4)
+        self.assertEqual(rows[0].mismatches, 0)
 
     def test_assembly_inventory_separates_code_data_padding_and_hasm(self):
         asm = self.root / "asm"

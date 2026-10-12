@@ -228,11 +228,36 @@ if __name__ == "__main__":
     parser.add_argument("--pipeline", choices=("production", "raw-kmc", "asn64"),
                         default="production")
     parser.add_argument("--json")
+    parser.add_argument("--built-instructions",
+                        help="write portable decompkit instruction JSON for the candidate")
+    parser.add_argument("--reference-instructions",
+                        help="write portable decompkit instruction JSON for the retail function")
     parser.add_argument("--quiet", action="store_true")
     parser.add_argument("--all", action="store_true")
     args = parser.parse_args()
     b = kmclib.build(args.src, args.vram, focus=args.func, pipeline=args.pipeline)
     r = classify(b, args.func)
+    if args.built_instructions or args.reference_instructions:
+        built_bytes, retail_bytes, retail_addr, retail_size, built_addr = kmclib.func_words(
+            b, args.func
+        )
+        streams = (
+            (args.built_instructions, kmclib.disasm(built_bytes, built_addr)),
+            (args.reference_instructions, kmclib.disasm(retail_bytes, retail_addr)),
+        )
+        for destination, instructions in streams:
+            if destination:
+                rows = [
+                    {
+                        "address": f"0x{instruction[0]:08X}",
+                        "opcode": instruction[2],
+                        "operands": instruction[3],
+                    }
+                    for instruction in instructions
+                ]
+                with open(destination, "w") as output:
+                    json.dump(rows, output, indent=2)
+                    output.write("\n")
     if args.json:
         with open(args.json, "w") as output:
             json.dump(r, output, indent=1)

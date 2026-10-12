@@ -10,6 +10,7 @@ from pathlib import Path
 from decompkit.registers import (
     exhaustive_register_maps,
     parse_instruction_rows,
+    regional_register_swaps,
     single_register_swaps,
 )
 
@@ -37,6 +38,11 @@ def main() -> None:
         help="score identity and every one-pair swap in each --group",
     )
     parser.add_argument(
+        "--regional-swaps",
+        action="store_true",
+        help="find the best contiguous instruction window for every pair swap",
+    )
+    parser.add_argument(
         "--improving-only",
         action="store_true",
         help="with --single-swaps, omit swaps that do not beat identity",
@@ -45,11 +51,23 @@ def main() -> None:
     parser.add_argument("--keep", type=int, default=20)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
-    built = parse_instruction_rows(json.loads(args.built.read_text()))
-    reference = parse_instruction_rows(json.loads(args.reference.read_text()))
+    built_payload = json.loads(args.built.read_text())
+    reference_payload = json.loads(args.reference.read_text())
+    built = parse_instruction_rows(built_payload)
+    reference = parse_instruction_rows(reference_payload)
     if not args.group:
         parser.error("at least one --group is required")
-    if args.single_swaps:
+    if args.single_swaps and args.regional_swaps:
+        parser.error("--single-swaps and --regional-swaps are mutually exclusive")
+    if args.regional_swaps:
+        rows = regional_register_swaps(
+            built, reference, [sources for sources, _ in args.group], keep=args.keep
+        )
+        search_space = sum(
+            len(sources) * (len(sources) - 1) // 2 for sources, _ in args.group
+        )
+        mode = "regional-swaps"
+    elif args.single_swaps:
         rows = single_register_swaps(
             built,
             reference,
@@ -74,7 +92,21 @@ def main() -> None:
         "mode": mode,
         "search_space": search_space,
         "results": [
-            {"mismatches": row.mismatches, "mapping": row.mapping} for row in rows
+            {
+                "mismatches": row.mismatches,
+                "mapping": row.mapping,
+                **({
+                    "improvement": row.improvement,
+                    "start": row.start,
+                    "end": row.end,
+                    "start_address": built_payload[row.start].get("address"),
+                    "end_address": (
+                        built_payload[row.end].get("address")
+                        if row.end < len(built_payload) else None
+                    ),
+                } if hasattr(row, "start") else {}),
+            }
+            for row in rows
         ],
     }
     rendered = json.dumps(payload, indent=2, sort_keys=True) + "\n"

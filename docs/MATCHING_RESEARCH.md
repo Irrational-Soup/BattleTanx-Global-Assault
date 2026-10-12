@@ -146,6 +146,11 @@ register family in quadratic time, producing the complete one-change lookup
 table requested during the final allocation investigations. Only promote the
 small interacting set into the factorial permutation search.
 
+If a global swap is neutral or harmful, use `--regional-swaps`. It finds the
+best contiguous lifetime window for every pair with a linear minimum-subarray
+scan and reports both instruction indices and addresses. This distinguishes a
+regional pseudo-allocation difference from a whole-function register role.
+
 The search size is the product of each group factorial. Keep integer and
 floating-point registers separate, and exclude fixed ABI registers unless the
 target evidence permits them. A zero-cost mapping proves only that aligned

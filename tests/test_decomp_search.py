@@ -81,6 +81,14 @@ class DecompSearchTests(unittest.TestCase):
         self.assertEqual(catalogue["func_800A4468"][0], 0x800A4468)
         self.assertEqual(catalogue["func_800D6508"][0], 0x800D6508)
 
+    def test_span_parser_accepts_size_and_canonical_range(self):
+        compile_tool = load("decomp_compile")
+        self.assertEqual(compile_tool.parse_span("0x40"), 0x40)
+        self.assertEqual(compile_tool.parse_span("0x80001000..0x80001040"), 0x40)
+        self.assertIsNone(compile_tool.parse_span(None))
+        with self.assertRaisesRegex(ValueError, "precedes"):
+            compile_tool.parse_span("0x20..0x10")
+
     def test_pipeline_modes_do_not_hide_asn64_match(self):
         compile_tool = load("decomp_compile")
         source = os.path.join(ROOT, "src", "code", "unknown/8008A1A4.c")
