@@ -1,9 +1,9 @@
 address	old_path	new_path	evidence_level	justification
-0x80077C40	src/code/early_hw.c	src/code/80077C40_early_hw.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
-0x80077DA4	src/code/early_memory_read.c	src/code/80077DA4_early_memory_read.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
-0x80078048	src/code/early_memory_write.c	src/code/80078048_early_memory_write.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
-0x80078200	src/code/early_remote_copy.c	src/code/80078200_early_remote_copy.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
-0x80078274	src/code/early_memory_dispatch.c	src/code/80078274_early_memory_dispatch.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
-0x80078908	src/code/early_commands.c	src/code/80078908_early_commands.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
-0x80078ADC	src/code/early_remote_transfer.c	src/code/80078ADC_early_remote_transfer.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
-0x80078C68	src/code/early_command_status.c	src/code/80078C68_early_command_status.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
+0x80077C40	src/code/early_hw.c	src/code/debug/80077C40_early_hw.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
+0x80077DA4	src/code/early_memory_read.c	src/code/debug/80077DA4_early_memory_read.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
+0x80078048	src/code/early_memory_write.c	src/code/debug/80078048_early_memory_write.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
+0x80078200	src/code/early_remote_copy.c	src/code/debug/80078200_early_remote_copy.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
+0x80078274	src/code/early_memory_dispatch.c	src/code/debug/80078274_early_memory_dispatch.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
+0x80078908	src/code/early_commands.c	src/code/debug/80078908_early_commands.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
+0x80078ADC	src/code/early_remote_transfer.c	src/code/debug/80078ADC_early_remote_transfer.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.
+0x80078C68	src/code/early_command_status.c	src/code/debug/80078C68_early_command_status.c	established-behavior	Verified splat boundary; existing descriptive unit name retained.

@@ -22,7 +22,7 @@ from btga_world import parse_world  # noqa: E402
 
 class LzariAssetInventoryTests(unittest.TestCase):
     def test_boundaries_are_unique_and_sorted(self):
-        values = load_boundaries(ROOT / "src/code/slot_asset_ranges.c")
+        values = load_boundaries(ROOT / "src/code/frontend/800E8380_slot_asset_ranges.c")
         self.assertEqual(values, sorted(set(values)))
         self.assertEqual(values[0], 0x3F9B60)
         self.assertEqual(values[-1], 0x46F652)
@@ -52,7 +52,7 @@ class LzariAssetInventoryTests(unittest.TestCase):
         if not rom_path.exists():
             self.skipTest("base ROM is unavailable")
         rom = rom_path.read_bytes()
-        streams = inventory(rom, ROOT / "src/code/slot_asset_ranges.c")
+        streams = inventory(rom, ROOT / "src/code/frontend/800E8380_slot_asset_ranges.c")
         self.assertEqual(len(streams), 74)
         self.assertEqual(sum(item["packed_size"] for item in streams), 481785)
         self.assertEqual(sum(item["decoded_size"] for item in streams), 1570628)
@@ -85,7 +85,7 @@ class LzariAssetInventoryTests(unittest.TestCase):
         self.assertEqual(len(images), 195)
         self.assertEqual(images[0]["start"], 0x46F660)
         self.assertEqual(images[-1]["end"], 0x514714)
-        streams = inventory_known(rom, ROOT / "src/code/slot_asset_ranges.c")
+        streams = inventory_known(rom, ROOT / "src/code/frontend/800E8380_slot_asset_ranges.c")
         self.assertEqual(len(streams), 271)
         self.assertEqual(sum(item["kind"] == "world" for item in streams), 75)
         self.assertEqual(sum(item["kind"] == "image" for item in streams), 195)

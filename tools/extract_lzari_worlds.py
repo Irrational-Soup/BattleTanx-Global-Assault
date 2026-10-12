@@ -17,7 +17,7 @@ def main() -> None:
     parser.add_argument("output", type=Path, help="ignored directory for world manifests")
     parser.add_argument("--rom", type=Path, default=Path("baseroms/us/baserom.z64"))
     parser.add_argument(
-        "--boundaries", type=Path, default=Path("src/code/slot_asset_ranges.c")
+        "--boundaries", type=Path, default=Path("src/code/frontend/800E8380_slot_asset_ranges.c")
     )
     args = parser.parse_args()
 

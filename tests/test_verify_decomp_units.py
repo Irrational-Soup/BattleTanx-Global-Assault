@@ -17,14 +17,25 @@ class VerifyDecompUnitsTests(unittest.TestCase):
     def test_pipeline_catalogue_has_unique_selected_units(self):
         module = load_module()
         entries = module.catalogue()
-        self.assertEqual(entries["view_state_build"]["pipeline"], "asn64")
-        self.assertEqual(entries["view_project_point"]["pipeline"], "production")
+        self.assertEqual(
+            entries["render/800AC9E8_view_state_build"]["pipeline"], "asn64"
+        )
+        self.assertEqual(
+            entries["render/800ACCB4_view_project_point"]["pipeline"],
+            "production",
+        )
 
     def test_rodata_catalogue_uses_exact_owned_ranges(self):
         module = load_module()
         rodata = module.owned_rodata()
-        self.assertEqual(rodata["vector_distance_normalize"], (0x800725DC, 0x20))
-        self.assertEqual(rodata["grid_surface_height"], (0x80073150, 0x2C))
+        self.assertEqual(
+            rodata["math/8009DB2C_vector_distance_normalize"],
+            (0x800725DC, 0x20),
+        )
+        self.assertEqual(
+            rodata["collision/800B83A8_grid_surface_height"],
+            (0x80073150, 0x2C),
+        )
 
 
 if __name__ == "__main__":

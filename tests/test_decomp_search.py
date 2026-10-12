@@ -83,7 +83,7 @@ class DecompSearchTests(unittest.TestCase):
 
     def test_pipeline_modes_do_not_hide_asn64_match(self):
         compile_tool = load("decomp_compile")
-        source = os.path.join(ROOT, "src", "code", "func_8008A1A4.c")
+        source = os.path.join(ROOT, "src", "code", "unknown/8008A1A4.c")
         results = {}
         for pipeline in ("production", "raw-kmc", "asn64"):
             built = compile_tool.build(
@@ -99,7 +99,7 @@ class DecompSearchTests(unittest.TestCase):
 
     def test_score_cli_accepts_explicit_pipeline(self):
         score = os.path.join(ROOT, "tools", "decomp_score.py")
-        source = os.path.join(ROOT, "src", "code", "func_8008A1A4.c")
+        source = os.path.join(ROOT, "src", "code", "unknown/8008A1A4.c")
         import subprocess
         result = subprocess.run(
             [os.path.join(ROOT, ".venv", "bin", "python"), score, source,
@@ -112,7 +112,7 @@ class DecompSearchTests(unittest.TestCase):
     def test_effect_burst_assisted_unit_is_exact(self):
         compile_tool = load("decomp_compile")
         score_tool = load("decomp_score")
-        source = os.path.join(ROOT, "src", "code", "func_800D6508.c")
+        source = os.path.join(ROOT, "src", "code", "unknown/800D6508.c")
         built = compile_tool.build(source, 0x800D6508,
                                    focus="func_800D6508", pipeline="production")
         result = score_tool.classify(built, "func_800D6508")
@@ -122,7 +122,7 @@ class DecompSearchTests(unittest.TestCase):
     def test_ai_leader_assisted_unit_is_exact(self):
         compile_tool = load("decomp_compile")
         score_tool = load("decomp_score")
-        source = os.path.join(ROOT, "src", "code", "func_800854C4.c")
+        source = os.path.join(ROOT, "src", "code", "unknown/800854C4.c")
         built = compile_tool.build(source, 0x800854C4,
                                    focus="func_800854C4", pipeline="production")
         result = score_tool.classify(built, "func_800854C4")
@@ -131,7 +131,7 @@ class DecompSearchTests(unittest.TestCase):
 
     def test_batch_manifest_defaults_unit_address(self):
         batch = load("decomp_batch")
-        source = os.path.join(ROOT, "src", "code", "func_8009025C.c")
+        source = os.path.join(ROOT, "src", "code", "unknown/8009025C.c")
         with tempfile.NamedTemporaryFile("w", suffix=".tsv") as fh:
             fh.write("source\tfunction\tvram\n")
             fh.write("%s\tfunc_8009025C\t8009025C\n" % source)

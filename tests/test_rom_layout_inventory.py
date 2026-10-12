@@ -17,8 +17,8 @@ class RomLayoutInventoryTests(unittest.TestCase):
         rom = rom_path.read_bytes()
         report = inventory_layout(
             rom,
-            ROOT / "src/code/slot_asset_ranges.c",
-            ROOT / "src/code/campaign_mission_config.c",
+            ROOT / "src/code/frontend/800E8380_slot_asset_ranges.c",
+            ROOT / "src/code/frontend/80124B30_campaign_mission_config.c",
         )
         self.assertEqual(report["rom_size"], 0x800000)
         self.assertEqual(sum(report["bytes"].values()), len(rom))

@@ -1,7 +1,7 @@
 /* RODATA_VRAM 0x80077600 */
 /* func_800FAE70 = libmus Fenvelope (player_commands.c) with Fdefa inlined.
  * Adapted from AngheloAlf/drmario64 lib/libmus/src/player_commands.c @ b5526094 (MIT repo; libmus is
- * Software Creations' N64 SDK library). Channel offsets from BattleTanx's layout (src/code/libmus/mus_channel.h).
+ * Software Creations' N64 SDK library). Channel offsets from BattleTanx's layout (src/libmus/mus_channel.h).
  * MODE raw
  * SPAN 0x800FAFBC
  */

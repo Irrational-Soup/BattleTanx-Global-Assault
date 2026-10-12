@@ -44,8 +44,8 @@ def main() -> None:
     rom = rom_path.read_bytes()
     layout = inventory_layout(
         rom,
-        root / "src/code/slot_asset_ranges.c",
-        root / "src/code/campaign_mission_config.c",
+        root / "src/code/frontend/800E8380_slot_asset_ranges.c",
+        root / "src/code/frontend/80124B30_campaign_mission_config.c",
     )
     raw = output / "raw"
     manifest = extract_regions(

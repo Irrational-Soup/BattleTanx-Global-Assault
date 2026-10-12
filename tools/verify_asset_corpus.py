@@ -62,8 +62,8 @@ def verify_corpus(rom: bytes, root: Path) -> dict:
     require(hashlib.sha1(rom).hexdigest(), ROM_SHA1, "base ROM SHA-1")
     require(len(rom), EXPECTED["rom_size"], "base ROM size")
 
-    boundaries = root / "src/code/slot_asset_ranges.c"
-    campaign = root / "src/code/campaign_mission_config.c"
+    boundaries = root / "src/code/frontend/800E8380_slot_asset_ranges.c"
+    campaign = root / "src/code/frontend/80124B30_campaign_mission_config.c"
 
     streams = inventory_known(rom, boundaries)
     require(len(streams), EXPECTED["lzari_streams"], "LZARI stream count")

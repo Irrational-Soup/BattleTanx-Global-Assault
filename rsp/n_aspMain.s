@@ -6,7 +6,7 @@
 // 12 bytes of explicit object padding. Assembles with armips 0.11 (.rsp) byte-for-byte to the
 // retail image. Region/handler names are inferences and are marked as such.
 // The companion DMEM data (dispatch table, constants) is n_aspMainDataStart in
-// src/code/libmus/audio_runtime_data.c.
+// src/libmus/audio_runtime_data.c.
 
 .rsp
 

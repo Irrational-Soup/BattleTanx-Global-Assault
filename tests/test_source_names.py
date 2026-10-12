@@ -26,11 +26,16 @@ tracked_only = true
 [naming]
 source_root = "src/code"
 layout = "config/layout.yaml"
+catalogue = "config/source_layout.tsv"
 legacy = "config/legacy.txt"
 vram_delta = 0x80000000
 preferred = '^[0-9A-F]{8}_[a-z0-9][a-z0-9_]*\\.c$'
 exempt_globs = []
 """
+        )
+        (self.root / "config/source_layout.tsv").write_text(
+            "address\tsubsystem\tpath\tformer_path\n"
+            "0x80001000\tgameplay\tsrc/code/80001000_good_name.c\tsrc/code/good_name.c\n"
         )
         subprocess.run(("git", "init", "-q", str(self.root)), check=True)
         subprocess.run(("git", "-C", str(self.root), "add", "."), check=True)

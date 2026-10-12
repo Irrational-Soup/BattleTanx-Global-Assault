@@ -15,6 +15,7 @@ class NamingPolicy:
     root: Path
     source_root: Path
     layout: Path
+    catalogue: Path | None
     legacy: Path
     vram_delta: int
     preferred: str
@@ -53,6 +54,7 @@ def load_naming_policy(path: str | Path) -> NamingPolicy:
         root=root,
         source_root=resolved(naming.get("source_root", "src")),
         layout=resolved(naming["layout"]),
+        catalogue=resolved(naming["catalogue"]) if naming.get("catalogue") else None,
         legacy=resolved(naming["legacy"]),
         vram_delta=int(naming["vram_delta"]),
         preferred=naming.get("preferred", r"^[0-9A-F]{8}_[a-z0-9][a-z0-9_]*\.c$"),
@@ -70,6 +72,22 @@ def layout_addresses(policy: NamingPolicy) -> dict[str, int]:
         if relative in addresses:
             raise ValueError(f"duplicate C layout row for {relative}")
         addresses[relative] = offset + policy.vram_delta
+    if policy.catalogue and policy.catalogue.is_file():
+        for index, line in enumerate(policy.catalogue.read_text().splitlines()):
+            if index == 0 or not line.strip() or line.lstrip().startswith("#"):
+                continue
+            fields = line.split("\t")
+            if len(fields) < 3:
+                raise ValueError(f"invalid source catalogue row: {line}")
+            address = int(fields[0], 0)
+            relative = fields[2]
+            previous = addresses.get(relative)
+            if previous is not None and previous != address:
+                raise ValueError(
+                    f"source catalogue disagrees with layout for {relative}: "
+                    f"0x{address:08X} != 0x{previous:08X}"
+                )
+            addresses[relative] = address
     return addresses
 
 

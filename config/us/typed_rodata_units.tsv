@@ -1,8 +1,8 @@
 unit	address	size
-model_ring_identity	0x80074F94	0x50
-hud_timing_constants	0x80073120	0x20
-hud_timing_tail_constants	0x80073148	0x8
-grid_collision_constants	0x80073074	0x4
-path_waypoint_constants	0x80071120	0x4
-race_bar_scale_constants	0x80073EE4	0x8
-race_bar_ratio_constants	0x80073EF0	0x10
+render/80074F94_model_ring_identity	0x80074F94	0x50
+frontend/80073120_hud_timing_constants	0x80073120	0x20
+frontend/80073148_hud_timing_tail_constants	0x80073148	0x8
+collision/80073074_grid_collision_constants	0x80073074	0x4
+path/80071120_path_waypoint_constants	0x80071120	0x4
+frontend/80073EE4_race_bar_scale_constants	0x80073EE4	0x8
+frontend/80073EF0_race_bar_ratio_constants	0x80073EF0	0x10

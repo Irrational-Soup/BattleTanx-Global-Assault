@@ -255,10 +255,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rom", type=Path, default=Path("baseroms/us/baserom.z64"))
     parser.add_argument(
-        "--boundaries", type=Path, default=Path("src/code/slot_asset_ranges.c")
+        "--boundaries", type=Path, default=Path("src/code/frontend/800E8380_slot_asset_ranges.c")
     )
     parser.add_argument(
-        "--campaign", type=Path, default=Path("src/code/campaign_mission_config.c")
+        "--campaign", type=Path, default=Path("src/code/frontend/80124B30_campaign_mission_config.c")
     )
     parser.add_argument("--output", type=Path, help="write metadata inventory JSON")
     args = parser.parse_args()

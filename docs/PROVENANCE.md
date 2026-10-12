@@ -70,7 +70,7 @@ documented CC0 disassembly in
 [`Mr-Wiseguy/f3dex2`](https://github.com/Mr-Wiseguy/f3dex2/tree/bd31393fd02b89e024b043c8c50c9a5a10143fb6).
 The pinned upstream 2.07 configuration independently assembles to the same
 `0x1390`-byte instruction image found at `0x800F8E80` and the same `0x420`-byte
-data image found at `0x80125EC0`; `src/code/f3dex2_fifo_data.c` preserves its
+data image found at `0x80125EC0`; `src/code/gameplay/80125EC0_f3dex2_fifo_data.c` preserves its
 named matrices, render state, light buffers, dispatch tables, clipping state,
 and overlay metadata without embedding an extracted binary.
 
@@ -128,7 +128,7 @@ pointers and scalar values are compared byte-for-byte with this title.
 
 The source/tooling-only distribution and eventual Vita workflow follow the project structure and legal/release boundaries established in `TheGh0stShip/VitaKart64`.
 
-The display-list packet replacement loop in `src/code/model_player_color.c`
+The display-list packet replacement loop in `src/code/render/800B9AB0_model_player_color.c`
 uses the source structure of `func_80085330` from the CC0 original-BattleTanx
 decompilation at
 [`melalawi/battletanx-decomp`](https://github.com/melalawi/battletanx-decomp/tree/235abfc6c5bc3b6d5673d9c98de6b74093735726).

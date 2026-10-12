@@ -47,7 +47,7 @@ def output_section_name(unit: str, kind: str = "rodata") -> str:
 def unit_object_path(unit: str) -> str:
     if unit in {"libultra/exceptasm", "libultra/setintmask"}:
         return f"build/us/asm/us/{unit}.s.o"
-    if unit.startswith(("libultra/", "libgcc/")):
+    if unit.startswith(("libultra/", "libgcc/", "libmus/", "n_audio/")):
         return f"build/us/src/{unit}.c.o"
     return f"build/us/src/code/{unit}.c.o"
 

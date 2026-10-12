@@ -18,7 +18,7 @@ class WorldGeometryInventoryTests(unittest.TestCase):
             self.skipTest("base ROM is unavailable")
         rom = rom_path.read_bytes()
         worlds = inventory_ranges(
-            rom, world_ranges(ROOT / "src/code/slot_asset_ranges.c")
+            rom, world_ranges(ROOT / "src/code/frontend/800E8380_slot_asset_ranges.c")
         )
         report = inventory_geometry(rom, inventory_pools(rom, worlds))
         self.assertEqual(report["chunk_count"], 4638)

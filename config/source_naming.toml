@@ -5,11 +5,12 @@ tracked_only = true
 [naming]
 source_root = "src/code"
 layout = "config/us/splat.yaml"
+catalogue = "config/source_layout.tsv"
 legacy = "config/source_naming_legacy.txt"
 vram_delta = 0x80070000
-preferred = '^[0-9A-F]{8}_[a-z0-9][a-z0-9_]*\.c$'
+preferred = '^[0-9A-F]{8}(?:_[a-z0-9][a-z0-9_]*)?\.c$'
 exempt_globs = [
-  "src/code/libmus/*.c",
-  "src/code/n_audio/*.c",
-  "src/code/__osGetSR.c",
+  "src/libmus/*.c",
+  "src/n_audio/*.c",
+  "src/code/gameplay/80078E34_os_get_sr.c",
 ]

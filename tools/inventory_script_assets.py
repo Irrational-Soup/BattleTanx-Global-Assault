@@ -402,7 +402,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rom", type=Path, default=Path("baseroms/us/baserom.z64"))
     parser.add_argument(
-        "--campaign", type=Path, default=Path("src/code/campaign_mission_config.c")
+        "--campaign", type=Path, default=Path("src/code/frontend/80124B30_campaign_mission_config.c")
     )
     parser.add_argument("--output", type=Path, help="write metadata inventory JSON")
     parser.add_argument("--extract-dir", type=Path, help="write split script files")

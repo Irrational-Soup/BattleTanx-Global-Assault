@@ -31,7 +31,7 @@ action = "platform-adapter"
 reason = "MIPS/libultra assembly requires a portable service implementation."
 
 [[rule]]
-glob = "src/code/rsp_microcode_text.s"
+glob = "src/code/runtime/800F8DB0_rsp_microcode_text.s"
 category = "rsp-microcode"
 action = "replace-or-emulate"
 reason = "RSP graphics/audio microcode requires translation, replacement, or emulation."

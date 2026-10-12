@@ -96,10 +96,13 @@ acceptance criteria.
 
 ## Repository map
 
-- `src/code/` — recovered game, SDK, libmus, and n_audio source. Address-based
-  names remain intentional where semantics or original names are not proven.
-  Migrated game units use `ADDRESS_descriptive_name.c`; run
-  `make check-source-names` to enforce the evidence-led migration baseline.
+- `src/code/<subsystem>/` — recovered game source. Identified units use
+  `ADDRESS_descriptive_name.c`; genuinely anonymous units use `ADDRESS.c` in
+  `src/code/unknown/`. `config/source_layout.tsv` is the authoritative path and
+  address catalogue. Run `make check-source-names` to enforce it.
+- `src/libmus/`, `src/n_audio/`, and `src/libultra/` — recovered middleware and
+  SDK runtimes, kept separate from game-owned source and retaining authentic
+  upstream-style names where known.
 - `src/asm/` — reviewed source assembly such as RSP and microcode material;
   generated assembly is ignored.
 - `config/us/` — ROM layout, symbol, ownership, and matching-evidence tables.

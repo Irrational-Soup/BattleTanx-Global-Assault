@@ -45,7 +45,7 @@ class WorldPoolInventoryTests(unittest.TestCase):
             self.skipTest("base ROM is unavailable")
         rom = rom_path.read_bytes()
         worlds = inventory_ranges(
-            rom, world_ranges(ROOT / "src/code/slot_asset_ranges.c")
+            rom, world_ranges(ROOT / "src/code/frontend/800E8380_slot_asset_ranges.c")
         )
         report = inventory_pools(rom, worlds)
         self.assertEqual(report["world_count"], 75)

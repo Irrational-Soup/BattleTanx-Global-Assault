@@ -82,7 +82,7 @@ class ScriptAssetInventoryTests(unittest.TestCase):
         if not rom_path.exists():
             self.skipTest("base ROM is unavailable")
         report = inventory_scripts(
-            rom_path.read_bytes(), ROOT / "src/code/campaign_mission_config.c"
+            rom_path.read_bytes(), ROOT / "src/code/frontend/80124B30_campaign_mission_config.c"
         )
         self.assertEqual(report["script_count"], 17)
         self.assertEqual(report["stream_count"], 249)

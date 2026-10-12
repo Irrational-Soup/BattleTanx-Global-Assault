@@ -35,138 +35,138 @@ Files requiring review or target work: **259**.
 
 | Source | Role | Categories | Actions |
 |---|---|---|---|
-| `src/code/800998E8.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/800A2FBC.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/800A3758.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/800A477C.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/800A5BD8.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/800A9F10.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/800BBDC0.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/800DB1B0_projectile_segment_spawn.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/800DF89C_entry_helpers.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/__osGetSR.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/angle_fold.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/area_lighting_build.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/display_slot.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/effect_billboard_draw.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/effect_sprite_key_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/effect_sprite_ring_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/func_80077FD0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80078DFC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80078E18.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80078E40.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8007A75C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007AB64.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007AD40.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8007AF84.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8007B0E4.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007B190.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007D39C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007D628.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007D998.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007DB84.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007DE3C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007DFA0.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8007E024.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007E170.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007E210.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007E268.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8007E7A8.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80080AF4.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80080B58.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80080BC0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80080C04.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80082B68.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80082D10.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80082F1C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80083028.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800830F8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80083DF0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80083EBC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80083F74.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80085C30.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80085DA8.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800866B0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80086700.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80086BEC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80087F2C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8008875C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80088ABC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80089610.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80089E28.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80089E84.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8008A3A0.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8008A5E4.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8008AD80.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8008B788.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8008E620.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8008E6BC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8008EC40.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8008F3FC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8008F7E8.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80090218.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8009025C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80094744.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80095B68.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80095B90.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80095E7C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80097C1C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80097EE4.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80098250.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8009836C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80098534.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80098B58.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_80098F24.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80098FBC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80099028.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_80099160.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8009B35C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8009B3C8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8009D4B0.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8009D510.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8009D75C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8009E19C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8009E948.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8009EB68.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8009EC0C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8009F334.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_8009F444.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_8009F5AC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800A140C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800A18D0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800A1B44.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800A2B9C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800A2E5C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800A2F0C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800A8E84.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800A8F34.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800A977C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800A98B8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800A9B64.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800A9CCC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800ACEB4.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800ACEFC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800ACF20.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800ACFE0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800AD088.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800B0268.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800B6934.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800B99AC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800BF798.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800C0C38.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/func_800C21AC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800C2218.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/func_800E82AC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/graphics_frame_build.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/hud_draw_list.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/libmus/func_800FBDC8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/libmus/func_800FD4CC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/mesh_rings_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/mode_range.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/multiplayer_actor_spawn.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/code/object_range.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
-| `src/code/race_map_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/code/race_results_hud_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/unknown/800998E8.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/unknown/800A2FBC.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/unknown/800A3758.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/unknown/800A477C.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/unknown/800A5BD8.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/unknown/800A9F10.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/unknown/800BBDC0.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/weapons/800DB1B0_projectile_segment_spawn.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/script/800DF89C_entry_helpers.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/gameplay/80078E34_os_get_sr.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/math/8009D578_angle_fold.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/render/800AA058_area_lighting_build.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/render/8007A720_display_slot.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/effects/800F6C70_effect_billboard_draw.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/effects/800A40CC_effect_sprite_key_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/effects/800A42C8_effect_sprite_ring_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/unknown/80077FD0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80078DFC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80078E18.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80078E40.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8007A75C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007AB64.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007AD40.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8007AF84.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8007B0E4.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007B190.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007D39C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007D628.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007D998.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007DB84.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007DE3C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007DFA0.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8007E024.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007E170.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007E210.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007E268.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8007E7A8.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80080AF4.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80080B58.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80080BC0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80080C04.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80082B68.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80082D10.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80082F1C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80083028.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800830F8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80083DF0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80083EBC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80083F74.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80085C30.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80085DA8.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800866B0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80086700.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80086BEC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80087F2C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8008875C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80088ABC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80089610.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80089E28.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80089E84.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8008A3A0.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8008A5E4.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8008AD80.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8008B788.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8008E620.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8008E6BC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8008EC40.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8008F3FC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8008F7E8.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80090218.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8009025C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80094744.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80095B68.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80095B90.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80095E7C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80097C1C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80097EE4.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80098250.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8009836C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80098534.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80098B58.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/80098F24.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80098FBC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80099028.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/80099160.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8009B35C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8009B3C8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8009D4B0.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8009D510.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8009D75C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8009E19C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8009E948.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8009EB68.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8009EC0C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8009F334.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/8009F444.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/8009F5AC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800A140C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800A18D0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800A1B44.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800A2B9C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800A2E5C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800A2F0C.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800A8E84.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800A8F34.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800A977C.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800A98B8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800A9B64.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800A9CCC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800ACEB4.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800ACEFC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800ACF20.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800ACFE0.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800AD088.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800B0268.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800B6934.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800B99AC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800BF798.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800C0C38.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/unknown/800C21AC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800C2218.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/unknown/800E82AC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/render/8007A0A0_graphics_frame_build.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/frontend/800D56FC_hud_draw_list.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/libmus/func_800FBDC8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/libmus/func_800FD4CC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/gameplay/800F3F78_mesh_rings_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/gameplay/8009D144_mode_range.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/gameplay/800E80F4_multiplayer_actor_spawn.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/code/entities/800A2B74_object_range.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
+| `src/code/frontend/800C7C10_race_map_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
+| `src/code/frontend/800C9A3C_race_results_hud_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
 | `src/code/rsp_microcode_text.s` | recovered-game-and-audio | `rsp-microcode` | `replace-or-emulate` |
 | `src/libultra/al_aux_bus.c` | n64-platform | `libultra-audio-service` | `platform-adapter` |
 | `src/libultra/al_copy.c` | n64-platform | `libultra-audio-service` | `platform-adapter` |
