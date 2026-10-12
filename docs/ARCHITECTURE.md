@@ -26,7 +26,7 @@ desktop, other consoles, validation tools, and future ports.
 
 The work order is therefore:
 
-1. Recover and byte-verify the original N64 source and data ownership.
+1. **Complete:** recover and byte-verify the original N64 source and data ownership.
 2. Separate portable game behavior from original hardware services without
    changing the matching source used as evidence.
 3. Add host and console platform adapters outside the matching source tree.

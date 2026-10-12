@@ -25,28 +25,26 @@ class DecompReportTests(unittest.TestCase):
         measures = report["measures"]
         readme = (ROOT / "README.md").read_text()
         function_status = re.search(
-            r"([\d,]+) of ([\d,]+) catalogue functions .*?"
-            r"([\d,]+) of ([\d,]+) bytes",
+            r"All ([\d,]+) catalogue functions and all ([\d,]+) "
+            r"function-body bytes",
             readme,
         )
         data_status = re.search(
-            r"data accounts for ([\d,]+) of ([\d,]+) bytes", readme
+            r"All ([\d,]+) tracked initialized/read-only bytes", readme
         )
         self.assertIsNotNone(function_status)
         self.assertIsNotNone(data_status)
         self.assertEqual(
             tuple(int(value.replace(",", "")) for value in function_status.groups()),
-            (
-                measures["matched_functions"],
-                measures["total_functions"],
-                int(measures["matched_code"]),
-                int(measures["total_code"]),
-            ),
+            (measures["total_functions"], int(measures["total_code"])),
         )
+        self.assertEqual(measures["matched_functions"], measures["total_functions"])
+        self.assertEqual(measures["matched_code"], measures["total_code"])
         self.assertEqual(
             tuple(int(value.replace(",", "")) for value in data_status.groups()),
-            (int(measures["matched_data"]), int(measures["total_data"])),
+            (int(measures["total_data"]),),
         )
+        self.assertEqual(measures["matched_data"], measures["total_data"])
 
     def test_current_production_layout(self):
         report = REPORT.build_report(
@@ -56,11 +54,11 @@ class DecompReportTests(unittest.TestCase):
         measures = report["measures"]
         self.assertEqual(report["version"], 2)
         self.assertEqual(measures["total_functions"], 1879)
-        self.assertEqual(measures["matched_functions"], 1795)
+        self.assertEqual(measures["matched_functions"], 1879)
         self.assertEqual(measures["total_code"], "632132")
-        self.assertEqual(measures["matched_code"], "524996")
-        self.assertEqual(measures["total_data"], "115601")
-        self.assertEqual(measures["matched_data"], "115601")
+        self.assertEqual(measures["matched_code"], "632132")
+        self.assertEqual(measures["total_data"], "115617")
+        self.assertEqual(measures["matched_data"], "115617")
         self.assertEqual([item["name"] for item in report["categories"]], ["Code", "Data"])
         data = report["categories"][1]["measures"]
         self.assertAlmostEqual(data["matched_data_percent"], 100.0)
@@ -88,7 +86,7 @@ class DecompReportTests(unittest.TestCase):
         ranges = REPORT.load_owned_data(
             [ROOT / "config/us/unit_rodata.tsv", ROOT / "config/us/unit_data.tsv"]
         )
-        self.assertEqual(sum(item["size"] for item in ranges), 115601)
+        self.assertEqual(sum(item["size"] for item in ranges), 115617)
         self.assertTrue(
             all(
                 left["end"] <= right["address"]
@@ -98,8 +96,8 @@ class DecompReportTests(unittest.TestCase):
 
     def test_alignment_fill_is_excluded_from_data_progress(self):
         exclusions = REPORT.load_data_exclusions(ROOT / "config/us/data_exclusions.tsv")
-        self.assertEqual(len(exclusions), 188)
-        self.assertEqual(sum(item["size"] for item in exclusions), 1371)
+        self.assertEqual(len(exclusions), 186)
+        self.assertEqual(sum(item["size"] for item in exclusions), 1355)
 
     def test_report_is_json_serializable_with_string_u64_fields(self):
         report = REPORT.build_report(
