@@ -18,6 +18,7 @@ Architecture-neutral reporting, verification, register-search, image-comparison,
 | `decomp_register_atlas.py` | Exhaustively rank bounded register mappings between aligned instructions. |
 | `decompkit_verify_units.py` | Verify units using decompkit's portable subprocess adapter protocol. |
 | `generate_decomp_report.py` | Compatibility CLI for :mod:`decompkit.report`. |
+| `portability_report.py` | Inventory target-specific source that blocks or shapes a native port. |
 | `verify_rebuilt_image.py` | Compare a complete rebuilt binary image against its reference. |
 
 ## Candidate measurement and search

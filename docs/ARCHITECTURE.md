@@ -33,4 +33,11 @@ The work order is therefore:
 4. Apply Vita-specific optimization, packaging, and hardware validation only
    in the Vita target.
 
+Run `make portability-report` to verify the checked-in architecture-specific
+source inventory. Normalizer-assisted C is not itself a porting blocker: native
+targets compile the underlying C without the N64 assembly normalizer. True
+MIPS/RSP assembly, memory-mapped hardware access, libultra services, and N64
+display-list construction require target adapters, portable rewrites, or an
+explicit interpreter. See `docs/PORTABILITY_INVENTORY.md`.
+
 The Vita cross-build must verify `arm-vita-eabi-gcc` targets 32-bit ARM and must inspect every linked dependency with `arm-vita-eabi-readelf -A`. All objects must agree on the floating-point calling convention. Hardware validation is required because host tests and Vita3K cannot establish Cortex-A9 alignment, timing, driver, or calling-convention correctness.

@@ -8,6 +8,7 @@ tools = [
   "decomp_register_atlas.py",
   "decompkit_verify_units.py",
   "generate_decomp_report.py",
+  "portability_report.py",
   "verify_rebuilt_image.py",
 ]
 

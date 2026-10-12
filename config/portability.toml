@@ -1,0 +1,77 @@
+[project]
+root = ".."
+tracked_only = true
+
+[[source_root]]
+path = "src/code"
+role = "recovered-game-and-audio"
+
+[[source_root]]
+path = "src/libultra"
+role = "n64-platform"
+
+[[source_root]]
+path = "src/libgcc"
+role = "compiler-runtime"
+
+[[source_root]]
+path = "src/boot"
+role = "n64-bootstrap"
+
+[[rule]]
+glob = "src/boot/*.s"
+category = "mips-bootstrap-assembly"
+action = "replace-or-emulate"
+reason = "N64 boot, exception, and monitor assembly cannot execute natively."
+
+[[rule]]
+glob = "src/libultra/*.s"
+category = "mips-libultra-assembly"
+action = "platform-adapter"
+reason = "MIPS/libultra assembly requires a portable service implementation."
+
+[[rule]]
+glob = "src/code/rsp_microcode_text.s"
+category = "rsp-microcode"
+action = "replace-or-emulate"
+reason = "RSP graphics/audio microcode requires translation, replacement, or emulation."
+
+[[rule]]
+glob = "src/libultra/os_*.c"
+category = "libultra-platform-service"
+action = "platform-adapter"
+reason = "libultra services are implemented by each native platform backend."
+
+[[rule]]
+glob = "src/libultra/al_*.c"
+category = "libultra-audio-service"
+action = "platform-adapter"
+reason = "The libultra audio runtime needs a native audio backend or compatibility layer."
+
+[[detector]]
+name = "inline-assembly"
+category = "target-inline-assembly"
+action = "rewrite-portable"
+pattern = "(?m)\\b(?:__asm__|asm)\\s*(?:volatile\\s*)?\\("
+reason = "Inline assembly or explicit target instructions require a portable implementation."
+
+[[detector]]
+name = "register-pinning"
+category = "mips-register-pinning"
+action = "rewrite-portable"
+pattern = "(?m)\\bregister\\b[^;\\n]*\\b__asm__\\s*\\(\\s*\"\\$"
+reason = "Explicit MIPS hard-register allocation is only meaningful to the matching compiler."
+
+[[detector]]
+name = "memory-mapped-io"
+category = "n64-memory-mapped-io"
+action = "platform-adapter"
+pattern = "(?m)\\b(?:IO_READ|IO_WRITE)\\s*\\("
+reason = "N64 MMIO must not be dereferenced by a native host process."
+
+[[detector]]
+name = "display-list-macros"
+category = "n64-display-list-construction"
+action = "platform-adapter"
+pattern = "(?m)\\b(?:gDP|gSP)[A-Za-z0-9_]+\\s*\\("
+reason = "N64 display-list commands need a renderer backend or interpreter."

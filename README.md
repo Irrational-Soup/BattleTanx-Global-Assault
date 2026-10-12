@@ -11,9 +11,10 @@ scope reconstruct byte-for-byte. The result is readable C, authentic source
 assembly where appropriate, documented compiler-normalizer rules, and a
 reproducible build that matches retail ROM offsets `0x000000–0x101000`.
 
-The recovered N64 source is now the foundation for **VitaTanxGA**, the planned
-PS Vita port. Portability work will remain separate from the matching source
-and its binary-evidence gates.
+The recovered N64 source is the upstream reference for **VitaTanxGA**, the
+separate PS Vita port. This repository remains the N64 matching decompilation;
+portability work belongs in the port repository and must not weaken this
+project's binary-evidence gates.
 
 No ROM or ROM-derived assets are included. Supply your own legally obtained dump.
 
@@ -69,11 +70,43 @@ without changing the 100% binary-match result.
 
 ### Next phase
 
-The matching milestone is complete. The next major effort is the portable
-runtime and PS Vita target. Vita work must preserve the original 32-bit game
-semantics, use the ARMv7-A ILP32 toolchain, verify hard-float/softfp ELF
-compatibility, and pass supervised physical-hardware testing before any
-release claim. See the [architecture and portability contract](docs/ARCHITECTURE.md).
+The matching milestone is complete. This repository's next maturity phase is
+to improve source comprehension without weakening provenance: recover original
+translation units, consolidate types and interfaces, and replace address names
+only when behavior, callers, data flow, or recovered symbols support the name.
+See the [source-maturity and naming policy](docs/SOURCE_MATURITY.md).
+
+A wholesale function-by-function rename based only on resemblance to another
+routine is deliberately out of scope. Similar code is useful evidence, but it
+does not prove identical purpose, ownership, or an original name. Directory
+moves follow proven library, translation-unit, or subsystem boundaries and are
+made incrementally so each change remains reviewable and byte-verifiable.
+
+The downstream portable runtime and PS Vita target must preserve the original
+32-bit game semantics, use the ARMv7-A ILP32 toolchain, verify hard-float/softfp
+ELF compatibility, and pass supervised physical-hardware testing before any
+release claim. See the
+[architecture and portability contract](docs/ARCHITECTURE.md). The generated
+[native-port blocker inventory](docs/PORTABILITY_INVENTORY.md) identifies the
+MIPS/RSP assembly, MMIO, platform services, display-list construction, and
+matching-only register constraints that need adapters or portable replacements.
+The [native-port architecture](docs/NATIVE_PORT.md) defines the dual build
+pipelines, platform interface, data rules, staged Windows/Vita bring-up, and
+acceptance criteria.
+
+## Repository map
+
+- `src/code/` — recovered game, SDK, libmus, and n_audio source. Address-based
+  names remain intentional where semantics or original names are not proven.
+- `src/asm/` — reviewed source assembly such as RSP and microcode material;
+  generated assembly is ignored.
+- `config/us/` — ROM layout, symbol, ownership, and matching-evidence tables.
+- `decompkit/` — reusable Python library for ROM regions and resource tooling.
+- `tools/` — project-facing build, extraction, verification, and reporting
+  entry points.
+- `tests/` — portable synthetic tests that do not require copyrighted assets.
+- `docs/` — architecture, compiler, matching, provenance, asset-format, and
+  tooling references.
 
 One incidental discovery from the source recovery: rodata at `0x80072694`
 contains developer-credit Easter-egg strings including “Murray likes fries.”
@@ -81,6 +114,8 @@ contains developer-credit Easter-egg strings including “Murray likes fries.”
 See also the [reusable decompilation toolkit](docs/DECOMPKIT.md),
 [reproduction and resource guide](docs/REPRODUCING.md),
 [tool and test map](docs/TOOLS.md),
+[source-maturity and naming policy](docs/SOURCE_MATURITY.md),
+[native-port architecture](docs/NATIVE_PORT.md),
 [reproducible matching research](docs/MATCHING_RESEARCH.md),
 [library fingerprints](docs/LIBRARIES.md), [asset formats](docs/ASSET_FORMATS.md),
 [compiler notes](docs/COMPILER.md), and
