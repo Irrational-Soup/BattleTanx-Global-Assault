@@ -19,6 +19,11 @@ command-line entry points.
   SHA-256 values, sizes, and the first differing offset. The accompanying
   `verify_rebuilt_image.py` command never treats a matching prefix as a
   matching complete image.
+- `decompkit.resources` serializes an injected region map into deterministic
+  local files and reconstructs a complete image from those files plus an
+  independently compiled prefix. It validates coverage, overlap agreement,
+  paths, sizes, and optional pristine hashes without assuming a console, ROM
+  byte order, or title-specific table.
 - `decompkit.registers` exhaustively ranks explicitly bounded register
   bijections over an architecture-neutral instruction representation. It
   rejects factorially large searches rather than consuming unbounded time.
@@ -81,6 +86,19 @@ python3 tools/decompkit_verify_units.py --config project.toml \
   --adapter-command 'python3 adapter.py {request} {response}'
 make check-tools
 ```
+
+For a project with an independently rebuilt prefix and a mapped resource tail:
+
+```python
+from decompkit.resources import extract_regions, rebuild_image
+
+manifest = extract_regions(reference, regions, output_dir, include_after=len(prefix))
+rebuilt = rebuild_image(prefix, manifest, output_dir, require_pristine_resources=True)
+```
+
+Regions are dictionaries containing `start`, `end`, and optional `name` and
+`kind` fields. The generated manifest is portable JSON; title-specific code is
+responsible only for deriving an authoritative non-overlapping range map.
 
 The register-atlas JSON format is independent of objdump:
 

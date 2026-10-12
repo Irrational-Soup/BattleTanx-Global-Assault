@@ -68,3 +68,10 @@ that representation. The caller's refinement counts are 4, 7, 13 and 25.
 
 These are examples to test against RTL dumps, not universal rewrites. Confirm
 the first divergent pass before using either pattern on another function.
+
+Reusable support now lives in `decompkit.gcc_alloc` and
+`decomp_register_atlas.py`. The former keeps ordinary post-reload `.greg`
+assignments distinct from explicitly instrumented pre-reload observations;
+the latter exhaustively tests bounded register bijections without claiming a
+source-level cause. See [DECOMPKIT.md](DECOMPKIT.md) and
+[MATCHING_RESEARCH.md](MATCHING_RESEARCH.md).

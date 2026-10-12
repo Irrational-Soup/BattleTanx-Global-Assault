@@ -175,6 +175,34 @@ The bundled MIPS names are merely the default used by this repository.
   target and an already matched sibling worse. The relevant translation unit
   was C, despite the historical toolchain including C++.
 
+## Whole-image resource reconstruction experiment
+
+On 2026-10-11 the completed region-manifest pipeline was exercised against the
+verified USA Rev 0 dump, not only synthetic fixtures:
+
+```sh
+.venv/bin/python tools/extract_resources.py \
+  baseroms/us/baserom.z64 --output /tmp/btga-extracted
+.venv/bin/python tools/build_rom.py \
+  --code build/us/battletanx_ga.code.bin \
+  --resources /tmp/btga-extracted/raw \
+  --output /tmp/btga-rebuilt.z64 --require-original
+cmp /tmp/btga-rebuilt.z64 baseroms/us/baserom.z64
+```
+
+The extractor wrote 558 lossless mapped regions, plus 195 PNG image previews,
+75 structured world trees, all script and libmus files, raw world-pool chunks,
+and texture/display-list/geometry inventories. Every required output was
+nonempty. The compiled `0x101000`-byte prefix plus the raw region tree produced
+8,388,608 bytes identical to the input, with SHA-256
+`88268ce770ff39f2ca839848b842c87866df6c5ddaf775f180b2522c18ff6221`.
+
+The reusable synthetic controls independently reject incomplete coverage,
+wrong prefix sizes, path traversal, resource-size/hash drift, disagreement at
+the source/resource boundary, and conflicting resource overlaps. Thus the
+retail experiment proves the BattleTanx range adapter while fixtures prove the
+underlying `decompkit.resources` behavior without copyrighted inputs.
+
 ## Reusing this research
 
 Start with the structured tools described in [DECOMPKIT.md](DECOMPKIT.md) and

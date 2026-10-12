@@ -5,6 +5,22 @@ and cross-stream validation. Semantic names will be added after the consuming
 code establishes them; extracted bytes alone are not counted as decompiled
 Data.
 
+## Complete local extraction
+
+The individual commands below remain useful for format research. For a new
+checkout, the supported aggregate entry point is:
+
+```sh
+.venv/bin/python tools/extract_resources.py /path/to/BattleTanxGA.z64
+```
+
+It verifies the local dump, writes the lossless full-ROM region manifest, and
+runs every structured/preview exporter into the ignored
+`assets/extracted/us` tree. `tools/build_rom.py --require-original` then joins
+those resources with the compiled code prefix and requires the complete retail
+SHA-256. See [REPRODUCING.md](REPRODUCING.md) for the one-command fresh-clone
+workflow, output layout, and optional O2R packaging boundary.
+
 ## Progress accounting scope
 
 decomp.dev's Data category covers initialized non-function bytes in the loaded

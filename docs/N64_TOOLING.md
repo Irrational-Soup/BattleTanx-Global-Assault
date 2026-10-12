@@ -8,6 +8,36 @@ This is a project-specific review of tools listed by [n64.dev](https://n64.dev/)
 It is not a dependency list. New tools must preserve the repository's exact-ROM
 comparison gate and must not turn equivalent-but-different code into a match.
 
+The matching decompilation is complete. This document preserves measured tool
+trials that led there; references to “remaining” targets below describe the
+state at the dated experiment, not the current repository. The current
+per-file inventory is [TOOL_REFERENCE.md](TOOL_REFERENCE.md), and generalized
+compiler findings are [MATCHING_RESEARCH.md](MATCHING_RESEARCH.md).
+
+## Completion retrospective
+
+No single decompiler or mutation engine closed the project. The successful
+workflow was layered:
+
+1. splat/spimdisasm established reproducible ownership and boundaries;
+2. m2c and matched siblings supplied initial control-flow and source-shape
+   hypotheses;
+3. exact KMC/IDO adapters compiled at retail addresses with real symbols;
+4. structured scoring separated control-flow, register, schedule, stack,
+   literal-pool, and assembler differences;
+5. bounded searches tested explicit hypotheses and stopped at measured
+   plateaus;
+6. GCC dumps and checkpoint traces isolated CSE, loop, allocation, reload, and
+   scheduling decisions; and
+7. clean or narrowly normalizer-assisted units passed `make verify-code`.
+
+The result is 1,879/1,879 functions and 632,132/632,132 function bytes, plus
+all tracked initialized/read-only data. The build proves the reconstructed
+`0x000000–0x101000` ROM range. The resource-manifest pipeline then combines
+that compiled prefix with locally extracted, fully mapped resources into an
+independently checked 8 MiB ROM with the retail SHA-256. Asset families also
+retain their separate structured lossless gates.
+
 ## Local trial results
 
 The following results were measured on 2026-10-08 without adding repository
@@ -45,7 +75,7 @@ dependencies:
   listed in `config/us/asn64_units.tsv`; compiler/register rewrites remain on
   the normalizer path.
 
-## Use now
+## Adopted during matching and retained
 
 - `tools/decomp_batch.py` runs a TSV portfolio of candidate functions through
   `tools/decomp_permuter.py`. The search deduplicates generated source before
@@ -72,7 +102,7 @@ dependencies:
   function. This should sit in front of the narrow object/ROM comparator; it
   does not replace the comparator or `make verify-code`.
 - [decomp-permuter](https://github.com/simonlindholm/decomp-permuter): useful
-  for the remaining small and medium near-misses involving expression order,
+  for small and medium near-misses involving expression order,
   temporary lifetimes, register allocation, and statement placement. The
   repository's `decomp_permuter.py` is the project-specific adapter: it invokes
   the exact KMC GCC path and selectable assembler pipeline, retains relocation
@@ -91,11 +121,11 @@ dependencies:
   configuration over introducing a parallel extraction pipeline.
 - [ultralib](https://github.com/decompals/ultralib) and
   [libreultra](https://github.com/n64decomp/libreultra): use as provenance and
-  source-shape references for the remaining libultra functions. Compiler,
+  source-shape references for libultra functions. Compiler,
   version, flags, section ownership, and bytes still have to be verified in
   this repository.
 
-## Evaluate after the current integration batch
+## Evaluated, deferred, or retained as references
 
 - [Abu Recipe Maker 64](https://github.com/melalawi/abu-recipe-maker-64)
   and [Abu Cake Unbake 64](https://github.com/melalawi/abu-cake-unbake-64)
@@ -105,11 +135,10 @@ dependencies:
   recipes and structured results. Do not vendor them casually: Unbake is
   GPL-3.0-or-later, and their BattleTanx configuration is evidence to test,
   not a substitute for this project's retail-address gate.
-- [Coddog](https://github.com/ethteck/coddog) is the next retrieval tool to
-  trial. Run the remaining functions against independently matched C, then use
-  the returned whole-function and region-level siblings to seed types, inline
-  helpers, macros, and translation-unit grouping. Similarity is hypothesis
-  guidance only; it is never matching evidence.
+- [Coddog](https://github.com/ethteck/coddog) was not required for completion.
+  The deterministic `decomp_siblings.py` supplied mnemonic-ngram retrieval
+  over independently matched functions with the same safety boundary:
+  similarity proposes hypotheses but never proves a match.
 - [Mario Golf 64](https://github.com/monde-lointain/mariogolf64) uses the same
   KMC GCC 2.7.2 flag family and contains useful libmus, libkmc, libnaudio,
   libnusys, and libultra references. Its general build permits NONMATCHING
@@ -130,7 +159,7 @@ dependencies:
   triage tool for locating changed runs before using the project's
   symbol-aware and instruction-aware comparators. It is not sufficient match
   evidence by itself.
-- [n64sym](https://github.com/shygoo/n64sym): useful when identifying remaining
+- [n64sym](https://github.com/shygoo/n64sym): useful when identifying
   SDK/library functions from RAM or code fingerprints. It is evidence for a
   symbol name, not proof of source or byte identity.
 - [rabbitizer](https://github.com/Decompollaborate/rabbitizer): useful as a
@@ -141,25 +170,25 @@ dependencies:
 ### Asmlift evaluation (2026-10-11)
 
 The current public Asmlift checkout recognizes the `gcc2.7.2kmc` target, but
-cannot presently lift either of the final large grid/physics candidates:
+could not lift either of the then-final large grid/physics candidates:
 
 - `func_800B74B4` is declined at its first `bc1t`; the MIPS frontend does not
   yet model floating-point condition-code branches.
 - `func_800B5130` is declined because it takes the address of a stack local;
   local stack frames used as data are not supported.
 
-These are frontend declines before candidate generation, not mismatches from
-our compiler command. Re-evaluate Asmlift only after those two capabilities
-land upstream. Until then, `asmlift_prepare.py` remains useful for smaller
-integer-only functions without address-taken locals, but it is not a path to
-closing these targets.
+These were frontend declines before candidate generation, not mismatches from
+our compiler command. Both functions were later resolved through typed manual
+reconstruction, compiler evidence, and exact comparison. Re-evaluate Asmlift
+when those frontend capabilities change; `asmlift_prepare.py` remains a
+reproducible input adapter for supported functions.
 - [romjudge](https://github.com/jkbenaim/romjudge): potentially useful as an
   additional ROM header/byte-order/checksum sanity check around releases. It
   should supplement, not replace, the known-base-ROM hash and reconstruction
   comparison.
 - [y64_linker](https://github.com/ethteck/y64_linker): potentially useful for
   inspecting MIPS64 ELF relocations and extracting sections while diagnosing
-  the remaining jump-table and rodata-placement problems. Validate its output
+  jump-table and rodata-placement problems. Validate its output
   against the repository's real linker map and ROM addresses.
 
 ## Difficult static-analysis cases
@@ -190,22 +219,22 @@ closing these targets.
 Asset exporters, modern N64 homebrew libraries/toolchains, ROM packers, and
 flash-cart uploaders solve different problems. Reconsider them only for asset
 documentation, an N64-native test harness, or explicitly supervised hardware
-testing. They should not be mixed into the matching pipeline, and none of them
-changes the decision to defer PS Vita-specific work until the portable source
-base is substantially complete.
+testing. They should not be mixed into the matching pipeline. The portable
+matching source base is complete; Vita work belongs in its separate repository
+and architecture/release workflow.
 
 ### Portfolio-wide automated campaigns
 
-`tools/decomp_campaign.py` is the normal entry point for broad searches. It
-collects all saved candidates for functions that are still unmatched in the
-live report, establishes fresh baselines under both the production and ASN64
-pipelines, ranks them, and searches the best candidates concurrently. It does
+`tools/decomp_campaign.py` was the normal entry point for broad searches. It
+collects saved candidates for functions unmatched in a live report,
+establishes fresh baselines under both production and ASN64, ranks them, and
+searches the best candidates concurrently. It does
 not edit production sources and writes a consolidated leaderboard below
 `build/decomp_search/campaigns/`.
 
 ```sh
 .venv/bin/python tools/decomp_campaign.py \
-  --name remaining-20261010 --pipelines production,asn64 \
+  --name example-campaign --pipelines production,asn64 \
   --shortlist 24 --iters 500 --targets 8 --jobs 16 --resume
 ```
 
@@ -222,7 +251,7 @@ diverse top set for the next generation:
 
 ```sh
 .venv/bin/python tools/decomp_batch.py targets.tsv \
-  --name remaining-beam --engine beam --rounds 3 --beam 10 --samples 24 \
+  --name example-beam --engine beam --rounds 3 --beam 10 --samples 24 \
   --max-evals 600 --targets 4 --jobs 16 --pipeline production --stop-at-zero
 ```
 
@@ -249,19 +278,19 @@ justifies continuing through a measured plateau.
 
 ### Context-first diagnosis
 
-Do not send the entire remaining inventory directly into a wide mutation
+Do not send an entire unmatched inventory directly into a wide mutation
 search. First create dependency-complete contexts and classify the mismatch:
 
 ```sh
 .venv/bin/python tools/decomp_context.py targets.tsv \
-  --output build/decomp_search/contexts/remaining --pipeline production
+  --output build/decomp_search/contexts/example --pipeline production
 .venv/bin/python tools/decomp_siblings.py targets.tsv \
-  --output build/decomp_search/contexts/remaining/siblings.tsv
+  --output build/decomp_search/contexts/example/siblings.tsv
 .venv/bin/python tools/decomp_worklist.py \
-  build/decomp_search/contexts/remaining \
-  build/decomp_search/contexts/remaining/siblings.tsv \
-  --alternate-contexts build/decomp_search/contexts/remaining-asn64 \
-  --output build/decomp_search/contexts/remaining/worklist.tsv
+  build/decomp_search/contexts/example \
+  build/decomp_search/contexts/example/siblings.tsv \
+  --alternate-contexts build/decomp_search/contexts/example-asn64 \
+  --output build/decomp_search/contexts/example/worklist.tsv
 ```
 
 The context ID covers the source, transitive headers reported by KMC GCC,

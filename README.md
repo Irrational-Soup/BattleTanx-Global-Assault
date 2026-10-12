@@ -24,29 +24,33 @@ No ROM or ROM-derived assets are included. Supply your own legally obtained dump
 - Format: big-endian `.z64`
 - Size: 8 MiB
 - SHA-1: `805248fb0a0ee694cad8d7dc927b631d860dd8cf`
+- SHA-256: `88268ce770ff39f2ca839848b842c87866df6c5ddaf775f180b2522c18ff6221`
 
-## Bootstrap
+## Reproduce from your own ROM
 
 ```sh
-cp /path/to/BattleTanxGA.z64 "BattleTanx - Global Assault (USA).z64"
-make setup
-make split
-make verify-code
-make check
+python3 tools/reproduce.py /absolute/path/to/BattleTanxGA.z64
 ```
 
-`make setup` creates a local Python environment, verifies the dump, and copies it to the ignored canonical path. `make split` disassembles the known first-MiB code region with splat. `make verify-code` assembles and links that region and requires it to match ROM offsets `0x000000-0x101000` byte-for-byte. If GNU MIPS binutils or armips are not installed locally, the build installs checksum-pinned copies under the ignored `.toolchain/` directory without requiring root; building armips requires CMake and a C++ compiler. Generated assembly is intentionally ignored; reviewed C, RSP assembly, and project metadata are the source of truth.
+The input must be an existing local big-endian `.z64` dump. The command
+verifies it before use, installs pinned local toolchains, compiles the recovered
+source, extracts the complete ignored resource tree, rebuilds the full 8 MiB
+cartridge image, and runs the code, asset, hash, test, and repository-safety
+gates. Generated assembly is intentionally ignored; reviewed C, authentic RSP
+assembly, and project metadata are the source of truth.
+
+See [the complete reproduction and resource guide](docs/REPRODUCING.md) for
+individual stages, output paths, editing/repacking commands, prerequisites,
+and the reusable region-manifest interface.
 
 ## Current status
 
 - **Code: 100%.** All 1,879 catalogue functions and all 632,132 function-body bytes are represented by production C or authentic source assembly.
 - **Data: 100%.** All 115,617 tracked initialized/read-only bytes in the loaded executable scope are source-owned and matched.
 - **Binary gate: exact.** `make verify-code` reconstructs ROM offsets `0x000000–0x101000` byte-for-byte, including the header, IPL3, loaded program, RSP boot, F3DEX FIFO 2.07, and n_audio microcode.
-- **Whole-ROM hash: not yet a build output.** The complete 8 MiB reference ROM
-  has SHA-256 `88268ce770ff39f2ca839848b842c87866df6c5ddaf775f180b2522c18ff6221`,
-  while the current build emits and verifies the reconstructed `0x101000`-byte
-  prefix. Asset families have independent lossless gates, but they are not yet
-  assembled into one independently rebuilt 8 MiB ROM.
+- **Whole-ROM build: exact.** The compiled `0x101000`-byte prefix and locally
+  extracted resource regions assemble into an 8 MiB image with SHA-256
+  `88268ce770ff39f2ca839848b842c87866df6c5ddaf775f180b2522c18ff6221`.
 - The function catalogue, corrected boundaries, compiler identifications, imported-source provenance, and normalizer-assisted exceptions are documented and reproducible.
 - The matching LZARI codec and audited ROM tables identify 271 compressed streams: 75 game-world bundles, 195 images, and one leftover BattleTanx world. Their 1,174,975 stored bytes expand to 2,886,765 bytes and canonically re-encode to every retail byte. `tools/inventory_lzari_assets.py` inventories them, `tools/extract_lzari_images.py` converts all six observed N64 texture layouts into local PNG previews, and `tools/extract_lzari_worlds.py` emits validated fixed-record world manifests without committing ROM-derived data.
 - The complete loading path is reconstructed in matching C: individual asset DMA/loading, the eight-function LZARI decoder, both world loaders, relocation walkers, and the compressed-bank directory. `make verify-assets` independently parses and losslessly rebuilds every known resource family while accounting for all 8 MiB of the retail ROM.
@@ -75,6 +79,7 @@ One incidental discovery from the source recovery: rodata at `0x80072694`
 contains developer-credit Easter-egg strings including “Murray likes fries.”
 
 See also the [reusable decompilation toolkit](docs/DECOMPKIT.md),
+[reproduction and resource guide](docs/REPRODUCING.md),
 [tool and test map](docs/TOOLS.md),
 [reproducible matching research](docs/MATCHING_RESEARCH.md),
 [library fingerprints](docs/LIBRARIES.md), [asset formats](docs/ASSET_FORMATS.md),

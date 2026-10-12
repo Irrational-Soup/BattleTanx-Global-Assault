@@ -87,9 +87,12 @@ scope = "title-specific"
 description = "Verify the supported private ROM, source hygiene, translation units, typed data, complete asset corpus, and full ROM accounting."
 evidence = "make check, make verify-code, make verify-assets, and SHA-256/reference-range documentation."
 tools = [
+  "build_rom.py",
   "check_repository.py",
+  "extract_resources.py",
   "inventory_rom_layout.py",
   "prepare_rom.py",
+  "reproduce.py",
   "verify_asset_corpus.py",
   "verify_decomp_units.py",
   "verify_rom.py",

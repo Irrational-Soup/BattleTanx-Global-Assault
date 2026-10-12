@@ -112,9 +112,12 @@ Verify the supported private ROM, source hygiene, translation units, typed data,
 
 | Tool | Purpose |
 |---|---|
+| `build_rom.py` | Build a complete BattleTanx ROM from compiled code and local resources. |
 | `check_repository.py` | Fail when private/generated artifacts or host-specific paths are tracked. |
+| `extract_resources.py` | Extract the complete local BattleTanx resource tree from a supported ROM. |
 | `inventory_rom_layout.py` | Account for every byte in the BattleTanx: Global Assault retail ROM. |
 | `prepare_rom.py` | Locate a local supported dump, verify it, and copy it to the canonical path. |
+| `reproduce.py` | One-command source, resource, and byte-identical ROM reproduction. |
 | `verify_asset_corpus.py` | Verify every known retail resource family without extracting ROM data. |
 | `verify_decomp_units.py` | Narrow integration gate for selected reconstructed C translation units. |
 | `verify_rom.py` | Verify and identify the supported BattleTanx GA ROM without modifying it. |
