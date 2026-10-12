@@ -16,6 +16,9 @@ from decompkit.image import compare_bytes  # noqa: E402
 from decompkit.registers import exhaustive_register_maps, mapping_cost  # noqa: E402
 from decompkit.report import build_report  # noqa: E402
 from decompkit.rewrite import function_body, permute_lines, rename_tokens, replace_exact  # noqa: E402
+from decompkit.tool_inventory import (  # noqa: E402
+    ToolGroup, load_inventory, render_markdown, validate_inventory,
+)
 from decompkit.units import UnitVerifier, load_unit_catalogue  # noqa: E402
 
 
@@ -225,6 +228,24 @@ class DecompkitPortabilityTests(unittest.TestCase):
         )
         with self.assertRaisesRegex(AdapterError, "exited 3"):
             broken(str(self.root / "source/unit_a.c"), 0x1000, pipeline="toy")
+
+    def test_tool_inventory_is_complete_unique_and_rendered(self):
+        inventory = load_inventory(ROOT / "config/tooling_inventory.toml")
+        rendered = render_markdown(inventory, ROOT / "tools")
+        self.assertEqual(rendered, (ROOT / "docs/TOOL_REFERENCE.md").read_text())
+
+        toy_tools = self.root / "toy_tools"
+        toy_tools.mkdir()
+        (toy_tools / "a.py").write_text('"""A tool."""\n')
+        (toy_tools / "b.sh").write_text("#!/bin/sh\n")
+        group = ToolGroup("toy", "portable", "Toy tools.", "Synthetic fixture.", ("a.py",))
+        with self.assertRaisesRegex(ValueError, "unclassified tools: b.sh"):
+            validate_inventory((group,), toy_tools)
+        duplicate = ToolGroup("copy", "adapter", "Copy.", "Synthetic fixture.", ("a.py",))
+        with self.assertRaisesRegex(ValueError, "multiply classified tools"):
+            validate_inventory((group, duplicate, ToolGroup(
+                "shell", "portable", "Shell.", "Synthetic fixture.", ("b.sh",)
+            )), toy_tools)
 
 
 if __name__ == "__main__":

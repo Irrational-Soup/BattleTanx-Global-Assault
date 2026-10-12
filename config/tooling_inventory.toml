@@ -1,0 +1,149 @@
+[[group]]
+name = "Portable decompkit interfaces"
+scope = "portable"
+description = "Architecture-neutral reporting, verification, register-search, image-comparison, and inventory entry points."
+evidence = "Synthetic temporary-project tests in tests/test_decompkit.py and make check-tools."
+tools = [
+  "audit_tooling.py",
+  "decomp_register_atlas.py",
+  "decompkit_verify_units.py",
+  "generate_decomp_report.py",
+  "verify_rebuilt_image.py",
+]
+
+[[group]]
+name = "Candidate measurement and search"
+scope = "adapter"
+description = "Deterministic candidate compilation, diagnosis, bounded mutation, sibling retrieval, and portfolio orchestration over the BattleTanx KMC adapter."
+evidence = "tests/test_decomp_search.py, tests/test_decomp_campaign.py, retained JSON/TSV ledgers, and narrow byte comparisons."
+tools = [
+  "asmlift_prepare.py",
+  "decomp_alloc_report.py",
+  "decomp_batch.py",
+  "decomp_beam.py",
+  "decomp_campaign.py",
+  "decomp_compile.py",
+  "decomp_context.py",
+  "decomp_flag_sweep.py",
+  "decomp_m2c_refresh.py",
+  "decomp_make_batch.py",
+  "decomp_permuter.py",
+  "decomp_score.py",
+  "decomp_siblings.py",
+  "decomp_worklist.py",
+  "decomp_xbatch.py",
+  "run_decomp_campaign.py",
+]
+
+[[group]]
+name = "Pinned toolchain bootstraps"
+scope = "adapter"
+description = "Download, verify, patch, and build the historical compilers, assemblers, SDK sources, and diagnostic GCC variants required by this project."
+evidence = "Pinned URLs/checksums or revisions in each script; exercised by setup/toolchain builds and compiler calibration."
+tools = [
+  "bootstrap_armips.sh",
+  "bootstrap_f3dex2.sh",
+  "bootstrap_ido.sh",
+  "bootstrap_kmc_gcc.sh",
+  "bootstrap_mips_binutils.sh",
+  "bootstrap_ultralib.sh",
+  "build_diagnostic_gcc272.sh",
+  "build_diagnostic_gcc272_alloc.sh",
+]
+
+[[group]]
+name = "Build and ELF plumbing"
+scope = "adapter"
+description = "Build the reconstructed code image and perform deterministic ELF32/MIPS section, symbol, and placement operations."
+evidence = "make verify-code plus focused ELF/placement tests in the repository test suite."
+tools = [
+  "build_code.sh",
+  "cmpfunc_strict.sh",
+  "fix_ido_symtab.py",
+  "generate_linker_symbols.py",
+  "insert_elf32_section_bytes.py",
+  "place_unit_rodata.py",
+  "rename_retail_asm_labels.py",
+  "set_elf32_mips_o32.py",
+  "splice_unit_rodata.py",
+  "trim_elf32_section.py",
+]
+
+[[group]]
+name = "Compiler and assembler compatibility"
+scope = "adapter"
+description = "Reproduce documented historical compiler/assembler output differences with function-gated, fail-closed transformations."
+evidence = "tests/test_kmc_pipeline.py, tests/test_asn64_conformance.py, and complete make verify-code coverage."
+tools = [
+  "modern_asn64.py",
+  "normalize_kmc_gcc_asm.py",
+  "normalize_libgcc_asm.py",
+  "segment_billboard_normalizer.py",
+]
+
+[[group]]
+name = "Repository and ROM release gates"
+scope = "title-specific"
+description = "Verify the supported private ROM, source hygiene, translation units, typed data, complete asset corpus, and full ROM accounting."
+evidence = "make check, make verify-code, make verify-assets, and SHA-256/reference-range documentation."
+tools = [
+  "check_repository.py",
+  "inventory_rom_layout.py",
+  "prepare_rom.py",
+  "verify_asset_corpus.py",
+  "verify_decomp_units.py",
+  "verify_rom.py",
+  "verify_typed_rodata.py",
+]
+
+[[group]]
+name = "Reusable format primitives"
+scope = "portable"
+description = "Independent codecs and binary-format helpers whose algorithms do not embed ROM addresses."
+evidence = "Codec round trips, texture fixtures, world-layout tests, and complete asset-corpus rebuilds."
+tools = [
+  "decode_libmus_wave.py",
+  "lzari.py",
+  "n64_texture.py",
+]
+
+[[group]]
+name = "BattleTanx asset inventories"
+scope = "title-specific"
+description = "Decode and account for BattleTanx-specific tables, compressed streams, scripts, worlds, geometry, textures, display lists, and retained debug/object data."
+evidence = "tests/test_asset_tools.py, tests/test_rom_inventory.py, and make verify-assets."
+tools = [
+  "btga_world.py",
+  "extract_lzari_images.py",
+  "extract_lzari_worlds.py",
+  "inventory_libmus_assets.py",
+  "inventory_lzari_assets.py",
+  "inventory_script_assets.py",
+  "inventory_stale_debug.py",
+  "inventory_stale_object.py",
+  "inventory_world_display_lists.py",
+  "inventory_world_geometry.py",
+  "inventory_world_pools.py",
+  "inventory_world_textures.py",
+]
+
+[[group]]
+name = "BattleTanx asset rebuilders"
+scope = "title-specific"
+description = "Rebuild independently extracted BattleTanx audio, compressed bundles, scripts, worlds, and raw world pools for lossless comparison."
+evidence = "Round-trip tests and make verify-assets comparisons against every owned retail byte."
+tools = [
+  "pack_libmus_assets.py",
+  "pack_lzari_bundle.py",
+  "pack_script_assets.py",
+  "pack_script_json.py",
+  "pack_world_json.py",
+  "pack_world_pools.py",
+]
+
+[[group]]
+name = "One-time provenance import"
+scope = "title-specific"
+description = "Import externally refined symbol boundaries while preserving provenance and requiring subsequent local byte verification."
+evidence = "Imported symbol ledger, function catalogue validation, and make verify-code."
+tools = ["import_recomp_symbols.py"]

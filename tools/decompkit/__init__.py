@@ -10,5 +10,5 @@ wrappers may inject compiler and ROM adapters for their own toolchains.
 # ``decompkit.report``; eager imports here would create a cycle.
 __all__ = (
     "adapters", "config", "gcc_alloc", "image", "registers", "report", "rewrite",
-    "tables", "units"
+    "tables", "tool_inventory", "units"
 )

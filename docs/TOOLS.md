@@ -4,6 +4,11 @@ This document separates reusable infrastructure from BattleTanx adapters and
 asset-specific utilities. The distinction matters: copying a script that has
 ROM addresses embedded in it is not reuse.
 
+The exhaustive per-file catalogue is [TOOL_REFERENCE.md](TOOL_REFERENCE.md).
+It is generated from `config/tooling_inventory.toml`; `make check-tools` fails
+if a top-level Python/shell tool is missing, duplicated, deleted, or if the
+rendered reference is stale.
+
 ## Stable reusable layer
 
 | Capability | Interface | Evidence |
