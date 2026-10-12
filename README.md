@@ -11,10 +11,11 @@ scope reconstruct byte-for-byte. The result is readable C, authentic source
 assembly where appropriate, documented compiler-normalizer rules, and a
 reproducible build that matches retail ROM offsets `0x000000–0x101000`.
 
-The recovered N64 source is the upstream reference for **VitaTanxGA**, the
-separate PS Vita port. This repository remains the N64 matching decompilation;
-portability work belongs in the port repository and must not weaken this
-project's binary-evidence gates.
+The recovered N64 source is the upstream reference for the separate
+[native PC port](https://github.com/TheGh0stShip/BattleTanx-Global-Assault-PC-Port)
+and **VitaTanxGA** PS Vita port. This repository remains the N64 matching
+decompilation; portability work belongs in those port repositories and must not
+weaken this project's binary-evidence gates.
 
 No ROM or ROM-derived assets are included. Supply your own legally obtained dump.
 
@@ -22,10 +23,11 @@ No ROM or ROM-derived assets are included. Supply your own legally obtained dump
 
 [![BattleTanx: Global Assault native Windows port demonstration](https://img.youtube.com/vi/PrhwXBr1qJI/maxresdefault.jpg)](https://www.youtube.com/watch?v=PrhwXBr1qJI)
 
-The video above demonstrates the recovered game running as a native Windows
-executable through the `pc-port` runtime: original menus and campaign gameplay,
-RT64 Direct3D 12 rendering, SDL audio, and live keyboard input. Click the image
-to play the full demonstration on YouTube.
+The video above demonstrates the recovered game running through the
+[standalone native PC port](https://github.com/TheGh0stShip/BattleTanx-Global-Assault-PC-Port):
+original menus and campaign gameplay, RT64 Direct3D 12 rendering, SDL audio,
+and live keyboard input. Click the image to play the full demonstration on
+YouTube.
 
 ## Supported ROM
 
