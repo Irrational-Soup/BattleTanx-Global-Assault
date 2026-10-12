@@ -403,7 +403,9 @@ vector_distance_normalize	0x800725DC	0x20
 grid_segment_walk	0x800730A0	0x24
 object_rotation_update	0x800730F8	0x20
 grid_contact_resolve	0x80073118	0x4
-hud_timing_constants	0x80073120	0x30
+hud_timing_constants	0x80073120	0x20
+tank_collision_resolve	0x80073140	0x8
+hud_timing_tail_constants	0x80073148	0x8
 grid_surface_height	0x80073150	0x2C
 ground_collision_response	0x8007317C	0x8
 matrix_operation_constants	0x80072660	0x20

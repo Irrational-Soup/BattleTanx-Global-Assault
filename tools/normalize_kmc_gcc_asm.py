@@ -4960,6 +4960,20 @@ def normalize_v3(source: str) -> str:
         text = shape_grid_segment_walk_counter(text)
     if os.environ.get("V3_GRID_CONTACT_QUERY_ALLOCATIONS", "1") == "1":
         text = shape_grid_contact_query_allocations(text)
+    if os.environ.get("V3_TANK_COLLISION_EXTENT_STORE", "1") == "1":
+        text = schedule_tank_collision_extent_store(text)
+    if os.environ.get("V3_TANK_COLLISION_SCAN1", "1") == "1":
+        text = shape_tank_collision_scan1(text)
+    if os.environ.get("V3_TANK_COLLISION_SCAN2", "1") == "1":
+        text = shape_tank_collision_scan2(text)
+    if os.environ.get("V3_TANK_COLLISION_SCAN3", "1") == "1":
+        text = shape_tank_collision_scan3(text)
+    if os.environ.get("V3_TANK_COLLISION_SCAN4", "1") == "1":
+        text = shape_tank_collision_scan4(text)
+    if os.environ.get("V3_TANK_COLLISION_EVENT", "1") == "1":
+        text = shape_tank_collision_event(text)
+    if os.environ.get("V3_TANK_COLLISION_TAIL", "1") == "1":
+        text = shape_tank_collision_tail(text)
     if os.environ.get("V3_MATRIX_ROTATE_SETUP", "1") == "1":
         text = schedule_matrix_rotate_setup(text)
     if os.environ.get("V3_SPRITE_PHASE_LIFETIMES", "1") == "1":
@@ -4967,6 +4981,608 @@ def normalize_v3(source: str) -> str:
     if os.environ.get("V3_EFFECT_BURST_SAVED_REGISTERS", "1") == "1":
         text = cycle_effect_burst_saved_registers(text)
     return text
+
+
+def schedule_tank_collision_extent_store(text: str) -> str:
+    """Delay B74B4's first extent store past the independent second loads."""
+    if "func_800B74B4:" not in text:
+        return text
+    match = re.search(
+        r"func_800B74B4:.*?\n\s*\.end\s+func_800B74B4\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B74B4 body not found for extent schedule")
+    body = match.group(0)
+    before = (
+        "\tsh\t$4,1312($sp)\n"
+        "\tlh\t$2,28($6)\n"
+        "\tlh\t$3,26($6)\n"
+    )
+    after = (
+        "\tlh\t$2,28($6)\n"
+        "\tlh\t$3,26($6)\n"
+        "\tsh\t$4,1312($sp)\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError(
+            "func_800B74B4 extent-store schedule did not fire exactly once"
+        )
+    body = body.replace(before, after, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_tank_collision_scan1(text: str) -> str:
+    """Match B74B4's raw/saved/bound values around the first contact scan."""
+    if "func_800B74B4:" not in text:
+        return text
+    match = re.search(
+        r"func_800B74B4:.*?\n\s*\.end\s+func_800B74B4\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B74B4 body not found for scan 1")
+    body = match.group(0)
+    before = (
+        "\tli\t$4,0x00000001\t\t# 1\n"
+        "\tc.lt.s\t$f20,$f22\n"
+        "\tandi\t$3,$2,0xffff\n"
+        "\t.set\tnoreorder\n"
+        "\tbc1t\t.L139\n"
+        "\tmove\t$23,$3\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$4,$0\n"
+        ".L139:\n"
+        "\tsltu\t$2,$3,1\n"
+        "\tand\t$2,$2,$4\n"
+        "\t.set\tnoreorder\n"
+        "\tbnel\t$2,$0,.L226\n"
+        "\tadd.s\t$f20,$f20,$f24\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$3,$0,.L219\n"
+        "\tnop\n"
+    )
+    after = (
+        "\tandi\t$4,$2,0xffff\n"
+        "\tc.lt.s\t$f20,$f22\n"
+        "\tmove\t$23,$4\n"
+        "\t.set\tnoreorder\n"
+        "\tbc1t\t.L139\n"
+        "\tli\t$3,0x00000001\t\t# 1\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$3,$0\n"
+        ".L139:\n"
+        "\tsltu\t$2,$4,1\n"
+        "\tand\t$3,$3,$2\n"
+        "\t.set\tnoreorder\n"
+        "\tbnel\t$3,$0,.L226\n"
+        "\tadd.s\t$f20,$f20,$f24\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$4,$0,.L219\n"
+        "\tnop\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-1 result rewrite did not fire once")
+    body = body.replace(before, after, 1)
+    before = (
+        ".L142:\n"
+        "\taddu\t$18,$sp,144\n"
+        "\tsltu\t$2,$4,$3\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.L144\n"
+        "\tmove\t$21,$0\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$22,$3\n"
+        "\tmove\t$19,$0\n"
+    )
+    after = (
+        ".L142:\n"
+        "\tmove\t$21,$0\n"
+        "\taddu\t$18,$sp,144\n"
+        "\tsltu\t$2,$3,$4\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.L144\n"
+        "\tmove\t$19,$0\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$22,$4\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-1 guard rewrite did not fire once")
+    body = body.replace(before, after, 1)
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_tank_collision_scan2(text: str) -> str:
+    """Match B74B4's second contact scan allocation and copy schedule.
+
+    The recovered source has the same CFG and operations as retail.  GCC's
+    allocator keeps the contact array in s2 and the first result in s1;
+    retail uses s1 and s6 respectively, then materialises its raw second
+    result in v1 while copying the contact pointer to s2 in the branch delay
+    slot.  Keep this rule regional and fail closed on every boundary.
+    """
+    if "func_800B74B4:" not in text:
+        return text
+    match = re.search(
+        r"func_800B74B4:.*?\n\s*\.end\s+func_800B74B4\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B74B4 body not found for scan 2")
+    body = match.group(0)
+
+    # The two kind constants share one temporary throughout scan 2.
+    before = (
+        "\tbgez\t$2,.L150\n"
+        "\tli\t$3,0x00000001\t\t# 1\n"
+        "\t.set\tnoreorder\n"
+        "\tlhu\t$2,0($17)\n"
+        "\t.set\tnoreorder\n"
+        "\tj\t.L151\n"
+        "\tli\t$3,0x00000002\t\t# 2\n"
+        "\t.set\tnoreorder\n"
+        ".L150:\n"
+        "\tlhu\t$2,0($17)\n"
+        ".L151:\n"
+        "\t.set\tnoreorder\n"
+        "\tbeql\t$2,$3,.L148\n"
+    )
+    after = before.replace("$3", "$8")
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-2 constant rewrite drifted")
+    body = body.replace(before, after, 1)
+
+    before = (
+        "\taddu\t$18,$sp,144\n"
+        "\taddu\t$2,$sp,1316\n"
+        "\tsw\t$2,24($sp)\n"
+        "\taddu\t$2,$sp,64\n"
+        "\tsw\t$2,28($sp)\n"
+        "\taddu\t$2,$sp,1320\n"
+        "\tsw\t$18,16($sp)\n"
+        "\tsw\t$23,20($sp)\n"
+    )
+    after = before.replace("$18", "$17")
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-2 contact allocation drifted")
+    body = body.replace(before, after, 1)
+
+    result_patterns = (
+        ("\tandi\t$17,$2,0xffff\n\t.set\tnoreorder\n\tbeq\t$17,$0,.L155\n",
+         "\tandi\t$22,$2,0xffff\n\t.set\tnoreorder\n\tbeq\t$22,$0,.L155\n"),
+        ("\tandi\t$2,$2,0xffff\n\t.set\tnoreorder\n\tbeq\t$2,$0,.L202\n",
+         "\tandi\t$3,$2,0xffff\n\t.set\tnoreorder\n\tbeq\t$3,$0,.L202\n"),
+        ("\tmove\t$3,$2\n\tsltu\t$2,$17,$3\n",
+         "\tmove\t$18,$17\n\tsltu\t$2,$22,$3\n"),
+    )
+    for before, after in result_patterns:
+        if body.count(before) != 1:
+            raise RuntimeError("func_800B74B4 scan-2 result rewrite drifted")
+        body = body.replace(before, after, 1)
+
+    marker = body.find(".L155:\n")
+    end_marker = body.find(".L158:\n", marker)
+    before = "\tori\t$5,$5,0x540f\n\tmove\t$6,$18\n\tmove\t$7,$0\n"
+    after = "\tori\t$5,$5,0x540f\n\tmove\t$6,$17\n\tmove\t$7,$0\n"
+    if marker < 0 or end_marker < 0 or body[marker:end_marker].count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-2 call setup drifted")
+    region = body[marker:end_marker].replace(before, after, 1)
+    body = body[:marker] + region + body[end_marker:]
+
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_tank_collision_scan3(text: str) -> str:
+    """Match B74B4's third scan without changing its computation or CFG."""
+    if "func_800B74B4:" not in text:
+        return text
+    match = re.search(
+        r"func_800B74B4:.*?\n\s*\.end\s+func_800B74B4\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B74B4 body not found for scan 3")
+    body = match.group(0)
+
+    before = (
+        "\tori\t$5,$5,0x540f\n"
+        "\taddu\t$16,$sp,144\n"
+        "\tmove\t$6,$16\n"
+        "\tmove\t$7,$0\n"
+    )
+    after = (
+        "\tori\t$5,$5,0x540f\n"
+        "\taddu\t$6,$sp,144\n"
+        "\tmove\t$7,$0\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-3 call setup drifted")
+    body = body.replace(before, after, 1)
+
+    before = (
+        "\tandi\t$22,$2,0xffff\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$22,$0,.L202\n"
+        "\tmove\t$18,$16\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$3,$22\n"
+        "\tsltu\t$2,$17,$3\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.L172\n"
+        "\tmove\t$21,$0\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$19,$0\n"
+        "\tmove\t$23,$3\n"
+        "\taddu\t$17,$sp,176\n"
+    )
+    after = (
+        "\tandi\t$3,$2,0xffff\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$3,$0,.L202\n"
+        "\tmove\t$23,$3\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$21,$0\n"
+        "\taddu\t$18,$sp,144\n"
+        "\tsltu\t$2,$17,$3\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.L172\n"
+        "\tmove\t$19,$0\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$22,$3\n"
+        "\taddu\t$17,$sp,176\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-3 result rewrite drifted")
+    body = body.replace(before, after, 1)
+
+    before = (
+        "\tbgez\t$2,.L178\n"
+        "\tli\t$3,0x00000001\t\t# 1\n"
+        "\t.set\tnoreorder\n"
+        "\tlhu\t$2,0($17)\n"
+        "\t.set\tnoreorder\n"
+        "\tj\t.L179\n"
+        "\tli\t$3,0x00000002\t\t# 2\n"
+        "\t.set\tnoreorder\n"
+        ".L178:\n"
+        "\tlhu\t$2,0($17)\n"
+        ".L179:\n"
+        "\t.set\tnoreorder\n"
+        "\tbeql\t$2,$3,.L176\n"
+    )
+    after = before.replace("$3", "$8")
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-3 constant rewrite drifted")
+    body = body.replace(before, after, 1)
+
+    before = "\tsltu\t$2,$2,$23\n\t.set\tnoreorder\n\tbne\t$2,$0,.L173\n"
+    after = "\tsltu\t$2,$2,$22\n\t.set\tnoreorder\n\tbne\t$2,$0,.L173\n"
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-3 loop bound drifted")
+    body = body.replace(before, after, 1)
+
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_tank_collision_scan4(text: str) -> str:
+    """Match B74B4's fourth scan and rematerialised contact pointer."""
+    if "func_800B74B4:" not in text:
+        return text
+    match = re.search(
+        r"func_800B74B4:.*?\n\s*\.end\s+func_800B74B4\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B74B4 body not found for scan 4")
+    body = match.group(0)
+
+    before = (
+        "\taddu\t$18,$sp,144\n"
+        "\taddu\t$2,$sp,1316\n"
+        "\tsw\t$0,8($20)\n"
+        "\tsw\t$2,24($sp)\n"
+        "\taddu\t$2,$sp,64\n"
+        "\tsw\t$2,28($sp)\n"
+        "\taddu\t$2,$sp,1320\n"
+        "\tsw\t$18,16($sp)\n"
+        "\tsw\t$22,20($sp)\n"
+    )
+    after = (
+        "\taddu\t$17,$sp,144\n"
+        "\taddu\t$2,$sp,1316\n"
+        "\tsw\t$0,8($20)\n"
+        "\tsw\t$2,24($sp)\n"
+        "\taddu\t$2,$sp,64\n"
+        "\tsw\t$2,28($sp)\n"
+        "\taddu\t$2,$sp,1320\n"
+        "\tsw\t$17,16($sp)\n"
+        "\tsw\t$23,20($sp)\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-4 call frame drifted")
+    body = body.replace(before, after, 1)
+
+    before = (
+        "\tandi\t$17,$2,0xffff\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$17,$0,.L185\n"
+    )
+    after = (
+        "\tandi\t$21,$2,0xffff\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$21,$0,.L185\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-4 prior result drifted")
+    body = body.replace(before, after, 1)
+
+    before = (
+        "\tl.s\t$f2,4($8)\n"
+        "\tl.s\t$f0,0($8)\n"
+        "\t#nop\n"
+        "\ts.s\t$f0,0($fp)\n"
+        "\t.set\tnoreorder\n"
+        "\tj\t.L220\n"
+        "\ts.s\t$f2,4($fp)\n"
+    )
+    after = (
+        "\tl.s\t$f0,0($8)\n"
+        "\t#nop\n"
+        "\ts.s\t$f0,0($fp)\n"
+        "\tl.s\t$f0,4($8)\n"
+        "\t.set\tnoreorder\n"
+        "\tj\t.L220\n"
+        "\ts.s\t$f0,4($fp)\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-4 vector copy drifted")
+    body = body.replace(before, after, 1)
+
+    before = (
+        "\tori\t$5,$5,0x540f\n"
+        "\tmove\t$6,$18\n"
+        "\tmove\t$7,$0\n"
+    )
+    after = (
+        "\tori\t$5,$5,0x540f\n"
+        "\tmove\t$6,$17\n"
+        "\tmove\t$7,$0\n"
+    )
+    marker = body.find(".L185:\n")
+    end_marker = body.find(".L188:\n", marker)
+    if marker < 0 or end_marker < 0 or body[marker:end_marker].count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-4 query setup drifted")
+    region = body[marker:end_marker].replace(before, after, 1)
+    body = body[:marker] + region + body[end_marker:]
+
+    before = (
+        "\tbeq\t$3,$0,.L202\n"
+        "\tsltu\t$2,$17,$3\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$20,$0\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.L188\n"
+        "\tmove\t$19,$0\n"
+    )
+    after = (
+        "\tbeq\t$3,$0,.L202\n"
+        "\tmove\t$18,$17\n"
+        "\t.set\tnoreorder\n"
+        "\tmove\t$20,$0\n"
+        "\tsltu\t$2,$21,$3\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.L188\n"
+        "\tmove\t$19,$0\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 scan-4 guard schedule drifted")
+    body = body.replace(before, after, 1)
+
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_tank_collision_event(text: str) -> str:
+    """Match B74B4's event construction and callback dispatch schedule."""
+    if "func_800B74B4:" not in text:
+        return text
+    match = re.search(
+        r"func_800B74B4:.*?\n\s*\.end\s+func_800B74B4\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B74B4 body not found for event schedule")
+    body = match.group(0)
+
+    before = (
+        ".L202:\n"
+        "\tl.s\t$f0,48($sp)\n"
+        "\t#nop\n"
+        "\ts.s\t$f0,0($fp)\n"
+        "\tl.s\t$f0,52($sp)\n"
+        "\t#nop\n"
+        "\ts.s\t$f0,4($fp)\n"
+        "\tlw\t$2,1316($sp)\n"
+        "\t#nop\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.L203\n"
+        "\tli\t$2,0x00000002\t\t# 2\n"
+        "\t.set\tnoreorder\n"
+        "\tlw\t$8,1480($sp)\n"
+        "\t#nop\n"
+        "\tlw\t$4,12($8)\n"
+        "\tl.s\t$f0,64($sp)\n"
+        "\tl.s\t$f2,68($sp)\n"
+        "\tlhu\t$3,1320($sp)\n"
+        "\tlhu\t$8,1334($sp)\n"
+        "\tsw\t$2,112($sp)\n"
+    )
+    after = (
+        ".L202:\n"
+        "\tl.s\t$f0,48($sp)\n"
+        "\t#nop\n"
+        "\ts.s\t$f0,0($fp)\n"
+        "\tl.s\t$f0,52($sp)\n"
+        "\tlw\t$2,1316($sp)\n"
+        "\t.set\tnoreorder\n"
+        "\tbeq\t$2,$0,.L203\n"
+        "\ts.s\t$f0,4($fp)\n"
+        "\t.set\tnoreorder\n"
+        "\tlw\t$8,1480($sp)\n"
+        "\tlw\t$4,12($8)\n"
+        "\tl.s\t$f0,64($sp)\n"
+        "\tl.s\t$f2,68($sp)\n"
+        "\tlhu\t$3,1320($sp)\n"
+        "\tlhu\t$8,1334($sp)\n"
+        "\tli\t$2,0x00000002\t\t# 2\n"
+        "\tsw\t$2,112($sp)\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 event header schedule drifted")
+    body = body.replace(before, after, 1)
+
+    before = (
+        ".L205:\n"
+        "\tlw\t$2,1316($sp)\n"
+        "\t#nop\n"
+        "\tlw\t$3,4($2)\n"
+        "\t#nop\n"
+        "\tsll\t$2,$3,1\n"
+        "\taddu\t$2,$2,$3\n"
+        "\tsll\t$3,$2,2\n"
+    )
+    after = (
+        ".L205:\n"
+        "\tlw\t$4,1316($sp)\n"
+        "\t#nop\n"
+        "\tlw\t$2,4($4)\n"
+        "\t#nop\n"
+        "\tsll\t$3,$2,1\n"
+        "\taddu\t$3,$3,$2\n"
+        "\tsll\t$3,$3,2\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 event callback index drifted")
+    body = body.replace(before, after, 1)
+
+    before = (
+        "\tbeq\t$2,$0,.L207\n"
+        "\taddu\t$2,$sp,112\n"
+        "\t.set\tnoreorder\n"
+        "\tsw\t$2,16($sp)\n"
+        "\tlw\t$4,1316($sp)\n"
+        "\tlw\t$5,1480($sp)\n"
+        "\tlui\t$at,%hi(D_80224B5C)\n"
+        "\taddu\t$at,$at,$3\n"
+        "\tlw\t$2,%lo(D_80224B5C)($at)\n"
+        "\tmove\t$6,$0\n"
+        "\t.set\tnoreorder\n"
+        "\tjal\t$31,$2\n"
+        "\taddu\t$7,$sp,72\n"
+        "\t.set\tnoreorder\n"
+        "\tj\t.L207\n"
+        "\tnop\n"
+        ".L203:\n"
+        "\tli\t$2,0x00000009\t\t# 9\n"
+        "\tsw\t$2,112($sp)\n"
+        ".L207:\n"
+        "\tlw\t$8,1480($sp)\n"
+        "\t#nop\n"
+        "\tlw\t$4,12($8)\n"
+    )
+    after = (
+        "\tbeq\t$2,$0,.L207\n"
+        "\taddu\t$2,$sp,112\n"
+        "\t.set\tnoreorder\n"
+        "\tlw\t$5,1480($sp)\n"
+        "\tsw\t$2,16($sp)\n"
+        "\tlui\t$at,%hi(D_80224B5C)\n"
+        "\taddu\t$at,$at,$3\n"
+        "\tlw\t$2,%lo(D_80224B5C)($at)\n"
+        "\tmove\t$6,$0\n"
+        "\t.set\tnoreorder\n"
+        "\tjal\t$31,$2\n"
+        "\taddu\t$7,$sp,72\n"
+        "\t.set\tnoreorder\n"
+        ".L207:\n"
+        "\tlw\t$8,1480($sp)\n"
+        "\t.set\tnoreorder\n"
+        "\tj\t.L233\n"
+        "\tnop\n"
+        ".L203:\n"
+        "\tlw\t$8,1480($sp)\n"
+        "\tli\t$2,0x00000009\t\t# 9\n"
+        "\tsw\t$2,112($sp)\n"
+        ".L233:\n"
+        "\tlw\t$4,12($8)\n"
+    )
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 event callback layout drifted")
+    body = body.replace(before, after, 1)
+
+    return text[:match.start()] + body + text[match.end():]
+
+
+def shape_tank_collision_tail(text: str) -> str:
+    """Finish B74B4's equivalent tail labels, narrows, and FP registers."""
+    if "func_800B74B4:" not in text:
+        return text
+    match = re.search(
+        r"func_800B74B4:.*?\n\s*\.end\s+func_800B74B4\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B74B4 body not found for tail")
+    body = match.group(0)
+
+    replacements = (
+        (
+            "\tjal\tfunc_8009060C\n\taddu\t$5,$sp,112\n\t.set\tnoreorder\n"
+            "\tlw\t$8,1480($sp)\n.L231:\n\tlw\t$3,4($8)\n",
+            "\tjal\tfunc_8009060C\n\taddu\t$5,$sp,112\n\t.set\tnoreorder\n"
+            ".L231:\n\tlw\t$8,1480($sp)\n\tlw\t$3,4($8)\n",
+        ),
+        (
+            "\tjal\tfunc_80098B58\n\tsubu\t$7,$7,$6\n\t.set\tnoreorder\n"
+            ".L209:\n\tlw\t$8,1480($sp)\n\t#nop\n\tlw\t$2,0($8)\n",
+            "\tjal\tfunc_80098B58\n\tsubu\t$7,$7,$6\n\t.set\tnoreorder\n"
+            ".L234:\n\tlw\t$8,1480($sp)\n\t#nop\n.L209:\n\tlw\t$2,0($8)\n",
+        ),
+        (
+            "\tl.s\t$f4,D_80073134\n\t#nop\n\tc.lt.s\t$f4,$f0\n\tnop\n"
+            "\tbc1f\t.L209\n\tnop\n\tsub.s\t$f0,$f0,$f4\n",
+            "\tl.s\t$f2,D_80073134\n\t#nop\n\tc.lt.s\t$f2,$f0\n\tnop\n"
+            "\tbc1f\t.L209\n\tnop\n\tsub.s\t$f0,$f0,$f2\n",
+        ),
+        (
+            "\tl.s\t$f0,D_80073148\n\tl.s\t$f2,8($20)\n\t#nop\n"
+            "\tmul.s\t$f0,$f0,$f2\n\tmtc1\t$0,$f2\n\t#nop\n"
+            "\tc.lt.s\t$f0,$f2\n\tnop\n\t.set\tnoreorder\n"
+            "\tbc1f\t.L218\n\ts.s\t$f0,8($20)\n",
+            "\tl.s\t$f0,D_80073148\n\tl.s\t$f2,8($20)\n\t#nop\n"
+            "\tmul.s\t$f2,$f2,$f0\n\tmtc1\t$0,$f0\n\t#nop\n"
+            "\tc.lt.s\t$f2,$f0\n\tnop\n\t.set\tnoreorder\n"
+            "\tbc1f\t.L218\n\ts.s\t$f2,8($20)\n",
+        ),
+        (
+            ".L219:\n\tl.s\t$f0,40($sp)\n\tmove\t$2,$0\n\ts.s\t$f0,0($fp)\n"
+            "\tl.s\t$f0,44($sp)\n.L201:\n\ts.s\t$f0,4($fp)\n",
+            ".L219:\n\tl.s\t$f0,40($sp)\n\ts.s\t$f0,0($fp)\n\tl.s\t$f0,44($sp)\n"
+            "\tmove\t$2,$0\n.L201:\n\ts.s\t$f0,4($fp)\n",
+        ),
+    )
+    for before, after in replacements:
+        if body.count(before) != 1:
+            raise RuntimeError("func_800B74B4 tail regional rewrite drifted")
+        body = body.replace(before, after, 1)
+
+    # Retail narrows the scan-2 status at its definition and merely copies the
+    # already-narrow double-conversion result in the later delay slot.
+    before = "\tmove\t$17,$21\n\tbne\t$17,$0,.L183\n"
+    after = "\tandi\t$17,$21,0xffff\n\tbne\t$17,$0,.L183\n"
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 early narrow drifted")
+    body = body.replace(before, after, 1)
+
+    before = "\tbeq\t$2,$0,.L209\n\tandi\t$6,$3,0xffff\n"
+    after = "\tbeq\t$2,$0,.L234\n\tmove\t$6,$3\n"
+    if body.count(before) != 1:
+        raise RuntimeError("func_800B74B4 late narrow drifted")
+    body = body.replace(before, after, 1)
+
+    return text[:match.start()] + body + text[match.end():]
 
 
 def shape_grid_contact_query_allocations(text: str) -> str:

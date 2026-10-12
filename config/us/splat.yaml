@@ -658,7 +658,7 @@ segments:
       - [0x46CC4, c, code/grid_corner_sweep]
       - [0x46F40, c, code/grid_contact_resolve]
       - [0x4739C, c, code/contact_side_test]
-      - [0x474B4, asm, main_800B74B4_to_800B8100]
+      - [0x474B4, c, code/tank_collision_resolve]
       - [0x48100, c, code/mover_step_response]
       - [0x48310, c, code/vector_angle_from_xy]
       - [0x483A8, c, code/grid_surface_height]

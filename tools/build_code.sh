@@ -4502,7 +4502,8 @@ if false; then
     build/us/src/code/grid_contact_resolve.c.o \
     build/us/src/code/hud_timing_constants.c.o \
     build/us/src/code/contact_side_test.c.o \
-    build/us/asm/us/main_800B74B4_to_800B8100.s.o \
+    build/us/src/code/tank_collision_resolve.c.o \
+    build/us/src/code/hud_timing_tail_constants.c.o \
     build/us/src/code/mover_step_response.c.o \
     build/us/src/code/hud_animation_limits.c.o \
     build/us/src/code/vector_angle_from_xy.c.o \
