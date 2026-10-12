@@ -17,6 +17,8 @@ import re
 import struct
 from pathlib import Path
 
+from segment_billboard_normalizer import shape_segment_billboard_matrix
+
 
 TRANSFER = re.compile(
     r"^(?:b(?:al|eq|ne|gez|gezal|gtz|lez|ltz|ltzal|c1[ft]|c1fl|c1tl)?|"
@@ -4960,6 +4962,8 @@ def normalize_v3(source: str) -> str:
         text = shape_grid_segment_walk_counter(text)
     if os.environ.get("V3_GRID_CONTACT_QUERY_ALLOCATIONS", "1") == "1":
         text = shape_grid_contact_query_allocations(text)
+    if os.environ.get("V3_SEGMENT_BILLBOARD_MATRIX", "1") == "1":
+        text = shape_segment_billboard_matrix(text)
     if os.environ.get("V3_TANK_COLLISION_EXTENT_STORE", "1") == "1":
         text = schedule_tank_collision_extent_store(text)
     if os.environ.get("V3_TANK_COLLISION_SCAN1", "1") == "1":

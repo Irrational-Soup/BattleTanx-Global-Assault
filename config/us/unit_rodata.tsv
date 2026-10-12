@@ -408,7 +408,7 @@ tank_collision_resolve	0x80073140	0x8
 hud_timing_tail_constants	0x80073148	0x8
 grid_surface_height	0x80073150	0x2C
 ground_collision_response	0x8007317C	0x8
-matrix_operation_constants	0x80072660	0x20
+segment_billboard_matrix	0x80072660	0x20
 area_lighting_build	0x80072D80	0x18
 view_radius_visible	0x80072DA0	0x20
 grid_collision_constants	0x80073074	0x4

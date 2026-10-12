@@ -198,6 +198,10 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_8009FCCC_to_8009FF1C.s.o .text 0x250 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
+    -o build/us/asm/us/main_800A0744_to_800A0750.s.o asm/us/main_800A0744_to_800A0750.s
+python3 tools/trim_elf32_section.py \
+    build/us/asm/us/main_800A0744_to_800A0750.s.o .text 0xc --alignment 4
+"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_8009FFB8_to_800A1280.s.o asm/us/main_8009FFB8_to_800A1280.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_8009FFB8_to_800A1280.s.o .text 0x12c8 --alignment 4
@@ -4328,8 +4332,8 @@ if false; then
     build/us/src/code/func_8009F8A0.c.o \
     build/us/asm/us/main_8009FCCC_to_8009FF1C.s.o \
     build/us/src/code/vector2_rotate.c.o \
-    build/us/asm/us/main_8009FFB8_to_800A0750.s.o \
-    build/us/src/code/matrix_operation_constants.c.o \
+    build/us/src/code/segment_billboard_matrix.c.o \
+    build/us/asm/us/main_800A0744_to_800A0750.s.o \
     build/us/src/code/lzari_decode.c.o \
     build/us/asm/us/main_800A1144_to_800A1150.s.o \
     build/us/src/code/func_800A1150.c.o \
