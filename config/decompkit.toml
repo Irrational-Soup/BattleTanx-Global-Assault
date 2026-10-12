@@ -1,0 +1,24 @@
+[project]
+root = ".."
+functions = "config/us/recomp_function_boundaries.toml"
+splat = "config/us/splat.yaml"
+source_dir = "src/code"
+report_source_root = "src"
+rodata = "config/us/unit_rodata.tsv"
+data = "config/us/unit_data.tsv"
+exclusions = "config/us/data_exclusions.tsv"
+report_output = "build/us/report.json"
+
+[report]
+vram_delta = 0x80070000
+code_end = 0x101000
+image_start = 0x1000
+image_end = 0xB7E30
+source_kinds = ["c", "hasm"]
+
+[units]
+manifests = [
+  { path = "config/us/clean_normalized_units.tsv", pipeline = "production" },
+  { path = "config/us/asn64_units.tsv", pipeline = "asn64" },
+  { path = "config/us/normalizer_assisted_units.tsv", pipeline = "production" },
+]

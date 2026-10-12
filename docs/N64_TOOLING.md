@@ -1,5 +1,9 @@
 # N64 Tooling Notes
 
+For the consolidated compiler findings established during the final matching
+work, see [MATCHING_RESEARCH.md](MATCHING_RESEARCH.md). For reusable APIs and
+test tiers, see [DECOMPKIT.md](DECOMPKIT.md) and [TOOLS.md](TOOLS.md).
+
 This is a project-specific review of tools listed by [n64.dev](https://n64.dev/).
 It is not a dependency list. New tools must preserve the repository's exact-ROM
 comparison gate and must not turn equivalent-but-different code into a match.

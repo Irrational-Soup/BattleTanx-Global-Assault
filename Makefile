@@ -46,11 +46,18 @@ verify-assets: verify
 	$(PYTHON) tools/verify_asset_corpus.py --rom $(ROM)
 
 progress-report:
-	$(PYTHON) tools/generate_decomp_report.py
+	$(PYTHON) tools/generate_decomp_report.py --config config/decompkit.toml
 
-check:
-	$(PYTHON) -m unittest discover -s tests -v
-	$(PYTHON) tools/check_repository.py
+verify-units:
+	@test -n "$(UNITS)" || (echo "usage: make verify-units UNITS='unit_a unit_b'" >&2; exit 2)
+	$(PYTHON) tools/verify_decomp_units.py --config config/decompkit.toml $(UNITS)
+
+check-tools: $(VENV_STAMP)
+	$(VENV_PYTHON) -m unittest tests.test_decompkit tests.test_decomp_report tests.test_verify_decomp_units -v
+
+check: $(VENV_STAMP)
+	$(VENV_PYTHON) -m unittest discover -s tests -v
+	$(VENV_PYTHON) tools/check_repository.py
 
 clean-generated:
 	rm -rf asm assets/extracted build .splache

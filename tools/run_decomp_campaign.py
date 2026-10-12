@@ -39,7 +39,8 @@ RESULT_RE = re.compile(r"\b(UNIT MATCH|NORMALIZER_ASSISTED|DIFF\((\d+)\)|DIFF)")
 TEXT_DIFF_RE = re.compile(r"^\.text\s+[^:]+:\s+(\d+)\s+mismatched words", re.MULTILINE)
 TEXT_SPAN_RE = re.compile(r"^\.text\s+([0-9A-Fa-f]+)\.\.([0-9A-Fa-f]+):", re.MULTILINE)
 RESULT_LINE_RE = re.compile(
-    r"^RESULT \S+: (UNIT MATCH|NORMALIZER_ASSISTED|DIFF)\s*$", re.MULTILINE
+    r"^RESULT \S+: (UNIT MATCH|NORMALIZER_ASSISTED|DIFF(?:\(\d+\))?)\s*$",
+    re.MULTILINE,
 )
 SPAN_RE = re.compile(
     r"^\.text\s+([0-9A-Fa-f]+)\.\.([0-9A-Fa-f]+):\s+"
@@ -293,6 +294,8 @@ def parse_result(output: str, returncode: int) -> tuple[str, int | None]:
                 or span.group(3) != "0"):
             return "INVALID", None
         return ("MATCH" if result == "UNIT MATCH" else "ASSISTED"), 0
+    if result.startswith("DIFF("):
+        return "DIFF", int(result[5:-1])
     if span:
         return "DIFF", int(span.group(3))
     counts = DIFF_COUNT_RE.findall(output)

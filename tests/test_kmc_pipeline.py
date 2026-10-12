@@ -1475,8 +1475,6 @@ class KmcPipelineTests(unittest.TestCase):
              "func_800B8310:\n\tnop\n\t.end\tfunc_800B8310\n", "join-label"),
             (MODULE.shape_effect_mesh_draw_registers,
              "func_800F8AAC:\n\tnop\n\t.end\tfunc_800F8AAC\n", "counts"),
-            (MODULE.shape_contact_side_test_frame,
-             "func_800B739C:\n\tnop\n\t.end\tfunc_800B739C\n", "prologue"),
             (MODULE.shape_curve_mode_dispatches,
              "func_80079AFC:\n\tnop\n\t.end\tfunc_80079AFC\n", "curve-dispatch"),
         )

@@ -15,9 +15,11 @@ import argparse
 import hashlib
 import re
 import struct
+import sys
 from pathlib import Path
 
-from segment_billboard_normalizer import shape_segment_billboard_matrix
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from segment_billboard_normalizer import shape_segment_billboard_matrix  # noqa: E402
 
 
 TRANSFER = re.compile(

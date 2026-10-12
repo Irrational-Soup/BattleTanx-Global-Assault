@@ -27,8 +27,12 @@ class DecompCampaignTests(unittest.TestCase):
         )
         self.assertEqual(CAMPAIGN.parse_result(output, 1), ("DIFF", 1355))
 
-    def test_unit_match_with_nonzero_status_is_still_a_match(self):
-        self.assertEqual(CAMPAIGN.parse_result("RESULT x.c: UNIT MATCH\n", 1), ("MATCH", 0))
+    def test_unit_match_with_nonzero_status_fails_closed(self):
+        output = (
+            ".text 80001000..80001004: 0 mismatched words\n"
+            "RESULT x.c: UNIT MATCH\n"
+        )
+        self.assertEqual(CAMPAIGN.parse_result(output, 1), ("INVALID", None))
 
     def test_zero_byte_unit_match_is_invalid(self):
         output = (
