@@ -20,6 +20,9 @@ ROW = re.compile(
 ANY_ROW = re.compile(r"^\s*-\s*\[\s*(0x[0-9A-Fa-f]+)\s*,")
 WORD = re.compile(r"^\s*(?:/\*.*?\*/\s*)?\.word\s+(.+?)\s*(?:/\*.*)?$")
 INSTRUCTION = re.compile(r"^\s*(?:/\*.*?\*/\s*)?([A-Za-z][\w.]*)(?:\s+(.*?))?\s*$")
+HEX_WORD = re.compile(
+    r"/\*\s*[0-9A-Fa-f]+\s+[0-9A-Fa-f]+\s+([0-9A-Fa-f]{8})\s*\*/"
+)
 
 
 @dataclass(frozen=True)
@@ -63,6 +66,22 @@ def _stats(text: str) -> tuple[int, int, int, int, int]:
     return glabels, dlabels, instructions, words, zero_words
 
 
+def _looks_like_embedded_text(text: str) -> bool:
+    """Recognize words whose original bytes are predominantly printable text.
+
+    Disassemblers routinely turn string fragments in executable sections into
+    syntactically valid MIPS64 instructions.  This conservative check requires
+    at least one complete word and three printable ASCII bytes per word on
+    average; it is classification evidence only and never rewrites the input.
+    """
+    values = [int(match.group(1), 16) for match in HEX_WORD.finditer(text)]
+    if not values:
+        return False
+    payload = b"".join(value.to_bytes(4, "big") for value in values)
+    printable = sum(byte in (9, 10, 13) or 0x20 <= byte <= 0x7E for byte in payload)
+    return printable * 4 >= len(payload) * 3
+
+
 def classify_assembly(kind: str, name: str, text: str) -> tuple[str, tuple[int, int, int, int, int]]:
     stats = _stats(text)
     glabels, dlabels, instructions, words, zero_words = stats
@@ -71,6 +90,8 @@ def classify_assembly(kind: str, name: str, text: str) -> tuple[str, tuple[int, 
         category = "authentic-source-assembly"
     elif "rspboot" in lowered or "microcode" in lowered or "f3dex" in lowered:
         category = "microcode-or-coprocessor-data"
+    elif _looks_like_embedded_text(text):
+        category = "embedded-data"
     elif not glabels and (words or dlabels):
         category = "padding" if words and zero_words == words else "embedded-data"
     elif glabels and (dlabels or words):

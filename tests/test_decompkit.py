@@ -9,7 +9,7 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from decompkit.config import load_config  # noqa: E402
 from decompkit.adapters import AdapterError, CommandBuildAdapter, ImageReference  # noqa: E402
-from decompkit.assembly import category_totals, inventory_assembly  # noqa: E402
+from decompkit.assembly import category_totals, classify_assembly, inventory_assembly  # noqa: E402
 from decompkit.gcc_alloc import (  # noqa: E402
     allocation_priority, allocation_rows, function_section, parse_pre_reload_text,
 )
@@ -255,6 +255,13 @@ class DecompkitPortabilityTests(unittest.TestCase):
         ])
         self.assertEqual(rows[0].size, 8)
         self.assertEqual(category_totals(rows)["padding"], (1, 4))
+
+    def test_assembly_inventory_recognizes_disassembled_ascii(self):
+        text = """glabel bogus
+/* D468 8007D468 6754696D */ daddiu $s4, $k0, 0x696D
+/* D46C 8007D46C 65520000 */ daddiu $s2, $t2, 0
+"""
+        self.assertEqual(classify_assembly("asm", "bogus", text)[0], "embedded-data")
 
     def test_register_atlas_rejects_factorial_explosion(self):
         with self.assertRaisesRegex(ValueError, "exceeds limit"):
