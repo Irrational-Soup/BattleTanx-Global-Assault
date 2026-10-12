@@ -4,7 +4,7 @@ VENV_PYTHON := $(VENV)/bin/python
 VENV_STAMP := $(VENV)/.installed
 ROM := baseroms/us/baserom.z64
 
-.PHONY: all setup toolchain symbols verify split build-code verify-code verify-assets progress-report check clean-generated
+.PHONY: all setup toolchain symbols verify split build-code verify-code verify-assets progress-report check clean-generated vita-assets vita vita-check
 
 all: split
 
@@ -61,3 +61,23 @@ check: $(VENV_STAMP)
 
 clean-generated:
 	rm -rf asm assets/extracted build .splache
+
+vita-assets: verify
+	$(PYTHON) tools/inventory_lzari_assets.py --rom $(ROM) --output assets/extracted/us/vita/lzari_manifest.json --extract-dir assets/extracted/us/vita/lzari --split-bundles
+	$(PYTHON) tools/extract_lzari_images.py assets/extracted/us/vita/images --rom $(ROM)
+	$(PYTHON) tools/extract_lzari_worlds.py assets/extracted/us/vita/worlds --rom $(ROM)
+	$(PYTHON) tools/inventory_script_assets.py --rom $(ROM) --output assets/extracted/us/vita/scripts_manifest.json --extract-dir assets/extracted/us/vita/scripts
+	$(PYTHON) tools/inventory_libmus_assets.py --rom $(ROM) --output assets/extracted/us/vita/libmus_manifest.json --extract-dir assets/extracted/us/vita/libmus
+
+vita: vita-assets
+	@test -n "$(VITASDK)" || (echo "Set VITASDK to your VitaSDK installation" >&2; exit 2)
+	cmake -S port/vita -B port/vita/build -DCMAKE_BUILD_TYPE=Release
+	cmake --build port/vita/build
+
+vita-check: vita
+	port/vita/verify_elf.sh port/vita/build/vitatanxga \
+		$(VITASDK)/arm-vita-eabi/lib/libvita2d.a \
+		$(VITASDK)/arm-vita-eabi/lib/libpng.a \
+		$(VITASDK)/arm-vita-eabi/lib/libjpeg.a \
+		$(VITASDK)/arm-vita-eabi/lib/libfreetype.a \
+		$(VITASDK)/arm-vita-eabi/lib/libz.a
