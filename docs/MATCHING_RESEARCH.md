@@ -133,6 +133,21 @@ See [NORMALIZER_ASSISTED.md](NORMALIZER_ASSISTED.md) for the unit ledger. For
 blocks over whole-function liveness, rejecting transformations that did not
 preserve values at joins and calls.
 
+### Exhaustive register searches
+
+Register-allocation residues should be measured instead of attacked through
+unbounded source mutation. `decomp_register_atlas.py` enumerates every
+bijection in caller-declared register groups and ranks the aligned instruction
+operands. It can prove that a residue is a simple swap or cycle and identify
+the smallest diagnostic allocation change.
+
+The search size is the product of each group factorial. Keep integer and
+floating-point registers separate, and exclude fixed ABI registers unless the
+target evidence permits them. A zero-cost mapping proves only that aligned
+instructions differ by that mapping; it does not establish the source cause or
+compiler pass. Structural, opcode, and control-flow differences must be fixed
+before a mapping can support a normalizer rule.
+
 ## Approaches that did not generalize
 
 - Exact size is weak evidence: an incorrect spill pair can compensate for

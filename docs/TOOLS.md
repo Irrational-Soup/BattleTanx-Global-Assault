@@ -15,6 +15,8 @@ ROM addresses embedded in it is not reuse.
 | Whole-image verification | `decompkit.image`, `verify_rebuilt_image.py` | SHA-256, size, and first-difference fixture tests |
 | Candidate compilation | `tools/decomp_compile.py` | KMC/ASN64 pipeline tests and retail-address comparisons |
 | Candidate diagnosis | `decomp_context.py`, `decomp_score.py`, `decomp_alloc_report.py` | Structured JSON/TSV outputs and compiler-dump tests |
+| Register mapping | `decompkit.registers`, `decomp_register_atlas.py` | Exhaustive bounded permutations across independent register classes |
+| Fail-closed rewriting | `decompkit.rewrite` | Exact fire counts, unique function gates, bijective token maps, and complete line permutations |
 | Bounded search | `decomp_xbatch.py`, `decomp_batch.py`, `decomp_beam.py`, `decomp_permuter.py` | Deterministic seeds, bounded evaluations, retained ledgers |
 | Portfolio orchestration | `decomp_make_batch.py`, `decomp_campaign.py`, `decomp_worklist.py`, `decomp_siblings.py` | Resumable manifests and ranked outputs |
 
@@ -22,6 +24,11 @@ ROM addresses embedded in it is not reuse.
 result is deliberately the adapter boundary consumed by `UnitVerifier`.
 Another project should implement that result contract rather than fork the
 verification algorithm.
+
+`decomp_register_atlas.py` consumes portable JSON instead of invoking this
+repository's compiler. Project adapters can export their disassembly to that
+format. This prevents the shared engine from assuming MIPS register names or
+incorrectly mixing GPR, FPR, ABI-reserved, or architecture-specific classes.
 
 ## Stable project adapters
 

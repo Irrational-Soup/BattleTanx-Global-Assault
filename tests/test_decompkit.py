@@ -9,7 +9,9 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from decompkit.config import load_config  # noqa: E402
 from decompkit.image import compare_bytes  # noqa: E402
+from decompkit.registers import exhaustive_register_maps, mapping_cost  # noqa: E402
 from decompkit.report import build_report  # noqa: E402
+from decompkit.rewrite import function_body, permute_lines, rename_tokens, replace_exact  # noqa: E402
 from decompkit.units import UnitVerifier, load_unit_catalogue  # noqa: E402
 
 
@@ -122,6 +124,44 @@ class DecompkitPortabilityTests(unittest.TestCase):
         self.assertEqual(changed.first_difference, 2)
         short = compare_bytes(b"ABCD", b"ABC")
         self.assertEqual(short.first_difference, 3)
+
+    def test_register_atlas_finds_independent_swaps(self):
+        built = [("add", ("r1", "r2", "r3")), ("mul", ("f0", "f2", "f4"))]
+        reference = [("add", ("r2", "r1", "r3")), ("mul", ("f2", "f0", "f4"))]
+        rows = exhaustive_register_maps(
+            built, reference,
+            [(["r1", "r2"], ["r1", "r2"]), (["f0", "f2"], ["f0", "f2"])],
+        )
+        self.assertEqual(rows[0].mismatches, 0)
+        self.assertEqual(
+            rows[0].mapping,
+            {"r1": "r2", "r2": "r1", "f0": "f2", "f2": "f0"},
+        )
+
+    def test_register_atlas_rejects_factorial_explosion(self):
+        with self.assertRaisesRegex(ValueError, "exceeds limit"):
+            exhaustive_register_maps(
+                [], [], [(["a", "b", "c"], ["x", "y", "z"])], limit=5
+            )
+        self.assertEqual(
+            mapping_cost([("a", ("r1",))], [("b", ("r2",))], {"r1": "r2"}), 1
+        )
+
+    def test_rewrite_primitives_are_fail_closed(self):
+        self.assertEqual(replace_exact("a b", "a", "x").text, "x b")
+        with self.assertRaisesRegex(RuntimeError, "fired 0 times"):
+            replace_exact("a b", "z", "x")
+        self.assertEqual(
+            rename_tokens("$s1,$s10,$s2", {"$s1": "$s2", "$s2": "$s1"}),
+            "$s2,$s10,$s1",
+        )
+        with self.assertRaisesRegex(ValueError, "injective"):
+            rename_tokens("a", {"a": "x", "b": "x"})
+        body = "f:\n\ta\n\tb\n\t.end f\n"
+        self.assertEqual(function_body(body, "f")[2], body)
+        self.assertEqual(permute_lines("a\nb\n", [1, 0]), "b\na\n")
+        with self.assertRaisesRegex(ValueError, "complete permutation"):
+            permute_lines("a\nb\n", [0, 0])
 
 
 if __name__ == "__main__":

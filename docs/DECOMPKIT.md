@@ -19,6 +19,12 @@ command-line entry points.
   SHA-256 values, sizes, and the first differing offset. The accompanying
   `verify_rebuilt_image.py` command never treats a matching prefix as a
   matching complete image.
+- `decompkit.registers` exhaustively ranks explicitly bounded register
+  bijections over an architecture-neutral instruction representation. It
+  rejects factorially large searches rather than consuming unbounded time.
+- `decompkit.rewrite` provides exact-fire-count replacement, unique function
+  selection, simultaneous token renaming, and checked line permutations for
+  fail-closed normalizers.
 
 The tools deliberately do not infer target architecture. Consumers provide
 their own compiler adapter and reference reader. Vita work remains ARMv7-A,
@@ -61,8 +67,21 @@ manifests = [
 python3 tools/generate_decomp_report.py --config config/decompkit.toml
 python3 tools/verify_decomp_units.py --config config/decompkit.toml unit_name
 python3 tools/verify_rebuilt_image.py reference.z64 rebuilt.z64
+python3 tools/decomp_register_atlas.py built.json reference.json \
+  --group 's0,s1,s2=s0,s1,s2' --group 'f20,f22=f20,f22'
 make check-tools
 ```
+
+The register-atlas JSON format is independent of objdump:
+
+```json
+[{"opcode": "addiu", "operands": ["s0", "s1", "4"]}]
+```
+
+Architecture adapters preserve non-register operands verbatim and place only
+genuinely interchangeable registers in the same `--group`. The tool reports
+the exact search-space size and ranks every bijection. Its default maximum is
+100,000 permutations; increase it deliberately with `--limit`.
 
 The report command also accepts `--functions`, `--splat`, and `--output`
 overrides. Other projects construct
