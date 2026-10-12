@@ -141,6 +141,11 @@ bijection in caller-declared register groups and ranks the aligned instruction
 operands. It can prove that a residue is a simple swap or cycle and identify
 the smallest diagnostic allocation change.
 
+Use `--single-swaps` first. It scores identity and every pair in each declared
+register family in quadratic time, producing the complete one-change lookup
+table requested during the final allocation investigations. Only promote the
+small interacting set into the factorial permutation search.
+
 The search size is the product of each group factorial. Keep integer and
 floating-point registers separate, and exclude fixed ABI registers unless the
 target evidence permits them. A zero-cost mapping proves only that aligned

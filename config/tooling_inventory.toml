@@ -6,6 +6,7 @@ evidence = "Synthetic temporary-project tests in tests/test_decompkit.py and mak
 tools = [
   "audit_tooling.py",
   "audit_source_names.py",
+  "audit_assembly_segments.py",
   "decomp_register_atlas.py",
   "decompkit_verify_units.py",
   "generate_decomp_report.py",

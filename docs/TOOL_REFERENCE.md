@@ -14,6 +14,7 @@ Architecture-neutral reporting, verification, register-search, image-comparison,
 
 | Tool | Purpose |
 |---|---|
+| `audit_assembly_segments.py` | Classify Splat asm/hasm rows as code, data, padding, or microcode. |
 | `audit_source_names.py` | Enforce address-prefixed descriptive names without forcing a mass rename. |
 | `audit_tooling.py` | Validate the complete tool inventory and optionally refresh its reference. |
 | `decomp_register_atlas.py` | Exhaustively rank bounded register mappings between aligned instructions. |

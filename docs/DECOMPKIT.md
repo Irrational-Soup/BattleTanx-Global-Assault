@@ -24,9 +24,12 @@ command-line entry points.
   independently compiled prefix. It validates coverage, overlap agreement,
   paths, sizes, and optional pristine hashes without assuming a console, ROM
   byte order, or title-specific table.
-- `decompkit.registers` exhaustively ranks explicitly bounded register
-  bijections over an architecture-neutral instruction representation. It
-  rejects factorially large searches rather than consuming unbounded time.
+- `decompkit.registers` ranks every single-register swap or exhaustively ranks
+  explicitly bounded register bijections over an architecture-neutral
+  instruction representation. It rejects factorially large searches rather
+  than consuming unbounded time.
+- `decompkit.assembly` inventories Splat `asm`/`hasm` rows and separates
+  generated code, embedded data, padding, microcode, and authentic assembly.
 - `decompkit.rewrite` provides exact-fire-count replacement, unique function
   selection, simultaneous token renaming, and checked line permutations for
   fail-closed normalizers.
@@ -81,6 +84,11 @@ python3 tools/verify_decomp_units.py --config config/decompkit.toml unit_name
 python3 tools/verify_rebuilt_image.py reference.z64 rebuilt.z64
 python3 tools/decomp_register_atlas.py built.json reference.json \
   --group 's0,s1,s2=s0,s1,s2' --group 'f20,f22=f20,f22'
+python3 tools/decomp_register_atlas.py built.json reference.json \
+  --single-swaps --improving-only --group 's0,s1,s2=s0,s1,s2'
+python3 tools/audit_assembly_segments.py --splat config/us/splat.yaml \
+  --asm-root asm/us --json build/us/assembly-inventory.json
+make assembly-report
 python3 tools/decompkit_verify_units.py --config project.toml \
   --reference baserom.z64 \
   --adapter-command 'python3 adapter.py {request} {response}'

@@ -16,6 +16,60 @@ class MappingResult:
     mapping: dict[str, str]
 
 
+def register_tokens(instructions: Sequence[Instruction]) -> set[str]:
+    """Return register-like operand tokens seen in an instruction stream.
+
+    The representation deliberately remains architecture-neutral: callers decide
+    which token families may be exchanged.  Memory operands are not decomposed;
+    JSON producers should expose a base register as its own operand when they want
+    it included in the search.
+    """
+    return {operand for _, operands in instructions for operand in operands}
+
+
+def single_register_swaps(
+    built: Sequence[Instruction],
+    reference: Sequence[Instruction],
+    groups: Sequence[Sequence[str]],
+    *,
+    keep: int = 100,
+    improving_only: bool = False,
+) -> list[MappingResult]:
+    """Score identity plus every one-pair swap in each register family.
+
+    This is the inexpensive exhaustive probe to run before a factorial mapping
+    search.  It tests every pair exactly once, never exchanges tokens across
+    caller-defined families (for example GPR and FPR), and reports deterministic
+    results.  The mismatch count is the same operand-slot metric used by
+    :func:`exhaustive_register_maps`.
+    """
+    if keep < 1:
+        raise ValueError("keep must be positive")
+    seen: set[str] = set()
+    normalized: list[tuple[str, ...]] = []
+    for group in groups:
+        current = tuple(group)
+        if len(set(current)) != len(current):
+            raise ValueError("register groups must not contain duplicates")
+        overlap = seen.intersection(current)
+        if overlap:
+            raise ValueError(f"registers occur in multiple groups: {sorted(overlap)}")
+        seen.update(current)
+        normalized.append(current)
+
+    baseline = mapping_cost(built, reference, {})
+    ranked = [MappingResult(baseline, {})]
+    for current in normalized:
+        for left_index, left in enumerate(current):
+            for right in current[left_index + 1 :]:
+                mapping = {left: right, right: left}
+                cost = mapping_cost(built, reference, mapping)
+                if not improving_only or cost < baseline:
+                    ranked.append(MappingResult(cost, mapping))
+    ranked.sort(key=lambda item: (item.mismatches, sorted(item.mapping.items())))
+    return ranked[:keep]
+
+
 def parse_instruction_rows(rows: Iterable[Mapping[str, object]]) -> list[Instruction]:
     """Validate the portable JSON instruction representation."""
     result: list[Instruction] = []

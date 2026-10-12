@@ -290,10 +290,6 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800BFE94_to_800BFEA0.s.o .text 0xc --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800C6914_to_800C6918.s.o asm/us/main_800C6914_to_800C6918.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800C6914_to_800C6918.s.o .text 0x4 --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/data/main_800C6918_textbin.s.o asm/us/data/main_800C6918_textbin.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/data/main_800C6918_textbin.s.o .text 0x8 --alignment 4
@@ -305,10 +301,6 @@ python3 tools/trim_elf32_section.py \
     -o build/us/asm/us/main_800CD96C_to_800CD970.s.o asm/us/main_800CD96C_to_800CD970.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800CD96C_to_800CD970.s.o .text 0x4 --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800CDBDC_to_800CDBE0.s.o asm/us/main_800CDBDC_to_800CDBE0.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800CDBDC_to_800CDBE0.s.o .text 0x4 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800D05D8_to_800D05E0.s.o asm/us/main_800D05D8_to_800D05E0.s
 python3 tools/trim_elf32_section.py \
@@ -333,10 +325,6 @@ python3 tools/trim_elf32_section.py \
     -o build/us/asm/us/main_800D7DD4_to_800D7DE0.s.o asm/us/main_800D7DD4_to_800D7DE0.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800D7DD4_to_800D7DE0.s.o .text 0xc --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800D84D8_to_800D84DC.s.o asm/us/main_800D84D8_to_800D84DC.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800D84D8_to_800D84DC.s.o .text 0x4 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800D88E8_to_800D88F0.s.o asm/us/main_800D88E8_to_800D88F0.s
 python3 tools/trim_elf32_section.py \
@@ -417,10 +405,6 @@ python3 tools/trim_elf32_section.py \
     -o build/us/asm/us/main_800E58C4_to_800E58D0.s.o asm/us/main_800E58C4_to_800E58D0.s
 python3 tools/trim_elf32_section.py \
     build/us/asm/us/main_800E58C4_to_800E58D0.s.o .text 0xc --alignment 4
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_800E603C_to_800E6040.s.o asm/us/main_800E603C_to_800E6040.s
-python3 tools/trim_elf32_section.py \
-    build/us/asm/us/main_800E603C_to_800E6040.s.o .text 0x4 --alignment 4
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_800E64EC_to_800E64F0.s.o asm/us/main_800E64EC_to_800E64F0.s
 python3 tools/trim_elf32_section.py \
@@ -587,8 +571,6 @@ python3 tools/trim_elf32_section.py \
     -o build/us/asm/us/main_80106EE0_to_80107A30.s.o asm/us/main_80106EE0_to_80107A30.s
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_80107D60_to_80108530.s.o asm/us/main_80107D60_to_80108530.s
-"${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
-    -o build/us/asm/us/main_80109030_to_80109090.s.o asm/us/main_80109030_to_80109090.s
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
     -o build/us/asm/us/main_80109490_to_8010A9A0.s.o asm/us/main_80109490_to_8010A9A0.s
 "${tool_prefix}as" -EB -march=vr4300 -mabi=32 -I include \
@@ -4646,7 +4628,6 @@ if false; then
     build/us/src/code/frontend/800C67BC_hud_page_open.c.o \
     build/us/src/code/frontend/800C6844_hud_page_close.c.o \
     build/us/src/code/frontend/800C68AC_hud_value_to_byte.c.o \
-    build/us/asm/us/main_800C6914_to_800C6918.s.o \
     build/us/asm/us/data/main_800C6918_textbin.s.o \
     build/us/src/code/frontend/800C6920_race_assets_load.c.o \
     build/us/src/code/frontend/800C6D68_race_hud_init.c.o \
@@ -4702,7 +4683,6 @@ if false; then
     build/us/src/code/frontend/800CD85C_results_record_write.c.o \
     build/us/asm/us/main_800CD96C_to_800CD970.s.o \
     build/us/src/code/frontend/800CD970_results_menu_callbacks.c.o \
-    build/us/asm/us/main_800CDBDC_to_800CDBE0.s.o \
     build/us/src/code/frontend/800CDBE0_results_time_text.c.o \
     build/us/src/code/frontend/800CDD70_results_time_format.c.o \
     build/us/src/code/frontend/800CE188_results_time_compare.c.o \
@@ -4784,7 +4764,6 @@ if false; then
     build/us/src/code/entities/800D8050_actor_collision_free.c.o \
     build/us/src/code/entities/800D8088_actor_model_draw.c.o \
     build/us/src/code/entities/800D8380_actor_timer_update.c.o \
-    build/us/asm/us/main_800D84D8_to_800D84DC.s.o \
     build/us/src/code/entities/800D84DC_actor_message_handler.c.o \
     build/us/src/code/entities/800D8674_turret_message_handlers.c.o \
     build/us/src/code/entities/800D8758_turret_state_messages.c.o \
@@ -4889,7 +4868,6 @@ if false; then
     build/us/asm/us/main_800E58C4_to_800E58D0.s.o \
     build/us/src/code/world/800E58D0_bridge_segments_init.c.o \
     build/us/src/code/effects/800E5BB8_lightning_path_subdivide.c.o \
-    build/us/asm/us/main_800E603C_to_800E6040.s.o \
     build/us/src/code/world/800E6040_bridge_piece_spawn.c.o \
     build/us/src/code/effects/800E61E8_lightning_arc_update.c.o \
     build/us/asm/us/main_800E64EC_to_800E64F0.s.o \
@@ -5123,7 +5101,6 @@ if false; then
     build/us/src/libultra/os_cont_ram_read.c.o \
     build/us/src/libultra/os_cont_crc.c.o \
     build/us/src/libultra/gu_mtx.c.o \
-    build/us/asm/us/main_80109030_to_80109090.s.o \
     build/us/src/libultra/gu_perspective.c.o \
     build/us/src/libultra/cosf.c.o \
     build/us/asm/us/main_80109490_to_8010A9A0.s.o \

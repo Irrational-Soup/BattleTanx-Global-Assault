@@ -9,11 +9,14 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from decompkit.config import load_config  # noqa: E402
 from decompkit.adapters import AdapterError, CommandBuildAdapter, ImageReference  # noqa: E402
+from decompkit.assembly import category_totals, inventory_assembly  # noqa: E402
 from decompkit.gcc_alloc import (  # noqa: E402
     allocation_priority, allocation_rows, function_section, parse_pre_reload_text,
 )
 from decompkit.image import compare_bytes  # noqa: E402
-from decompkit.registers import exhaustive_register_maps, mapping_cost  # noqa: E402
+from decompkit.registers import (  # noqa: E402
+    exhaustive_register_maps, mapping_cost, single_register_swaps,
+)
 from decompkit.report import build_report  # noqa: E402
 from decompkit.rewrite import function_body, permute_lines, rename_tokens, replace_exact  # noqa: E402
 from decompkit.tool_inventory import (  # noqa: E402
@@ -144,6 +147,47 @@ class DecompkitPortabilityTests(unittest.TestCase):
             rows[0].mapping,
             {"r1": "r2", "r2": "r1", "f0": "f2", "f2": "f0"},
         )
+
+    def test_register_atlas_scores_every_single_swap(self):
+        built = [
+            ("add", ("r1", "r2", "r3")),
+            ("mul", ("r1", "r4", "r2")),
+            ("fadd", ("f0", "f2", "f4")),
+        ]
+        reference = [
+            ("add", ("r2", "r1", "r3")),
+            ("mul", ("r2", "r4", "r1")),
+            ("fadd", ("f0", "f2", "f4")),
+        ]
+        rows = single_register_swaps(
+            built, reference, [["r1", "r2", "r3", "r4"], ["f0", "f2", "f4"]]
+        )
+        self.assertEqual(rows[0].mismatches, 0)
+        self.assertEqual(rows[0].mapping, {"r1": "r2", "r2": "r1"})
+        self.assertEqual(len(rows), 10)  # identity + C(4,2) + C(3,2)
+
+    def test_assembly_inventory_separates_code_data_padding_and_hasm(self):
+        asm = self.root / "asm"
+        asm.mkdir()
+        (asm / "code.s").write_text("glabel f\n  addiu $sp, $sp, -8\n")
+        (asm / "data.s").write_text("dlabel d\n  .word 0x12345678\n")
+        (asm / "pad.s").write_text("dlabel p\n  .word 0x00000000\n")
+        (asm / "hand.s").write_text("glabel h\n  jr $ra\n")
+        splat = self.root / "splat.yaml"
+        splat.write_text(textwrap.dedent("""
+            subsegments:
+              - [0x100, asm, code]
+              - [0x108, asm, data]
+              - [0x10C, asm, pad]
+              - [0x110, hasm, hand]
+              - [0x118, c, next]
+        """))
+        rows = inventory_assembly(splat, asm)
+        self.assertEqual([row.category for row in rows], [
+            "generated-code", "embedded-data", "padding", "authentic-source-assembly",
+        ])
+        self.assertEqual(rows[0].size, 8)
+        self.assertEqual(category_totals(rows)["padding"], (1, 4))
 
     def test_register_atlas_rejects_factorial_explosion(self):
         with self.assertRaisesRegex(ValueError, "exceeds limit"):
