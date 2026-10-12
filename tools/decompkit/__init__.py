@@ -8,4 +8,6 @@ wrappers may inject compiler and ROM adapters for their own toolchains.
 # Keep package import side-effect free.  In particular, the legacy reporting
 # CLI imports ``decompkit.config`` and is also re-exported by
 # ``decompkit.report``; eager imports here would create a cycle.
-__all__ = ("config", "image", "registers", "report", "rewrite", "tables", "units")
+__all__ = (
+    "config", "gcc_alloc", "image", "registers", "report", "rewrite", "tables", "units"
+)

@@ -8,6 +8,9 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 from decompkit.config import load_config  # noqa: E402
+from decompkit.gcc_alloc import (  # noqa: E402
+    allocation_priority, allocation_rows, function_section, parse_pre_reload_text,
+)
 from decompkit.image import compare_bytes  # noqa: E402
 from decompkit.registers import exhaustive_register_maps, mapping_cost  # noqa: E402
 from decompkit.report import build_report  # noqa: E402
@@ -162,6 +165,29 @@ class DecompkitPortabilityTests(unittest.TestCase):
         self.assertEqual(permute_lines("a\nb\n", [1, 0]), "b\na\n")
         with self.assertRaisesRegex(ValueError, "complete permutation"):
             permute_lines("a\nb\n", [0, 0])
+
+    def test_gcc_allocation_parser_keeps_pre_and_post_reload_distinct(self):
+        dump = ";; Function f\nbody\n;; Function g\nother\n"
+        self.assertEqual(function_section(dump, "f"), "\nbody\n")
+        lreg = (
+            "Register 101 used 4 times across 8 insns; crosses 1 call; 8 bytes.\n"
+            ";; Register 102 in 18.\n"
+            "(set (reg:SI 101)\n    (const_int 3))\n"
+        )
+        greg = (
+            ";; 1 regs to allocate: 101\n"
+            ";; Register dispositions:\n101 in 19\n;; Hard regs used\n"
+        )
+        pre = parse_pre_reload_text(
+            "PRE_RELOAD_REG function=f pseudo=101 hard=18 allocno=4 refs=4 live=8 calls=1\n",
+            "f",
+        )
+        parsed = allocation_rows(lreg, greg, pre)
+        row = parsed["global"][0]
+        self.assertEqual((row["pre_reload_hard_name"], row["hard_name"]), ("s2", "s3"))
+        self.assertTrue(row["reload_changed_assignment"])
+        self.assertEqual(parsed["local"], {102: 18})
+        self.assertEqual(row["priority"], allocation_priority(4, 8, 2))
 
 
 if __name__ == "__main__":

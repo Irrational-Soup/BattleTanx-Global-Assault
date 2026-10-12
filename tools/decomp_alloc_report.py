@@ -11,132 +11,22 @@ Usage:
 
 import argparse
 import json
-import math
-import re
 
 from decomp_compile import build
-
-
-HARD_NAMES = (
-    "zero at v0 v1 a0 a1 a2 a3 t0 t1 t2 t3 t4 t5 t6 t7 "
-    "s0 s1 s2 s3 s4 s5 s6 s7 t8 t9 k0 k1 gp sp s8 ra"
-).split() + [f"f{i}" for i in range(32)]
-
-
-def hard_name(number):
-    return HARD_NAMES[number] if number < len(HARD_NAMES) else f"hr{number}"
-
-
-def function_section(text, function):
-    parts = re.split(r"(?m)^;; Function (\S+)\s*$", text)
-    for index in range(1, len(parts), 2):
-        if parts[index] == function:
-            return parts[index + 1]
-    raise ValueError(f"function {function!r} is absent from compiler dump")
-
-
-def register_stats(text):
-    result = {}
-    pattern = r"(?m)^Register (\d+) used (\d+) times across (\d+) insns(.*)$"
-    for match in re.finditer(pattern, text):
-        tail = match.group(4)
-        calls = re.search(r"crosses (\d+) call", tail)
-        width = re.search(r"(\d+) bytes", tail)
-        result[int(match.group(1))] = {
-            "refs": int(match.group(2)),
-            "live": int(match.group(3)),
-            "calls": int(calls.group(1)) if calls else 0,
-            "size_words": max(1, (int(width.group(1)) + 3) // 4) if width else 1,
-            "local": "in block" in tail,
-            "description": tail.strip("; ."),
-        }
-    return result
-
-
-def first_set(text, pseudo):
-    match = re.search(
-        rf"\(set \(reg(?:/\w+)*:\w+ {pseudo}\)\s*\n?\s*(.{{0,120}})", text
-    )
-    return re.sub(r"\s+", " ", match.group(1)).strip() if match else ""
-
-
-def parse_pre_reload(path, function):
-    if not path:
-        return {}
-    result = {}
-    pattern = re.compile(
-        r"^PRE_RELOAD_REG function=(\S+) pseudo=(\d+) hard=(-?\d+) "
-        r"allocno=(-?\d+) refs=(-?\d+) live=(-?\d+) calls=(-?\d+)$"
-    )
-    with open(path) as trace:
-        for line in trace:
-            match = pattern.match(line.rstrip())
-            if not match or match.group(1) != function:
-                continue
-            pseudo = int(match.group(2))
-            result[pseudo] = {
-                "hard": int(match.group(3)),
-                "allocno": int(match.group(4)),
-                "refs": int(match.group(5)),
-                "live": int(match.group(6)),
-                "calls": int(match.group(7)),
-            }
-    return result
+from decompkit.gcc_alloc import (
+    allocation_rows, first_set, function_section, hard_name, parse_pre_reload,
+)
 
 
 def collect(source, vram, function, pre_reload_path=None):
     compiled = build(source, vram, focus=function, dumps=True)
     lreg = function_section(compiled["dumps"]["lreg"], function)
     greg = function_section(compiled["dumps"]["greg"], function)
-    stats = register_stats(lreg)
-
-    order_match = re.search(r";; (\d+) regs to allocate:([ \d]*)", greg)
-    order = [int(value) for value in order_match.group(2).split()] if order_match else []
-
-    dispositions = {}
-    marker = ";; Register dispositions:"
-    if marker in greg:
-        body = greg.split(marker, 1)[1].split(";; Hard regs used", 1)[0]
-        dispositions = {int(p): int(h) for p, h in re.findall(r"(\d+) in (\d+)", body)}
-
-    local = {
-        int(p): int(h)
-        for p, h in re.findall(r";; Register (\d+) in (\d+)\.", lreg)
-    }
-
     pre_reload = parse_pre_reload(pre_reload_path, function)
-    global_set = set(order)
-    rows = []
-    for rank, pseudo in enumerate(order):
-        item = stats.get(
-            pseudo,
-            {"refs": 0, "live": 1, "calls": 0, "size_words": 1,
-             "local": False, "description": ""},
-        )
-        refs = item["refs"]
-        priority = (
-            math.floor(math.log2(refs)) * refs / item["live"] * 10000
-            * item["size_words"]
-            if refs else 0
-        )
-        pre = pre_reload.get(pseudo)
-        rows.append({
-            "rank": rank,
-            "pseudo": pseudo,
-            **item,
-            "priority": round(priority),
-            "hard": dispositions.get(pseudo),
-            "hard_name": hard_name(dispositions[pseudo]) if pseudo in dispositions else "MEM",
-            "pre_reload_hard": pre["hard"] if pre else None,
-            "pre_reload_hard_name": (
-                hard_name(pre["hard"]) if pre and pre["hard"] >= 0 else
-                "MEM" if pre else None
-            ),
-            "reload_changed_assignment": (
-                pre is not None and pre["hard"] != dispositions.get(pseudo, -1)
-            ),
-            "first_set": first_set(lreg, pseudo),
-        })
+    parsed = allocation_rows(lreg, greg, pre_reload)
+    rows = parsed["global"]
+    local = parsed["local"]
+    global_set = {row["pseudo"] for row in rows}
     return {
         "function": function,
         "source": source,

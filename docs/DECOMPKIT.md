@@ -25,6 +25,9 @@ command-line entry points.
 - `decompkit.rewrite` provides exact-fire-count replacement, unique function
   selection, simultaneous token renaming, and checked line permutations for
   fail-closed normalizers.
+- `decompkit.gcc_alloc` parses GCC 2.x local/global allocation dumps and
+  optional instrumented pre-reload records without invoking a compiler.
+  Pre-reload and post-reload assignments remain explicitly separate.
 
 The tools deliberately do not infer target architecture. Consumers provide
 their own compiler adapter and reference reader. Vita work remains ARMv7-A,

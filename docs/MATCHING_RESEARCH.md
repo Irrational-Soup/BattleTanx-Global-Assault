@@ -148,6 +148,19 @@ instructions differ by that mapping; it does not establish the source cause or
 compiler pass. Structural, opcode, and control-flow differences must be fixed
 before a mapping can support a normalizer rule.
 
+### Allocation dumps and checkpoint traces
+
+GCC 2.7.2's `.greg` dump is produced after reload; it is not evidence of the
+pre-reload allocation by itself. `decompkit.gcc_alloc` therefore exposes the
+ordinary dump assignment and an optional instrumented `PRE_RELOAD_REG` record
+as separate fields, including an explicit `reload_changed_assignment` flag.
+This distinction prevented several apparent allocator choices from being
+misattributed during the final grid and matrix investigations.
+
+The parser is compiler-invocation agnostic. Another project can feed dumps
+from its own GCC build and provide a target-specific hard-register name table.
+The bundled MIPS names are merely the default used by this repository.
+
 ## Approaches that did not generalize
 
 - Exact size is weak evidence: an incorrect spill pair can compensate for
