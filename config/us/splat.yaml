@@ -642,7 +642,7 @@ segments:
       - [0x44684, c, code/800B4684_collision_query]
       - [0x449E0, c, code/grid_segment_walk]
       - [0x44F38, c, code/func_800B4F38]
-      - [0x45130, asm, main_800B5130_to_800B5728]
+      - [0x45130, c, code/grid_cell_contact_query]
       - [0x45728, c, code/grid_edge_points]
       - [0x45A10, c, code/800B5A10]
       - [0x45B8C, c, code/800B5B8C_mover_reflect]

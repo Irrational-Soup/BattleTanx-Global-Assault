@@ -3,6 +3,7 @@ grid_segment_walk	0x800B49E0	0x558	normalizer-assisted
 race_results_hud_draw	0x800C9A3C	0x76C	normalizer-assisted
 grid_segment_cell_test	0x800B4294	0x3F0	normalizer-assisted
 alternate_player_setup	0x800A80AC	0x5E4	normalizer-assisted
+grid_cell_contact_query	0x800B5130	0x5F8	normalizer-assisted
 task_class_init	0x800A22CC	0x8A8	normalizer-assisted
 step_pool_release	0x8007DBE0	0x174	normalizer-assisted
 matrix_rotate_translate	0x8009FCCC	0x250	normalizer-assisted

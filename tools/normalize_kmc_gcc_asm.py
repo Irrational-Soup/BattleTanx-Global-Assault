@@ -4958,6 +4958,8 @@ def normalize_v3(source: str) -> str:
         text = shape_race_results_hud_value_spill(text)
     if os.environ.get("V3_GRID_SEGMENT_WALK_COUNTER", "1") == "1":
         text = shape_grid_segment_walk_counter(text)
+    if os.environ.get("V3_GRID_CONTACT_QUERY_ALLOCATIONS", "1") == "1":
+        text = shape_grid_contact_query_allocations(text)
     if os.environ.get("V3_MATRIX_ROTATE_SETUP", "1") == "1":
         text = schedule_matrix_rotate_setup(text)
     if os.environ.get("V3_SPRITE_PHASE_LIFETIMES", "1") == "1":
@@ -4965,6 +4967,106 @@ def normalize_v3(source: str) -> str:
     if os.environ.get("V3_EFFECT_BURST_SAVED_REGISTERS", "1") == "1":
         text = cycle_effect_burst_saved_registers(text)
     return text
+
+
+def shape_grid_contact_query_allocations(text: str) -> str:
+    """Match the two saved-register allocations in ``func_800B5130``.
+
+    The recovered C has retail's size, frame, CFG and instruction stream, but
+    GCC's global allocator wins two close priority races in the opposite
+    order.  Exchange only the value-carrying uses; the ABI save/restore slots
+    remain tied to their physical registers.  Exact frame patterns and token
+    counts make source or compiler drift fail closed.
+    """
+    if "func_800B5130:" not in text:
+        return text
+    match = re.search(
+        r"func_800B5130:.*?\n\s*\.end\s+func_800B5130\b", text, flags=re.S
+    )
+    if match is None:
+        raise RuntimeError("func_800B5130 body not found")
+    body = match.group(0)
+    frame_lines = (
+        "\tsw\t$18,96($sp)\n", "\tsw\t$19,100($sp)\n",
+        "\tsw\t$21,108($sp)\n", "\tsw\t$22,112($sp)\n",
+        "\tlw\t$18,96($sp)\n", "\tlw\t$19,100($sp)\n",
+        "\tlw\t$21,108($sp)\n", "\tlw\t$22,112($sp)\n",
+    )
+    for index, line in enumerate(frame_lines):
+        if body.count(line) != 1:
+            raise RuntimeError(
+                f"func_800B5130 frame pattern {index} fired "
+                f"{body.count(line)} times (expected 1)"
+            )
+        body = body.replace(line, f"@@B5130_FRAME_{index}@@\n", 1)
+    expected = {"$21": 12, "$22": 11}
+    counts = {
+        register: len(re.findall(rf"{re.escape(register)}(?![0-9])", body))
+        for register in expected
+    }
+    if counts != expected:
+        raise RuntimeError(
+            f"func_800B5130 saved-register counts changed: {counts}"
+        )
+    phase1_end = body.find("\n.L49:\n")
+    if phase1_end < 0:
+        raise RuntimeError("func_800B5130 phase-1 boundary not found")
+    phase1, phase2 = body[:phase1_end], body[phase1_end:]
+    phase1_counts = {
+        register: len(re.findall(rf"{re.escape(register)}(?![0-9])", phase1))
+        for register in ("$18", "$19")
+    }
+    if phase1_counts != {"$18": 5, "$19": 8}:
+        raise RuntimeError(
+            f"func_800B5130 phase-1 register counts changed: {phase1_counts}"
+        )
+    phase1 = re.sub(r"\$18(?![0-9])", "$__b5130_18", phase1)
+    phase1 = re.sub(r"\$19(?![0-9])", "$18", phase1)
+    phase1 = phase1.replace("$__b5130_18", "$19")
+    body = phase1 + phase2
+    body = re.sub(r"\$21(?![0-9])", "$__b5130_21", body)
+    body = re.sub(r"\$22(?![0-9])", "$21", body)
+    body = body.replace("$__b5130_21", "$22")
+    schedule_before = (
+        "\tandi\t$13,$fp,0xffff\n"
+        "\tli\t$12,0x0000ffff\t\t# 65535\n"
+        "\tla\t$10,D_803978E0\n"
+        "\tla\t$11,D_80397658\n"
+    )
+    schedule_after = (
+        "\tli\t$12,0x0000ffff\t\t# 65535\n"
+        "\tla\t$10,D_803978E0\n"
+        "\tandi\t$13,$fp,0xffff\n"
+        "\tla\t$11,D_80397658\n"
+    )
+    if body.count(schedule_before) != 1:
+        raise RuntimeError(
+            "func_800B5130 phase-2 setup schedule did not fire exactly once"
+        )
+    body = body.replace(schedule_before, schedule_after, 1)
+    address_before = (
+        "\taddu\t$2,$2,$3\n"
+        "\tlw\t$3,12($8)\n"
+        "\tandi\t$2,$2,0xffff\n"
+        "\tsll\t$2,$2,1\n"
+    )
+    address_after = (
+        "\taddu\t$3,$3,$2\n"
+        "\tlw\t$2,12($8)\n"
+        "\tandi\t$3,$3,0xffff\n"
+        "\tsll\t$3,$3,1\n"
+    )
+    if body.count(address_before) != 1:
+        raise RuntimeError(
+            "func_800B5130 cell-address allocation did not fire exactly once"
+        )
+    body = body.replace(address_before, address_after, 1)
+    for index, line in enumerate(frame_lines):
+        marker = f"@@B5130_FRAME_{index}@@\n"
+        if body.count(marker) != 1:
+            raise RuntimeError(f"func_800B5130 frame marker {index} changed")
+        body = body.replace(marker, line, 1)
+    return text[:match.start()] + body + text[match.end():]
 
 
 def shape_alt_player_setup_pair_address(text: str) -> str:
