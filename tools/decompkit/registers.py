@@ -203,6 +203,20 @@ def mapping_cost(
     return cost
 
 
+def window_mapping_cost(
+    built: Sequence[Instruction], reference: Sequence[Instruction],
+    mapping: Mapping[str, str], start: int, end: int,
+) -> int:
+    """Score a mapping applied only inside a half-open instruction window."""
+    if not 0 <= start <= end <= len(built):
+        raise ValueError("window must be within the built instruction stream")
+    cost = abs(len(built) - len(reference))
+    for index, (left, right) in enumerate(zip(built, reference)):
+        active = mapping if start <= index < end else {}
+        cost += mapping_cost([left], [right], active)
+    return cost
+
+
 def search_space_size(groups: Sequence[tuple[Sequence[str], Sequence[str]]]) -> int:
     total = 1
     for sources, targets in groups:
@@ -248,4 +262,60 @@ def exhaustive_register_maps(
             mapping.update(zip(sources, targets))
         ranked.append(MappingResult(mapping_cost(built, reference, mapping), mapping))
     ranked.sort(key=lambda item: (item.mismatches, sorted(item.mapping.items())))
+    return ranked[:keep]
+
+
+def exhaustive_window_register_maps(
+    built: Sequence[Instruction], reference: Sequence[Instruction],
+    groups: Sequence[tuple[Sequence[str], Sequence[str]]], start: int, end: int,
+    *, limit: int = 100_000, keep: int = 20, align_opcodes: bool = False,
+) -> list[WindowMappingResult]:
+    """Rank every bounded register bijection inside one explicit window."""
+    if len(built) != len(reference) and not align_opcodes:
+        raise ValueError("window permutation search requires equal instruction counts")
+    if not 0 <= start < end <= len(built):
+        raise ValueError("window must be non-empty and within the instruction stream")
+    space = search_space_size(groups)
+    if space > limit:
+        raise ValueError(f"register search space {space} exceeds limit {limit}")
+    source_seen: set[str] = set()
+    target_seen: set[str] = set()
+    choices = []
+    for sources, targets in groups:
+        if source_seen.intersection(sources) or target_seen.intersection(targets):
+            raise ValueError("register groups must not overlap")
+        source_seen.update(sources)
+        target_seen.update(targets)
+        choices.append(tuple(permutations(targets)))
+    if align_opcodes:
+        pairs = [
+            (built_start + offset, reference_start + offset)
+            for built_start, reference_start, size in opcode_aligned_regions(built, reference)
+            for offset in range(size)
+        ]
+        structural = len(built) + len(reference) - 2 * len(pairs)
+
+        def score(mapping: Mapping[str, str]) -> int:
+            return structural + sum(
+                mapping_cost([built[built_index]], [reference[reference_index]],
+                             mapping if start <= built_index < end else {})
+                for built_index, reference_index in pairs
+            )
+    else:
+        def score(mapping: Mapping[str, str]) -> int:
+            return window_mapping_cost(built, reference, mapping, start, end)
+
+    baseline = score({})
+    ranked: list[WindowMappingResult] = []
+    for selected in product(*choices):
+        mapping: dict[str, str] = {}
+        for (sources, _), targets in zip(groups, selected):
+            mapping.update(zip(sources, targets))
+        cost = score(mapping)
+        ranked.append(WindowMappingResult(
+            cost, baseline - cost, start, end, mapping
+        ))
+    ranked.sort(key=lambda item: (
+        item.mismatches, sorted(item.mapping.items())
+    ))
     return ranked[:keep]

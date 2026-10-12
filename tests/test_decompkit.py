@@ -16,7 +16,8 @@ from decompkit.gcc_alloc import (  # noqa: E402
 from decompkit.image import compare_bytes  # noqa: E402
 from decompkit.o2r import load_readiness, readiness_summary  # noqa: E402
 from decompkit.registers import (  # noqa: E402
-    exhaustive_register_maps, mapping_cost, opcode_aligned_regions, regional_register_swaps,
+    exhaustive_register_maps, exhaustive_window_register_maps, mapping_cost,
+    opcode_aligned_regions, regional_register_swaps,
     single_register_swaps,
 )
 from decompkit.report import build_report  # noqa: E402
@@ -207,6 +208,23 @@ class DecompkitPortabilityTests(unittest.TestCase):
         )
         self.assertEqual((rows[0].start, rows[0].end), (2, 4))
         self.assertEqual(rows[0].improvement, 4)
+
+    def test_register_atlas_exhausts_permutations_in_one_window(self):
+        built = [("head", ("r1",)), ("body", ("r1", "r2")), ("tail", ("r1",))]
+        reference = [("head", ("r1",)), ("body", ("r2", "r1")), ("tail", ("r1",))]
+        rows = exhaustive_window_register_maps(
+            built, reference, [(["r1", "r2"], ["r1", "r2"])], 1, 2
+        )
+        self.assertEqual(rows[0].mapping, {"r1": "r2", "r2": "r1"})
+        self.assertEqual(rows[0].mismatches, 0)
+        self.assertEqual(rows[0].improvement, 2)
+        inserted = built[:1] + [("nop", ())] + built[1:]
+        aligned = exhaustive_window_register_maps(
+            inserted, reference, [(["r1", "r2"], ["r1", "r2"])], 2, 3,
+            align_opcodes=True,
+        )
+        self.assertEqual(aligned[0].mapping, {"r1": "r2", "r2": "r1"})
+        self.assertEqual(aligned[0].improvement, 2)
 
     def test_o2r_readiness_requires_real_runtime_contract(self):
         manifest = self.root / "o2r.toml"

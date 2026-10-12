@@ -9,6 +9,7 @@ from pathlib import Path
 
 from decompkit.registers import (
     exhaustive_register_maps,
+    exhaustive_window_register_maps,
     parse_instruction_rows,
     regional_register_swaps,
     single_register_swaps,
@@ -54,6 +55,10 @@ def main() -> None:
     )
     parser.add_argument("--limit", type=int, default=100_000)
     parser.add_argument("--keep", type=int, default=20)
+    parser.add_argument(
+        "--window", metavar="START:END",
+        help="apply exhaustive permutations only in this instruction-index window",
+    )
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     built_payload = json.loads(args.built.read_text())
@@ -64,6 +69,8 @@ def main() -> None:
         parser.error("at least one --group is required")
     if args.single_swaps and args.regional_swaps:
         parser.error("--single-swaps and --regional-swaps are mutually exclusive")
+    if args.window and (args.single_swaps or args.regional_swaps):
+        parser.error("--window is for exhaustive permutation mode")
     if args.regional_swaps:
         rows = regional_register_swaps(
             built, reference, [sources for sources, _ in args.group], keep=args.keep,
@@ -85,6 +92,19 @@ def main() -> None:
             len(sources) * (len(sources) - 1) // 2 for sources, _ in args.group
         )
         mode = "single-swaps"
+    elif args.window:
+        try:
+            start, end = (int(value, 0) for value in args.window.split(":", 1))
+        except (ValueError, TypeError):
+            parser.error("--window must be START:END instruction indices")
+        rows = exhaustive_window_register_maps(
+            built, reference, args.group, start, end,
+            limit=args.limit, keep=args.keep, align_opcodes=args.align_opcodes,
+        )
+        search_space = __import__("math").prod(
+            __import__("math").factorial(len(sources)) for sources, _ in args.group
+        )
+        mode = "window-permutations"
     else:
         rows = exhaustive_register_maps(
             built, reference, args.group, limit=args.limit, keep=args.keep

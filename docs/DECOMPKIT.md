@@ -90,6 +90,8 @@ python3 tools/decomp_register_atlas.py built.json reference.json \
   --regional-swaps --group 's0,s1,s2=s0,s1,s2'
 python3 tools/decomp_register_atlas.py built.json reference.json \
   --regional-swaps --align-opcodes --group 'f0,f2,f4,f6=f0,f2,f4,f6'
+python3 tools/decomp_register_atlas.py built.json reference.json \
+  --window 300:420 --align-opcodes --group 's4,s5,s6=s4,s5,s6'
 python3 tools/audit_assembly_segments.py --splat config/us/splat.yaml \
   --asm-root asm/us --json build/us/assembly-inventory.json
 make assembly-report
@@ -103,6 +105,9 @@ make check-tools
 structural mismatch cost while searching each equal-opcode region separately.
 Use it for near-matches containing an assembler hazard `nop`; reported windows
 retain the candidate stream's original instruction indices and addresses.
+`--window START:END` exhausts every bounded permutation in one selected region,
+including three-or-more-register cycles that pair swaps cannot discover. The
+ordinary factorial search-space limit still applies.
 
 For a project with an independently rebuilt prefix and a mapped resource tail:
 
