@@ -6,6 +6,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 GAME_NAME = re.compile(r"^[0-9A-F]{8}(?:_[a-z0-9][a-z0-9_]*)?\.c$")
+GENERIC_ADDRESS_NAME = re.compile(r"^func_[0-9A-Fa-f]+\.(?:c|h|s)$")
 
 
 class SourceTreeLayoutTests(unittest.TestCase):
@@ -36,6 +37,14 @@ class SourceTreeLayoutTests(unittest.TestCase):
         self.assertFalse((ROOT / "src/code/n_audio").exists())
         self.assertTrue(self.tracked("src/libmus/*"))
         self.assertTrue(self.tracked("src/n_audio/*"))
+
+    def test_no_source_family_uses_generic_function_filenames(self):
+        generic = [
+            source
+            for source in self.tracked("src/**/*")
+            if GENERIC_ADDRESS_NAME.fullmatch(Path(source).name)
+        ]
+        self.assertEqual(generic, [])
 
     def test_every_splat_c_path_exists(self):
         pattern = re.compile(r"\[\s*0x[0-9A-Fa-f]+\s*,\s*c\s*,\s*([^\],]+)")
