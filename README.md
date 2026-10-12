@@ -44,6 +44,10 @@ See [the complete reproduction and resource guide](docs/REPRODUCING.md) for
 individual stages, output paths, editing/repacking commands, prerequisites,
 and the reusable region-manifest interface.
 
+For native-port resource packaging, see the [O2R runtime-resource
+path](docs/O2R_PORT_PATH.md). It records what is genuinely structured today
+and prevents container-only `.o2r` claims without runtime resource factories.
+
 ## Current status
 
 - **Code: 100%.** All 1,879 catalogue functions and all 632,132 function-body bytes are represented by production C or authentic source assembly.

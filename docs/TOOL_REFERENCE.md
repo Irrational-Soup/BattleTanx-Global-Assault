@@ -17,7 +17,7 @@ Architecture-neutral reporting, verification, register-search, image-comparison,
 | `audit_assembly_segments.py` | Classify Splat asm/hasm rows as code, data, padding, or microcode. |
 | `audit_source_names.py` | Enforce address-prefixed descriptive names without forcing a mass rename. |
 | `audit_tooling.py` | Validate the complete tool inventory and optionally refresh its reference. |
-| `decomp_register_atlas.py` | Exhaustively rank bounded register mappings, including regional searches across structurally near-matching instruction streams. |
+| `decomp_register_atlas.py` | Rank bounded register mappings across exact or opcode-aligned instructions. |
 | `decompkit_verify_units.py` | Verify units using decompkit's portable subprocess adapter protocol. |
 | `generate_decomp_report.py` | Compatibility CLI for :mod:`decompkit.report`. |
 | `portability_report.py` | Inventory target-specific source that blocks or shapes a native port. |
@@ -116,6 +116,7 @@ Verify the supported private ROM, source hygiene, translation units, typed data,
 | Tool | Purpose |
 |---|---|
 | `build_rom.py` | Build a complete BattleTanx ROM from compiled code and local resources. |
+| `check_o2r_readiness.py` | Validate and report the project's honest O2R migration readiness. |
 | `check_repository.py` | Fail when private/generated artifacts or host-specific paths are tracked. |
 | `extract_resources.py` | Extract the complete local BattleTanx resource tree from a supported ROM. |
 | `inventory_rom_layout.py` | Account for every byte in the BattleTanx: Global Assault retail ROM. |

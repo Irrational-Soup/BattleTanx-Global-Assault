@@ -50,6 +50,8 @@ incorrectly mixing GPR, FPR, ABI-reserved, or architecture-specific classes.
 - `extract_resources.py`, `build_rom.py`, and `reproduce.py` connect the
   portable region engine to BattleTanx's verified ROM map and present the
   one-command owned-ROM workflow.
+- `check_o2r_readiness.py` validates the staged runtime-resource ledger and
+  rejects O2R-ready claims without a serializer, resource type, and factory.
 - `normalize_kmc_gcc_asm.py`, `normalize_libgcc_asm.py`, and
   `segment_billboard_normalizer.py` are title/compiler-output policy. Their
   fail-closed rule design is reusable; their concrete rewrites are not.

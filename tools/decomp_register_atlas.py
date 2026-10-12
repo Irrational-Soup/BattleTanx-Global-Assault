@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exhaustively rank bounded register mappings between aligned instructions."""
+"""Rank bounded register mappings across exact or opcode-aligned instructions."""
 
 from __future__ import annotations
 

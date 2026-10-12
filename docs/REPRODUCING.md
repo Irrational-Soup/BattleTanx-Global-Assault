@@ -126,6 +126,8 @@ owned .z64 -> verified raw manifest -> structured resources -> optional O2R
 
 That boundary gives modern ports the packaging benefits without making the
 matching decompilation depend on one runtime ecosystem or archive version.
+The concrete migration ledger, validation command, and acceptance boundary are
+documented in [O2R runtime-resource path](O2R_PORT_PATH.md).
 
 ## Reuse in other decompilation projects
 

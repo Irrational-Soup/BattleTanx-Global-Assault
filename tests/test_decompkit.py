@@ -14,6 +14,7 @@ from decompkit.gcc_alloc import (  # noqa: E402
     allocation_priority, allocation_rows, function_section, parse_pre_reload_text,
 )
 from decompkit.image import compare_bytes  # noqa: E402
+from decompkit.o2r import load_readiness, readiness_summary  # noqa: E402
 from decompkit.registers import (  # noqa: E402
     exhaustive_register_maps, mapping_cost, opcode_aligned_regions, regional_register_swaps,
     single_register_swaps,
@@ -206,6 +207,31 @@ class DecompkitPortabilityTests(unittest.TestCase):
         )
         self.assertEqual((rows[0].start, rows[0].end), (2, 4))
         self.assertEqual(rows[0].improvement, 4)
+
+    def test_o2r_readiness_requires_real_runtime_contract(self):
+        manifest = self.root / "o2r.toml"
+        manifest.write_text(textwrap.dedent("""
+            [[resource]]
+            name = "texture"
+            stage = "runtime-ready"
+            extractor = "extract.py"
+            serializer = "TextureV1"
+            resource_type = "Texture"
+            factory = "TextureFactory"
+
+            [[resource]]
+            name = "world"
+            stage = "structured"
+            extractor = "world.py"
+            blocker = "No runtime factory yet."
+        """))
+        resources = load_readiness(manifest)
+        self.assertEqual(readiness_summary(resources)["runtime-ready"], 1)
+        manifest.write_text(manifest.read_text().replace(
+            'factory = "TextureFactory"', 'blocker = "Not actually ready"'
+        ))
+        with self.assertRaisesRegex(ValueError, "runtime-ready requires factory"):
+            load_readiness(manifest)
 
     def test_assembly_inventory_separates_code_data_padding_and_hasm(self):
         asm = self.root / "asm"

@@ -4,7 +4,7 @@ VENV_PYTHON := $(VENV)/bin/python
 VENV_STAMP := $(VENV)/.installed
 ROM := baseroms/us/baserom.z64
 
-.PHONY: all setup toolchain symbols verify split build-code verify-code resources build-rom verify-assets progress-report assembly-report portability-report check-source-names check clean-generated
+.PHONY: all setup toolchain symbols verify split build-code verify-code resources build-rom verify-assets progress-report assembly-report portability-report o2r-readiness check-source-names check clean-generated
 
 all: split
 
@@ -61,6 +61,9 @@ assembly-report: split
 
 portability-report:
 	$(PYTHON) tools/portability_report.py --config config/portability.toml --check docs/PORTABILITY_INVENTORY.md
+
+o2r-readiness:
+	$(PYTHON) tools/check_o2r_readiness.py config/o2r_resources.toml
 
 check-source-names:
 	$(PYTHON) tools/audit_source_names.py --config config/source_naming.toml

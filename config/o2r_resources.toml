@@ -1,0 +1,49 @@
+# O2R is a future runtime format, not the matching build's reconstruction input.
+
+[[resource]]
+name = "lossless-rom-regions"
+stage = "raw"
+extractor = "tools/extract_resources.py"
+blocker = "Layout-preserving ROM regions are evidence/build inputs, not runtime resources."
+
+[[resource]]
+name = "lzari-images"
+stage = "structured"
+extractor = "tools/extract_lzari_images.py"
+serializer = "PNG previews plus validated N64 texture metadata"
+blocker = "Define the runtime texture schema and renderer-side factory."
+
+[[resource]]
+name = "lzari-worlds"
+stage = "structured"
+extractor = "tools/extract_lzari_worlds.py"
+serializer = "world.json and lossless component files"
+blocker = "Define versioned world, relocation, geometry, and texture resource types."
+
+[[resource]]
+name = "scripts"
+stage = "structured"
+extractor = "tools/inventory_script_assets.py"
+serializer = "script manifests and bytecode payloads"
+blocker = "Define a bounds-checked script resource and address-token resolver."
+
+[[resource]]
+name = "libmus-audio"
+stage = "structured"
+extractor = "tools/inventory_libmus_assets.py"
+serializer = "indexed songs, effects, and ADPCM wave banks"
+blocker = "Choose the native audio representation and implement its runtime factory."
+
+[[resource]]
+name = "world-pools"
+stage = "structured"
+extractor = "tools/inventory_world_pools.py"
+serializer = "lossless pool chunks and manifests"
+blocker = "Replace raw N64 pointer-bearing pools with typed endian-safe resources."
+
+[[resource]]
+name = "display-lists"
+stage = "structured"
+extractor = "tools/inventory_world_display_lists.py"
+serializer = "validated command inventories"
+blocker = "Select and implement an RSP/RDP command translation resource type."

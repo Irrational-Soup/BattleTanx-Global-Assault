@@ -91,6 +91,7 @@ description = "Verify the supported private ROM, source hygiene, translation uni
 evidence = "make check, make verify-code, make verify-assets, and SHA-256/reference-range documentation."
 tools = [
   "build_rom.py",
+  "check_o2r_readiness.py",
   "check_repository.py",
   "extract_resources.py",
   "inventory_rom_layout.py",
