@@ -17,7 +17,7 @@ Architecture-neutral reporting, verification, register-search, image-comparison,
 | `audit_assembly_segments.py` | Classify Splat asm/hasm rows as code, data, padding, or microcode. |
 | `audit_source_names.py` | Enforce address-prefixed descriptive names without forcing a mass rename. |
 | `audit_tooling.py` | Validate the complete tool inventory and optionally refresh its reference. |
-| `decomp_register_atlas.py` | Exhaustively rank bounded register mappings between aligned instructions. |
+| `decomp_register_atlas.py` | Exhaustively rank bounded register mappings, including regional searches across structurally near-matching instruction streams. |
 | `decompkit_verify_units.py` | Verify units using decompkit's portable subprocess adapter protocol. |
 | `generate_decomp_report.py` | Compatibility CLI for :mod:`decompkit.report`. |
 | `portability_report.py` | Inventory target-specific source that blocks or shapes a native port. |

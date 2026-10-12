@@ -15,7 +15,7 @@ from decompkit.gcc_alloc import (  # noqa: E402
 )
 from decompkit.image import compare_bytes  # noqa: E402
 from decompkit.registers import (  # noqa: E402
-    exhaustive_register_maps, mapping_cost, regional_register_swaps,
+    exhaustive_register_maps, mapping_cost, opcode_aligned_regions, regional_register_swaps,
     single_register_swaps,
 )
 from decompkit.report import build_report  # noqa: E402
@@ -185,6 +185,27 @@ class DecompkitPortabilityTests(unittest.TestCase):
         self.assertEqual((rows[0].start, rows[0].end), (1, 3))
         self.assertEqual(rows[0].improvement, 4)
         self.assertEqual(rows[0].mismatches, 0)
+
+    def test_register_atlas_aligns_around_inserted_opcode(self):
+        built = [
+            ("add", ("r1", "r2")),
+            ("nop", ()),
+            ("sub", ("r1", "r2")),
+            ("mul", ("r1", "r2")),
+        ]
+        reference = [
+            ("add", ("r1", "r2")),
+            ("sub", ("r2", "r1")),
+            ("mul", ("r2", "r1")),
+        ]
+        self.assertEqual(
+            opcode_aligned_regions(built, reference), [(0, 0, 1), (2, 1, 2)]
+        )
+        rows = regional_register_swaps(
+            built, reference, [["r1", "r2"]], align_opcodes=True
+        )
+        self.assertEqual((rows[0].start, rows[0].end), (2, 4))
+        self.assertEqual(rows[0].improvement, 4)
 
     def test_assembly_inventory_separates_code_data_padding_and_hasm(self):
         asm = self.root / "asm"

@@ -21,7 +21,7 @@ rendered reference is stale.
 | Resource extraction/reassembly | `decompkit.resources` | Synthetic complete-coverage, overlap, path, size, and hash tests plus the real 8 MiB rebuild |
 | Candidate compilation | `tools/decomp_compile.py` | KMC/ASN64 pipeline tests and retail-address comparisons |
 | Candidate diagnosis | `decomp_context.py`, `decomp_score.py`, `decomp_alloc_report.py` | Structured JSON/TSV outputs and compiler-dump tests |
-| Register mapping | `decompkit.registers`, `decomp_register_atlas.py` | Every single-register swap plus exhaustive bounded permutations across independent register classes |
+| Register mapping | `decompkit.registers`, `decomp_register_atlas.py` | Every single-register swap, regional swaps across opcode-aligned near-matches, plus exhaustive bounded permutations across independent register classes |
 | Assembly disposition | `decompkit.assembly`, `audit_assembly_segments.py` | Synthetic Splat fixture separating generated code, embedded data, padding, microcode, and authentic assembly |
 | Fail-closed rewriting | `decompkit.rewrite` | Exact fire counts, unique function gates, bijective token maps, and complete line permutations |
 | GCC allocation evidence | `decompkit.gcc_alloc`, `decomp_alloc_report.py` | Synthetic GCC 2.x dumps with distinct pre/post-reload assignments |

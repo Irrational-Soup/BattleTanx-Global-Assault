@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from difflib import SequenceMatcher
 from itertools import permutations, product
 from math import factorial
 from typing import Iterable, Mapping, Sequence
@@ -85,6 +86,7 @@ def regional_register_swaps(
     groups: Sequence[Sequence[str]],
     *,
     keep: int = 100,
+    align_opcodes: bool = False,
 ) -> list[WindowMappingResult]:
     """Find the best contiguous instruction window for every one-pair swap.
 
@@ -95,10 +97,14 @@ def regional_register_swaps(
     """
     if keep < 1:
         raise ValueError("keep must be positive")
-    if len(built) != len(reference):
+    if len(built) != len(reference) and not align_opcodes:
         raise ValueError("regional swap search requires equal instruction counts")
     seen: set[str] = set()
     baseline = mapping_cost(built, reference, {})
+    regions = (
+        opcode_aligned_regions(built, reference)
+        if align_opcodes else [(0, 0, len(built))]
+    )
     ranked: list[WindowMappingResult] = []
     for group in groups:
         current = tuple(group)
@@ -111,22 +117,27 @@ def regional_register_swaps(
         for left_index, left in enumerate(current):
             for right in current[left_index + 1 :]:
                 mapping = {left: right, right: left}
-                deltas = [
-                    mapping_cost([lhs], [rhs], mapping)
-                    - mapping_cost([lhs], [rhs], {})
-                    for lhs, rhs in zip(built, reference)
-                ]
-                best_sum = current_sum = 0
-                best_start = best_end = current_start = 0
-                for index, delta in enumerate(deltas):
-                    if current_sum + delta >= 0:
-                        current_sum = 0
-                        current_start = index + 1
-                    else:
-                        current_sum += delta
-                        if current_sum < best_sum:
-                            best_sum = current_sum
-                            best_start, best_end = current_start, index + 1
+                best_sum = 0
+                best_start = best_end = 0
+                for built_start, reference_start, size in regions:
+                    current_sum = 0
+                    current_start = built_start
+                    for offset in range(size):
+                        index = built_start + offset
+                        lhs = built[index]
+                        rhs = reference[reference_start + offset]
+                        delta = (
+                            mapping_cost([lhs], [rhs], mapping)
+                            - mapping_cost([lhs], [rhs], {})
+                        )
+                        if current_sum + delta >= 0:
+                            current_sum = 0
+                            current_start = index + 1
+                        else:
+                            current_sum += delta
+                            if current_sum < best_sum:
+                                best_sum = current_sum
+                                best_start, best_end = current_start, index + 1
                 if best_sum < 0:
                     ranked.append(WindowMappingResult(
                         baseline + best_sum, -best_sum, best_start, best_end, mapping
@@ -135,6 +146,28 @@ def regional_register_swaps(
         item.mismatches, item.end - item.start, item.start, sorted(item.mapping.items())
     ))
     return ranked[:keep]
+
+
+def opcode_aligned_regions(
+    built: Sequence[Instruction], reference: Sequence[Instruction]
+) -> list[tuple[int, int, int]]:
+    """Return contiguous equal-opcode regions with original stream indices.
+
+    Structural insertions, deletions, and substitutions split regions and stay
+    in the baseline cost.  Regional register searches can therefore tolerate a
+    hazard nop without losing the built stream's source-address coordinates.
+    """
+    matcher = SequenceMatcher(
+        None,
+        [instruction[0] for instruction in built],
+        [instruction[0] for instruction in reference],
+        autojunk=False,
+    )
+    return [
+        (block.a, block.b, block.size)
+        for block in matcher.get_matching_blocks()
+        if block.size
+    ]
 
 
 def parse_instruction_rows(rows: Iterable[Mapping[str, object]]) -> list[Instruction]:

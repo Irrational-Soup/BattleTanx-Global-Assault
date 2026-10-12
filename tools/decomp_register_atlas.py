@@ -43,6 +43,11 @@ def main() -> None:
         help="find the best contiguous instruction window for every pair swap",
     )
     parser.add_argument(
+        "--align-opcodes",
+        action="store_true",
+        help="align around inserted/deleted opcodes before regional swap search",
+    )
+    parser.add_argument(
         "--improving-only",
         action="store_true",
         help="with --single-swaps, omit swaps that do not beat identity",
@@ -61,7 +66,8 @@ def main() -> None:
         parser.error("--single-swaps and --regional-swaps are mutually exclusive")
     if args.regional_swaps:
         rows = regional_register_swaps(
-            built, reference, [sources for sources, _ in args.group], keep=args.keep
+            built, reference, [sources for sources, _ in args.group], keep=args.keep,
+            align_opcodes=args.align_opcodes,
         )
         search_space = sum(
             len(sources) * (len(sources) - 1) // 2 for sources, _ in args.group
