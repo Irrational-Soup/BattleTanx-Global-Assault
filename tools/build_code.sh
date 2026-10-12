@@ -916,9 +916,9 @@ python3 tools/normalize_kmc_gcc_asm.py \
     -o build/us/src/code/render_queue.c.o build/us/src/code/render_queue.s
 python3 tools/trim_elf32_section.py \
     build/us/src/code/render_queue.c.o .text 0x46c --alignment 4
-for unit in early_hw early_memory_read early_memory_write early_remote_copy \
+for unit in 80077C40_early_hw 80077DA4_early_memory_read 80078048_early_memory_write 80078200_early_remote_copy \
             80082C1C_state_activate path_sequence_init func_80082F1C func_80082F98 \
-            early_commands early_command_status display_slot mapped_record display_buffer \
+            80078908_early_commands 80078C68_early_command_status display_slot mapped_record display_buffer \
             display_buffer_select controller_state mode_range angle_subtract \
             angle_between angle_distance angle_fold angle_direction \
             render_submit asset_load video_mode texture_tile small_state \
@@ -1395,7 +1395,7 @@ done
 # Compile each unit once so inline copies and shared constant pools retain the
 # retail allocation and layout.
 for spec in \
-        early_remote_transfer:0x18C \
+        80078ADC_early_remote_transfer:0x18C \
         path_goal_update:0x290 \
         ai_state_dispatch:0x49C \
         unit_target_select:0x370 \
@@ -1420,7 +1420,7 @@ for spec in \
         ai_movement_dispatch:0x148 \
         target_angle_check:0xFC \
         spawn_point_retry:0x1D8 \
-        early_memory_dispatch:0x5BC \
+        80078274_early_memory_dispatch:0x5BC \
         display_list_interpolate:0x58C; do
     unit="${spec%%:*}"
     text_size="${spec#*:}"
@@ -1465,7 +1465,7 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/src/code/spawn_point_retry.c.o .rodata 0x18 --alignment 4
 python3 tools/trim_elf32_section.py \
-    build/us/src/code/early_memory_dispatch.c.o .rodata 0x28 --alignment 4
+    build/us/src/code/80078274_early_memory_dispatch.c.o .rodata 0x28 --alignment 4
 
 # The graphics task and frame-builder units were compiled without optimization,
 # matching the adjacent retail graphics setup code.
@@ -2025,17 +2025,17 @@ python3 tools/trim_elf32_section.py \
 python3 tools/trim_elf32_section.py \
     build/us/src/code/random_dispatch_tables.c.o .rodata 0x31C --alignment 4
 python3 tools/trim_elf32_section.py \
-    build/us/src/code/early_hw.c.o .text 0x164 --alignment 4
+    build/us/src/code/80077C40_early_hw.c.o .text 0x164 --alignment 4
 python3 tools/trim_elf32_section.py \
-    build/us/src/code/early_memory_read.c.o .text 0x22c --alignment 4
+    build/us/src/code/80077DA4_early_memory_read.c.o .text 0x22c --alignment 4
 python3 tools/trim_elf32_section.py \
-    build/us/src/code/early_memory_write.c.o .text 0x1b8 --alignment 4
+    build/us/src/code/80078048_early_memory_write.c.o .text 0x1b8 --alignment 4
 python3 tools/trim_elf32_section.py \
-    build/us/src/code/early_remote_copy.c.o .text 0x74 --alignment 4
+    build/us/src/code/80078200_early_remote_copy.c.o .text 0x74 --alignment 4
 python3 tools/trim_elf32_section.py \
-    build/us/src/code/early_commands.c.o .text 0x1d4 --alignment 4
+    build/us/src/code/80078908_early_commands.c.o .text 0x1d4 --alignment 4
 python3 tools/trim_elf32_section.py \
-    build/us/src/code/early_command_status.c.o .text 0x70 --alignment 4
+    build/us/src/code/80078C68_early_command_status.c.o .text 0x70 --alignment 4
 python3 tools/trim_elf32_section.py \
     build/us/src/code/display_buffer.c.o .text 0x10c --alignment 4
 python3 tools/trim_elf32_section.py \
@@ -4125,15 +4125,15 @@ done
 if false; then
 "${tool_prefix}nm" -u \
     build/us/asm/us/main_before_80077C40.s.o \
-    build/us/src/code/early_hw.c.o \
-    build/us/src/code/early_memory_read.c.o \
+    build/us/src/code/80077C40_early_hw.c.o \
+    build/us/src/code/80077DA4_early_memory_read.c.o \
     build/us/asm/us/main_80077FD0_to_80078048.s.o \
-    build/us/src/code/early_memory_write.c.o \
-    build/us/src/code/early_remote_copy.c.o \
+    build/us/src/code/80078048_early_memory_write.c.o \
+    build/us/src/code/80078200_early_remote_copy.c.o \
     build/us/asm/us/main_80078274_to_80078908.s.o \
-    build/us/src/code/early_commands.c.o \
+    build/us/src/code/80078908_early_commands.c.o \
     build/us/asm/us/main_80078ADC_to_80078C68.s.o \
-    build/us/src/code/early_command_status.c.o \
+    build/us/src/code/80078C68_early_command_status.c.o \
     build/us/asm/us/main_80078CD8_to_8007A710.s.o \
     build/us/src/code/unknown_8007A710.c.o \
     build/us/src/code/display_slot.c.o \

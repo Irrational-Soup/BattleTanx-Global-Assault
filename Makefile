@@ -4,7 +4,7 @@ VENV_PYTHON := $(VENV)/bin/python
 VENV_STAMP := $(VENV)/.installed
 ROM := baseroms/us/baserom.z64
 
-.PHONY: all setup toolchain symbols verify split build-code verify-code resources build-rom verify-assets progress-report portability-report check clean-generated
+.PHONY: all setup toolchain symbols verify split build-code verify-code resources build-rom verify-assets progress-report portability-report check-source-names check clean-generated
 
 all: split
 
@@ -57,6 +57,9 @@ progress-report:
 portability-report:
 	$(PYTHON) tools/portability_report.py --config config/portability.toml --check docs/PORTABILITY_INVENTORY.md
 
+check-source-names:
+	$(PYTHON) tools/audit_source_names.py --config config/source_naming.toml
+
 verify-units:
 	@test -n "$(UNITS)" || (echo "usage: make verify-units UNITS='unit_a unit_b'" >&2; exit 2)
 	$(PYTHON) tools/verify_decomp_units.py --config config/decompkit.toml $(UNITS)
@@ -66,6 +69,7 @@ check-tools: $(VENV_STAMP)
 
 check: $(VENV_STAMP)
 	$(VENV_PYTHON) -m unittest discover -s tests -v
+	$(VENV_PYTHON) tools/audit_source_names.py --config config/source_naming.toml
 	$(VENV_PYTHON) tools/check_repository.py
 
 clean-generated:

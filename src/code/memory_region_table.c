@@ -1,10 +1,12 @@
 #include "types.h"
 
 /*
- * Address-validity map consumed by early_memory_dispatch.c (D_801144A0[]): the
+ * Address-validity map consumed by 80078274_early_memory_dispatch.c
+ * (D_801144A0[]): the
  * search walks entries until limit >= addr and uses flags for that span. Limits are
  * N64 physical/virtual address tokens. D_801144A8 / D_801144B8 (entries 1 and 3)
- * are patched at boot with the detected RDRAM size (early_memory_dispatch.c:97-98).
+ * are patched at boot with the detected RDRAM size
+ * (80078274_early_memory_dispatch.c:97-98).
  */
 typedef struct MemRegion {
     u32 limit;

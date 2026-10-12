@@ -14,6 +14,7 @@ Architecture-neutral reporting, verification, register-search, image-comparison,
 
 | Tool | Purpose |
 |---|---|
+| `audit_source_names.py` | Enforce address-prefixed descriptive names without forcing a mass rename. |
 | `audit_tooling.py` | Validate the complete tool inventory and optionally refresh its reference. |
 | `decomp_register_atlas.py` | Exhaustively rank bounded register mappings between aligned instructions. |
 | `decompkit_verify_units.py` | Verify units using decompkit's portable subprocess adapter protocol. |

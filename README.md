@@ -98,6 +98,8 @@ acceptance criteria.
 
 - `src/code/` — recovered game, SDK, libmus, and n_audio source. Address-based
   names remain intentional where semantics or original names are not proven.
+  Migrated game units use `ADDRESS_descriptive_name.c`; run
+  `make check-source-names` to enforce the evidence-led migration baseline.
 - `src/asm/` — reviewed source assembly such as RSP and microcode material;
   generated assembly is ignored.
 - `config/us/` — ROM layout, symbol, ownership, and matching-evidence tables.

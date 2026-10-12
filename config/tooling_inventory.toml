@@ -5,6 +5,7 @@ description = "Architecture-neutral reporting, verification, register-search, im
 evidence = "Synthetic temporary-project tests in tests/test_decompkit.py and make check-tools."
 tools = [
   "audit_tooling.py",
+  "audit_source_names.py",
   "decomp_register_atlas.py",
   "decompkit_verify_units.py",
   "generate_decomp_report.py",

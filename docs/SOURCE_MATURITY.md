@@ -56,6 +56,12 @@ machine-readable ledger with at least:
 - translation-unit or subsystem assignment;
 - commit introducing the change.
 
+The project ledger is `config/source_renames.tsv`; Git history records the
+introducing commit for each row. `make check-source-names` enforces the
+`ADDRESS_description.c` convention for migrated and newly added game units.
+Existing exceptions are frozen in `config/source_naming_legacy.txt`: new rows
+are rejected, and migrations remove rows from that baseline.
+
 `config/us/recovered_debug_symbols.tsv` is authoritative for the stale debug
 symbols it contains. `docs/PROVENANCE.md`, `docs/GAME_CODE.md`, and the manual
 symbol tables contain other evidence that must be reconciled rather than
