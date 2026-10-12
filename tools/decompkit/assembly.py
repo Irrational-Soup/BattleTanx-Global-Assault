@@ -96,6 +96,8 @@ def classify_assembly(kind: str, name: str, text: str) -> tuple[str, tuple[int, 
         category = "padding" if words and zero_words == words else "embedded-data"
     elif glabels and (dlabels or words):
         category = "mixed-code-data"
+    elif glabels and instructions <= 3 and not re.search(r"\bjr\s+\$ra\b", text):
+        category = "ambiguous-fragment"
     elif glabels or instructions:
         category = "generated-code"
     else:

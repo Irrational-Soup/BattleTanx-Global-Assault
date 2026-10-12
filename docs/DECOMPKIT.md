@@ -101,6 +101,11 @@ python3 tools/decompkit_verify_units.py --config project.toml \
 make check-tools
 ```
 
+The assembly inventory distinguishes full generated-code candidates from tiny
+orphan fragments that lack a function return. Those fragments remain visible
+as `ambiguous-fragment`; the audit does not inflate them into missing functions
+or silently assert that they are padding.
+
 `--align-opcodes` keeps insertions, deletions, and opcode substitutions as
 structural mismatch cost while searching each equal-opcode region separately.
 Use it for near-matches containing an assembler hazard `nop`; reported windows

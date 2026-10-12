@@ -254,7 +254,7 @@ class DecompkitPortabilityTests(unittest.TestCase):
     def test_assembly_inventory_separates_code_data_padding_and_hasm(self):
         asm = self.root / "asm"
         asm.mkdir()
-        (asm / "code.s").write_text("glabel f\n  addiu $sp, $sp, -8\n")
+        (asm / "code.s").write_text("glabel f\n  addiu $sp, $sp, -8\n  jr $ra\n")
         (asm / "data.s").write_text("dlabel d\n  .word 0x12345678\n")
         (asm / "pad.s").write_text("dlabel p\n  .word 0x00000000\n")
         (asm / "hand.s").write_text("glabel h\n  jr $ra\n")
@@ -273,6 +273,15 @@ class DecompkitPortabilityTests(unittest.TestCase):
         ])
         self.assertEqual(rows[0].size, 8)
         self.assertEqual(category_totals(rows)["padding"], (1, 4))
+
+    def test_assembly_inventory_does_not_call_tiny_orphans_functions(self):
+        text = """glabel alleged_function
+/* 100 80000100 00000008 */ jr $zero
+"""
+        self.assertEqual(
+            classify_assembly("asm", "alleged_function", text)[0],
+            "ambiguous-fragment",
+        )
 
     def test_assembly_inventory_recognizes_disassembled_ascii(self):
         text = """glabel bogus

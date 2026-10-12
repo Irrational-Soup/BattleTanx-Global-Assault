@@ -72,6 +72,13 @@ RSP/microcode material, or binary regions intentionally outside the C-function
 catalogue—not missing gameplay functions. Semantic renaming can continue
 without changing the 100% binary-match result.
 
+`make assembly-report` currently finds no remaining full generated-code
+candidate. Its generated rows classify as embedded data (61), tiny ambiguous
+fragments without a function return (17), mixed code/data boundary fragments
+(3), RSP/microcode material (1), or authentic source assembly (24). The
+ambiguous fragments stay visible until their exact ownership is proven; they
+are not counted as functions or silently discarded as padding.
+
 ### Next phase
 
 The matching milestone is complete. This repository's next maturity phase is
