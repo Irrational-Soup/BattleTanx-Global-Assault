@@ -28,6 +28,10 @@ command-line entry points.
 - `decompkit.gcc_alloc` parses GCC 2.x local/global allocation dumps and
   optional instrumented pre-reload records without invoking a compiler.
   Pre-reload and post-reload assignments remain explicitly separate.
+- `decompkit.adapters.CommandBuildAdapter` lets any compiler/linker pipeline
+  participate through versioned JSON request/response files and an argv-only
+  subprocess (never a shell). `ImageReference` injects the project's address
+  mapping rather than assuming an N64 ROM layout.
 
 The tools deliberately do not infer target architecture. Consumers provide
 their own compiler adapter and reference reader. Vita work remains ARMv7-A,
@@ -72,6 +76,9 @@ python3 tools/verify_decomp_units.py --config config/decompkit.toml unit_name
 python3 tools/verify_rebuilt_image.py reference.z64 rebuilt.z64
 python3 tools/decomp_register_atlas.py built.json reference.json \
   --group 's0,s1,s2=s0,s1,s2' --group 'f20,f22=f20,f22'
+python3 tools/decompkit_verify_units.py --config project.toml \
+  --reference baserom.z64 \
+  --adapter-command 'python3 adapter.py {request} {response}'
 make check-tools
 ```
 
@@ -85,6 +92,31 @@ Architecture adapters preserve non-register operands verbatim and place only
 genuinely interchangeable registers in the same `--group`. The tool reports
 the exact search-space size and ranks every bijection. Its default maximum is
 100,000 permutations; increase it deliberately with `--limit`.
+
+### Compiler adapter protocol
+
+The portable unit-verifier CLI writes this request:
+
+```json
+{"format":"decompkit-build-request-v1","source":"/abs/unit.c","vram":4096,"pipeline":"production"}
+```
+
+The adapter compiles and links the unit, then writes:
+
+```json
+{
+  "format": "decompkit-build-response-v1",
+  "text_hex": "27bdffe0...",
+  "text_size": 64,
+  "rodata_hex": "3f800000",
+  "rodata_vram": 8192
+}
+```
+
+`rodata_hex` may be `null` or omitted. Commands are parsed as argv and must
+contain separate `{request}` and `{response}` entries. This boundary makes the
+verifier reusable with IDO, GCC, SN64, proprietary wrappers, or a test double
+without embedding their flags and paths in the verification algorithm.
 
 The report command also accepts `--functions`, `--splat`, and `--output`
 overrides. Other projects construct

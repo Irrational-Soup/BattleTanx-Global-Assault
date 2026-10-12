@@ -8,6 +8,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 from decompkit.config import load_config  # noqa: E402
+from decompkit.adapters import AdapterError, CommandBuildAdapter, ImageReference  # noqa: E402
 from decompkit.gcc_alloc import (  # noqa: E402
     allocation_priority, allocation_rows, function_section, parse_pre_reload_text,
 )
@@ -188,6 +189,42 @@ class DecompkitPortabilityTests(unittest.TestCase):
         self.assertTrue(row["reload_changed_assignment"])
         self.assertEqual(parsed["local"], {102: 18})
         self.assertEqual(row["priority"], allocation_priority(4, 8, 2))
+
+    def test_command_adapter_and_image_reference_are_project_neutral(self):
+        adapter_script = self.root / "adapter.py"
+        adapter_script.write_text(textwrap.dedent("""
+            import json, pathlib, sys
+            request = json.loads(pathlib.Path(sys.argv[1]).read_text())
+            assert request["format"] == "decompkit-build-request-v1"
+            response = {
+                "format": "decompkit-build-response-v1",
+                "text_hex": "54455854",
+                "text_size": 4,
+                "rodata_hex": "44415441",
+                "rodata_vram": "0x1008",
+                "observed_pipeline": request["pipeline"],
+            }
+            pathlib.Path(sys.argv[2]).write_text(json.dumps(response))
+        """))
+        adapter = CommandBuildAdapter(
+            [sys.executable, str(adapter_script), "{request}", "{response}"], cwd=self.root
+        )
+        built = adapter(str(self.root / "source/unit_a.c"), 0x1000, pipeline="toy")
+        self.assertEqual((built["text"], built["rodata"]), (b"TEXT", b"DATA"))
+        self.assertEqual(built["adapter_response"]["observed_pipeline"], "toy")
+
+        image = self.root / "reference.bin"
+        image.write_bytes(b"TEXTxxxxDATA")
+        reference = ImageReference(image, lambda address: address - 0x1000)
+        self.assertEqual(reference(0x1008, 4), b"DATA")
+        with self.assertRaisesRegex(ValueError, "short"):
+            reference(0x100B, 4)
+
+        broken = CommandBuildAdapter(
+            [sys.executable, "-c", "import sys; sys.exit(3)", "{request}", "{response}"]
+        )
+        with self.assertRaisesRegex(AdapterError, "exited 3"):
+            broken(str(self.root / "source/unit_a.c"), 0x1000, pipeline="toy")
 
 
 if __name__ == "__main__":

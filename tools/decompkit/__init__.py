@@ -9,5 +9,6 @@ wrappers may inject compiler and ROM adapters for their own toolchains.
 # CLI imports ``decompkit.config`` and is also re-exported by
 # ``decompkit.report``; eager imports here would create a cycle.
 __all__ = (
-    "config", "gcc_alloc", "image", "registers", "report", "rewrite", "tables", "units"
+    "adapters", "config", "gcc_alloc", "image", "registers", "report", "rewrite",
+    "tables", "units"
 )

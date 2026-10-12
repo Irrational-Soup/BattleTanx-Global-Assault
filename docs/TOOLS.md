@@ -18,6 +18,7 @@ ROM addresses embedded in it is not reuse.
 | Register mapping | `decompkit.registers`, `decomp_register_atlas.py` | Exhaustive bounded permutations across independent register classes |
 | Fail-closed rewriting | `decompkit.rewrite` | Exact fire counts, unique function gates, bijective token maps, and complete line permutations |
 | GCC allocation evidence | `decompkit.gcc_alloc`, `decomp_alloc_report.py` | Synthetic GCC 2.x dumps with distinct pre/post-reload assignments |
+| External compiler adapters | `decompkit.adapters`, `decompkit_verify_units.py` | Synthetic subprocess compiler and arbitrary image-address mapping |
 | Bounded search | `decomp_xbatch.py`, `decomp_batch.py`, `decomp_beam.py`, `decomp_permuter.py` | Deterministic seeds, bounded evaluations, retained ledgers |
 | Portfolio orchestration | `decomp_make_batch.py`, `decomp_campaign.py`, `decomp_worklist.py`, `decomp_siblings.py` | Resumable manifests and ranked outputs |
 
