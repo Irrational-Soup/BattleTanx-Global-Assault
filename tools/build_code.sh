@@ -828,11 +828,11 @@ done <<'LIBMUS_UNITS'
 800FB244_master_volume 0x2C
 800FB270_start_song 0x30
 800FB2A0_start_song_marker 0x250
-func_800FB4F0 0x80
+800FB4F0_effect_start_default 0x80
 800FB570_player_api 0x264
 800FB7D4_player_api_handles 0x5AC
 800FBD80_player_api_misc_pre 0x48
-func_800FBDC8 0x64
+800FBDC8_handle_bank_value 0x64
 800FBE2C_player_api_misc_post 0x168
 800FBF94_player_main 0x8D0
 800FC864_player_voice 0x34C
@@ -840,7 +840,7 @@ func_800FBDC8 0x64
 800FD10C_player_bank_math 0x194
 800FD2A0_remap_ptr_bank 0x198
 800FD438_random_range 0x94
-func_800FD4CC 0x13C
+800FD4CC_channel_initialize 0x13C
 800FD608_player_start_pre 0x6C4
 800FDCCC_channel_flags 0x54
 800FDD20_player_commands 0x9F0

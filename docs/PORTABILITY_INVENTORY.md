@@ -159,8 +159,8 @@ Files requiring review or target work: **259**.
 | `src/code/unknown/800E82AC.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
 | `src/code/render/8007A0A0_graphics_frame_build.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
 | `src/code/frontend/800D56FC_hud_draw_list.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
-| `src/libmus/func_800FBDC8.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
-| `src/libmus/func_800FD4CC.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/libmus/800FBDC8_handle_bank_value.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
+| `src/libmus/800FD4CC_channel_initialize.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
 | `src/code/gameplay/800F3F78_mesh_rings_draw.c` | recovered-game-and-audio | `n64-display-list-construction` | `platform-adapter` |
 | `src/code/gameplay/8009D144_mode_range.c` | recovered-game-and-audio | `target-inline-assembly`, `mips-register-pinning` | `rewrite-portable` |
 | `src/code/gameplay/800E80F4_multiplayer_actor_spawn.c` | recovered-game-and-audio | `target-inline-assembly` | `rewrite-portable` |
