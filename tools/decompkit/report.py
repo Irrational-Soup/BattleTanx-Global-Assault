@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate an objdiff v2 progress report for decomp.dev.
+"""Generate an objdiff v2 progress report for matching-decomp trackers.
 
 The report is derived from the reviewed function catalogue and the production
 splat layout. A function counts as matched only when its entry point belongs to
@@ -8,7 +8,7 @@ proves that those C subsegments reproduce the supported ROM.
 
 Data progress covers initialized bytes in the main executable image. Cartridge
 assets, RSP payloads, stale build material, padding outside that image, and BSS
-are separate reconstruction concerns and are not part of decomp.dev's Data
+are separate reconstruction concerns and are not part of the report's Data
 denominator.
 """
 

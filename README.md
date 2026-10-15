@@ -1,7 +1,7 @@
 # BattleTanx: Global Assault — matching decompilation
 
-[![Decompilation: 100%](https://img.shields.io/badge/decompilation-100%25-brightgreen)](https://decomp.dev/TheGh0stShip/BattleTanx-Global-Assault)
-[![Functions: 1879/1879](https://img.shields.io/badge/functions-1879%2F1879-brightgreen)](https://decomp.dev/TheGh0stShip/BattleTanx-Global-Assault)
+[![Decompilation: 100%](https://img.shields.io/badge/decompilation-100%25-brightgreen)](https://recomp.fyi/game/battletanx-global-assault-n64)
+[![Functions: 1879/1879](https://img.shields.io/badge/functions-1879%2F1879-brightgreen)](https://recomp.fyi/game/battletanx-global-assault-n64)
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-blue)](COPYING)
 
 This repository contains a **complete matching decompilation** of
@@ -72,7 +72,10 @@ and prevents container-only `.o2r` claims without runtime resource factories.
 - The complete loading path is reconstructed in matching C: individual asset DMA/loading, the eight-function LZARI decoder, both world loaders, relocation walkers, and the compressed-bank directory. `make verify-assets` independently parses and losslessly rebuilds every known resource family while accounting for all 8 MiB of the retail ROM.
 - The complete 26-file libmus store is independently validated and can be losslessly split/rebuilt locally: 76 SFX waves, 93 effects, 231 music waves, and 21 songs occupying 2,289,292 indexed ROM bytes plus 66 alignment bytes. All 307 non-overlapping ADPCM waves are independently replaceable and inspection-decodable; `tools/pack_libmus_assets.py` reconstructs both large wave banks and the complete store without opaque fallback slices.
 - Normalizer-assisted units require narrowly gated, documented rules with exact fire counts; they are identified separately from pure source matches in [the normalizer-assisted record](docs/NORMALIZER_ASSISTED.md).
-- CI publishes Code and Data categories in the objdiff v2 `us_report` artifact. Data progress counts only source-owned bytes already proven identical; merely locating or extracting an opaque asset does not count as a match.
+- CI publishes Code and Data categories in the objdiff v2 `NBQE_report`
+  artifact for recomp.board. Data progress counts only source-owned bytes
+  already proven identical; merely locating or extracting an opaque asset does
+  not count as a match.
 
 ### What “100%” means
 

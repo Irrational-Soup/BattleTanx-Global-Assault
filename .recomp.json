@@ -1,0 +1,36 @@
+{
+  "$schema": "https://recomp.fyi/schema/v1.json",
+  "game": "BattleTanx: Global Assault",
+  "system": "N64",
+  "type": "decomp",
+  "original": {
+    "region": "USA",
+    "revision": "Rev 0",
+    "serial": "NBQE",
+    "sha1": "805248fb0a0ee694cad8d7dc927b631d860dd8cf"
+  },
+  "project": "BattleTanx: Global Assault matching decompilation",
+  "status": "complete",
+  "toolchain": [
+    "Splat",
+    "Decompkit"
+  ],
+  "approach": "Matching decompilation with byte-exact code, data, and whole-cartridge verification.",
+  "maintainers": [
+    {
+      "name": "TheGh0stShip",
+      "link": "https://github.com/TheGh0stShip"
+    }
+  ],
+  "links": [
+    {
+      "label": "Native PC port",
+      "url": "https://github.com/TheGh0stShip/BattleTanx-Global-Assault-PC-Port"
+    }
+  ],
+  "tags": [
+    "matching",
+    "complete"
+  ],
+  "notes": "All 1,879 catalogued functions and all source-owned initialized data in the defined loaded-program scope rebuild byte-for-byte. The complete cartridge is independently reconstructed and hash-verified from locally extracted resources. Source-maturity and naming work continues without weakening the binary verification gates."
+}

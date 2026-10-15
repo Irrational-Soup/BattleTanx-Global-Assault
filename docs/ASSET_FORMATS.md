@@ -23,12 +23,13 @@ workflow, output layout, and optional O2R packaging boundary.
 
 ## Progress accounting scope
 
-decomp.dev's Data category covers initialized non-function bytes in the loaded
-main executable image, ROM `0x001000–0x0B7E30`. It excludes the cartridge asset
-store, the raw RSP payload beginning at `0x0B7E30`, stale-build material, BSS,
-and terminal ROM padding. Those excluded regions still need documented formats
-and exact reconstruction for the project, but adding their bytes to the Data
-denominator would conflate asset extraction with linked program-data matching.
+The objdiff progress report's Data category covers initialized non-function
+bytes in the loaded main executable image, ROM `0x001000–0x0B7E30`. It excludes
+the cartridge asset store, the raw RSP payload beginning at `0x0B7E30`,
+stale-build material, BSS, and terminal ROM padding. Those excluded regions
+still need documented formats and exact reconstruction for the project, but
+adding their bytes to the Data denominator would conflate asset extraction
+with linked program-data matching.
 
 After subtracting the 632,132 non-overlapping catalogue function bytes and the
 independently audited object/alignment exclusions, the progress report tracks
@@ -198,8 +199,8 @@ buffers, dispatch tables, clipping state, and overlay metadata are kept in a
 separate unit from the game-owned model data.
 
 The source-built RSP boot and F3DEX FIFO 2.07 instruction images occupy
-`0x800F8DB0–0x800FA210`. Although these bytes execute on the RSP, decomp.dev
-accounts for them as Data because they are not R4300 CPU functions. Their
+`0x800F8DB0–0x800FA210`. Although these bytes execute on the RSP, the objdiff
+report accounts for them as Data because they are not R4300 CPU functions. Their
 assembly sources and instruction-set architecture remain distinct from the
 game's big-endian MIPS III/o32 CPU code.
 

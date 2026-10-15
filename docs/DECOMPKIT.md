@@ -10,7 +10,7 @@ command-line entry points.
 - `decompkit.config` resolves paths, tracked address ranges, source-bearing
   segment kinds, and compiler-pipeline manifests.
 - `decompkit.tables` strictly parses TSV ownership and manifest tables.
-- `decompkit.report` builds an objdiff v2/decomp.dev report from explicit
+- `decompkit.report` builds an objdiff v2 progress report from explicit
   catalogues, layouts, ownership, and address policy.
 - `decompkit.units.UnitVerifier` performs byte-exact text and rodata checks.
   Compiler and reference-byte readers are injected, so it is not tied to KMC,
